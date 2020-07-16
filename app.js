@@ -1,17 +1,9 @@
 const express = require("express");
 const createError = require('http-errors')
-const path = require("path");
 const multer = require("multer");
-// var upload = multer({ dest: "uploads/" });
-// const bodyParser = require("body-parser");
-// const fileUpload = require("express-fileupload");
 let fs = require('fs-extra');
-// var mongo = require("mongodb");
 const MongoClient = require("mongodb").MongoClient;
-// var mongoose = require("mongoose");
-// var Grid = require("gridfs-stream");
 const cors = require("cors");
-
 // пакет для работы с exifTool
 const exiftool = require('node-exiftool')
 // пакет для получения пути к исполняемому файлу exifTool
@@ -19,28 +11,30 @@ const exiftoolBin = require('dist-exiftool')
 // запускаем exifTool
 const ep = new exiftool.ExiftoolProcess(exiftoolBin)
 
-const LIB_PATH = 'D:/IDB/bin'
-// const PHOTO_PATH = path.join(__dirname, 'лысый2.jpg')
-// const rs = fs.createReadStream(PHOTO_PATH)
-//
-// ep
-//     .open()
-//     .then((pid) => console.log('Started exiftool process %s', pid))
-//     .then(() => ep.readMetadata(rs, ['-File:all']))
-//     .then(console.log, console.error)
-//     .then(() => ep.close())
-//     .then(() => console.log('Closed exiftool'))
-//     .catch(console.error)
-
 const getExif = async (photoPath) => {
     const rs = fs.createReadStream(photoPath)
+    let keywords = []
     await ep
         .open()
         .then((pid) => console.log('Started exiftool process %s', pid))
-        .then(() => ep.readMetadata(rs, ['-File:all']))
-        .then(console.log, console.error)
+        .then(() => ep.readMetadata(rs, ['Keywords']))
+        .then(k => {keywords = k}, console.error)
         .then(() => ep.close())
         .then(() => console.log('Closed exiftool'))
+        .catch(console.error)
+    return keywords
+}
+
+const pushExif = async (photoPath, keywords) => {
+    // меняем направление слеша в пути к файлу
+    const currentPhotoPath = photoPath.replace(/\//g, '\\')
+    await ep
+        .open()
+        .then(() => ep.writeMetadata(currentPhotoPath, {
+            'Keywords+': keywords,
+        }, ['overwrite_original']))
+        .then(console.log, console.error)
+        .then(() => ep.close())
         .catch(console.error)
 }
 
@@ -61,53 +55,10 @@ const upload = multer({storage: storage})
 
 app.use(cors());
 
-// const jsonParser = express.json();
-
-//определяет рабочую директорию (сейчас не нужно)
-// app.use(express.static(__dirname));
-
-
-// app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(multer({ dest: "./uploads/" }).single("filedata"));
-// app.use(
-// 	multer({
-// 		dest: "./uploads/",
-// 		rename: function (fieldname, filename) {
-// 			return filename.replace(/\W+/g, "-").toLowerCase() + Date.now();
-// 		},
-// 		onFileUploadStart: function (file) {
-// 			console.log(file.fieldname + " is starting ...");
-// 		},
-// 		onFileUploadData: function (file, data) {
-// 			console.log(data.length + " of " + file.fieldname + " arrived");
-// 		},
-// 		onFileUploadComplete: function (file) {
-// 			console.log(file.fieldname + " uploaded to  " + file.path);
-// 		},
-// 	})
-// )
-
 const mongoClient = new MongoClient("mongodb://localhost:27017/", {
     useUnifiedTopology: true,
     useNewUrlParser: true
 });
-
-// app.use("/upload", upload.array("filedata"), function(req, res, next){
-//   let path = req.files[0].destination + '/' + req.files[0].originalname
-//   console.log('req.path: ', path)
-//   let bom = loadImage.parseMetaData(
-//       path,
-//       function (data) {
-//         console.log('req.path: ', path)
-//         console.log('data: ', data)
-//         // console.log('Original image head: ', data.imageHead)
-//         // console.log('Exif data: ', data.exif) // requires exif extension
-//         // console.log('IPTC data: ', data.iptc) // requires iptc extension
-//       },
-//   )
-//   console.log("About Middleware");
-//   // next()
-// });
 
 function middleware() {
     // console.log('parser: ', jsonParser)
@@ -129,12 +80,25 @@ app.post("/upload", middleware(), async function (req, res) {
         return item
     })
 
-    const exifDataPromiseArr = filedata.map(async (item, i) => {
+    const exifDataPromiseArr = filedata.map(async (item) => {
         let path = filePath + '/' + item.originalname;
         return await getExif(path)
     })
 
-    await Promise.all(exifDataPromiseArr)
+    const exifResponse = await Promise.all(exifDataPromiseArr)
+    exifResponse.forEach((item, i) => {
+        // keywords с фронта (возможно дополненные)
+        const newKeywords = filedata[i].keywords
+        // keywords из exifTools (возможно не существуют, тогда возвращаем null)
+        let originalKeywords = item.data[0].Keywords || null
+
+        if (typeof originalKeywords === "string") originalKeywords = [ originalKeywords ]
+        else if (originalKeywords) originalKeywords = originalKeywords.map(item => item.trim())
+
+        if (originalKeywords.join('') !== newKeywords.join('')) {
+            pushExif(filedata[i].path, newKeywords)
+        }
+    })
 
     mongoClient.connect((err, client) => {
         if (err) {
