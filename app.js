@@ -10,6 +10,8 @@ const exiftool = require('node-exiftool')
 const exiftoolBin = require('dist-exiftool')
 // запускаем exifTool
 const ep = new exiftool.ExiftoolProcess(exiftoolBin)
+const app = express();
+const configPath = 'config.json'
 
 const getExif = async (photoPath) => {
     const rs = fs.createReadStream(photoPath)
@@ -18,7 +20,9 @@ const getExif = async (photoPath) => {
         .open()
         .then((pid) => console.log('Started exiftool process %s', pid))
         .then(() => ep.readMetadata(rs, ['Keywords']))
-        .then(k => {keywords = k}, console.error)
+        .then(k => {
+            keywords = k
+        }, console.error)
         .then(() => ep.close())
         .then(() => console.log('Closed exiftool'))
         .catch(console.error)
@@ -38,7 +42,14 @@ const pushExif = async (photoPath, keywords) => {
         .catch(console.error)
 }
 
-const app = express();
+const getConfig = () => {
+    try {
+        return  fs.readFileSync(configPath, "utf8")
+    } catch (err) {
+        console.error('Config.json не найден: ', err)
+        throw createError(500, `oops..`);
+    }
+}
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -65,13 +76,18 @@ function middleware() {
     return upload.array("filedata")
 }
 
+app.get("/keywords", function (req, res) {
+    const config = getConfig()
+    res.send(config)
+})
+
 app.post("/upload", middleware(), async function (req, res) {
     let filedata = req.files;
     if (!filedata) res.send("Ошибка при загрузке файла");
     // console.log('req.body', req.body);
     const filePath = req.headers.path
 
-
+    // парсим массив с параметрами, затем добавляем параметры в общий файл "filedata"
     const exifDataArr = JSON.parse(req.body.exifDataArr)
     filedata.map((item, i) => {
         item.keywords = exifDataArr[i].keywords
@@ -80,25 +96,39 @@ app.post("/upload", middleware(), async function (req, res) {
         return item
     })
 
+    // Получаем exif из всех фоточек в папке, и помещаем промисы в массив
     const exifDataPromiseArr = filedata.map(async (item) => {
         let path = filePath + '/' + item.originalname;
         return await getExif(path)
     })
 
+    // Достаем массив массивов keyword
     const exifResponse = await Promise.all(exifDataPromiseArr)
+
+    // Сравниваем keywords из картинок и пришедшие (возможно измененные), дописываем новые в картинки,
+    // затем сохраняем все слова в Set
+    let keywordsRawList = []
     exifResponse.forEach((item, i) => {
         // keywords с фронта (возможно дополненные)
-        const newKeywords = filedata[i].keywords
+        const newKeywords = filedata[i].keywords || []
         // keywords из exifTools (возможно не существуют, тогда возвращаем null)
-        let originalKeywords = item.data[0].Keywords || null
+        let originalKeywords = item.data[0].Keywords || []
 
-        if (typeof originalKeywords === "string") originalKeywords = [ originalKeywords ]
-        else if (originalKeywords) originalKeywords = originalKeywords.map(item => item.trim())
+        if (typeof originalKeywords === "string") originalKeywords = [originalKeywords]
+        else originalKeywords = originalKeywords.map(item => item.trim())
 
         if (originalKeywords.join('') !== newKeywords.join('')) {
             pushExif(filedata[i].path, newKeywords)
         }
+        keywordsRawList = [...keywordsRawList, ...originalKeywords, ...newKeywords]
     })
+
+    // Складываем список keywords в config
+    const configKeywords = JSON.parse(getConfig()).keywords
+    const keywordsSet = new Set([ ...configKeywords, ...keywordsRawList ])
+    const configObj = {keywords: [...keywordsSet].sort()}
+    fs.writeFileSync(configPath, JSON.stringify(configObj))
+
 
     mongoClient.connect((err, client) => {
         if (err) {
