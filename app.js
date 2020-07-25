@@ -14,34 +14,55 @@ const app = express();
 const configPath = 'config.json'
 const tempFolder = 'temp'
 
-const getExif = async (photoPath) => {
-    const rs = fs.createReadStream(photoPath)
-    let keywords = []
-    const pid = await ep.open()
-    console.log('Started exiftool process %s', pid)
-    keywords = await ep.readMetadata(rs, ['Keywords'])
-    console.log('keywords', keywords)
-    await ep.close()
-    console.log('Closed exiftool')
-    return keywords
+const getExif = async (pathsArr) => {
+    try {
+        const pid = await ep.open()
+        console.log('Started exiftool process %s', pid)
+
+        const keywordsPromiseArr = pathsArr.map(async tempImgPath => {
+            const rs = fs.createReadStream(tempImgPath)
+            return await ep.readMetadata(rs, ['Keywords'])
+        })
+        const exifResponse = await Promise.all(keywordsPromiseArr)
+
+        await ep.close()
+        console.log('Closed exiftool')
+
+        return exifResponse
+    } catch (e) {
+        console.error(e)
+        throw createError(500, `oops..`);
+    }
 }
 
-const pushExif = async (photoPath, keywords) => {
-    // меняем направление слеша в пути к файлу
-    const currentPhotoPath = photoPath.replace(/\//g, '\\')
-    await ep
-        .open()
-        .then(() => ep.writeMetadata(currentPhotoPath, {
-            'Keywords+': keywords,
-        }, ['overwrite_original']))
-        .then(console.log, console.error)
-        .then(() => ep.close())
-        .catch(console.error)
+const pushExif = async (pathsArr, changedKeywordsArr) => {
+    try {
+        const pid = await ep.open()
+        console.log('Started exiftool process %s', pid)
+
+        const response = pathsArr.map(async (tempImgPath, i) => {
+            if (changedKeywordsArr[i]) {
+                const currentPhotoPath = tempImgPath.replace(/\//g, '\\')
+                return await ep.writeMetadata(currentPhotoPath, {
+                    'Keywords+': changedKeywordsArr[i],
+                }, ['overwrite_original'])
+            } else {
+                return null
+            }
+        })
+        await Promise.all(response)
+
+        await ep.close()
+        console.log('Closed exiftool')
+    } catch (e) {
+        console.error(e)
+        throw createError(500, `oops..`);
+    }
 }
 
 const getConfig = () => {
     try {
-        return  fs.readFileSync(configPath, "utf8")
+        return fs.readFileSync(configPath, "utf8")
     } catch (err) {
         console.error('Config.json не найден: ', err)
         throw createError(500, `oops..`);
@@ -64,11 +85,6 @@ const storage = multer.diskStorage({
 const upload = multer({storage: storage})
 
 app.use(cors());
-
-const mongoClient = new MongoClient("mongodb://localhost:27017/", {
-    useUnifiedTopology: true,
-    useNewUrlParser: true
-});
 
 function middleware() {
     // console.log('parser: ', jsonParser)
@@ -95,19 +111,13 @@ app.post("/upload", middleware(), async function (req, res) {
         return item
     })
 
-    // Получаем exif из всех фоточек в папке, и помещаем промисы в массив
-    const exifDataPromiseArr = filedata.map(async (item) => {
-        return await getExif(item.path)
-    })
+    const pathsArr = filedata.map(dataItem => dataItem.path)
+    const exifResponse = await getExif(pathsArr)
 
-    // const exifDataPromiseArr = await getExif(filedata)
-
-    // Достаем массив массивов keyword
-    const exifResponse = await Promise.all(exifDataPromiseArr)
-    // Сравниваем keywords из картинок и пришедшие (возможно измененные), дописываем новые в картинки,
-    // затем сохраняем все слова в массив keywordsRawList
+    // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
+    // также походу добавляем все ключевые слова в массив keywordsRawList
     let keywordsRawList = []
-    exifResponse.forEach((item, i) => {
+    const changedKeywordsArr = exifResponse.map((item, i) => {
         // keywords с фронта (возможно дополненные)
         const newKeywords = filedata[i].keywords || []
         // keywords из exifTools (возможно не существуют, тогда возвращаем null)
@@ -116,36 +126,55 @@ app.post("/upload", middleware(), async function (req, res) {
         if (typeof originalKeywords === "string") originalKeywords = [originalKeywords]
         else originalKeywords = originalKeywords.map(item => item.trim())
 
-        // Дописываем keywords в картинки, если необходимо, и перемещаем картинки в целевую папку
-        const targetPath = targetFolder + '/' + filedata[i].originalname
-        if (originalKeywords.join('') !== newKeywords.join('')) {
-            pushExif(filedata[i].path, newKeywords)
-                .then(() => {
-                    return fs.move(filedata[i].path, targetPath)
-                })
-                .catch((err) => {
-                    console.log(err)
-                    throw createError(500, `oops..`);
-                })
-        } else {
-            try {
-                fs.move(filedata[i].path, targetPath)
-            } catch (err) {
-                console.log(err)
-                throw createError(500, `oops..`);
-            }
-        }
         keywordsRawList = [...keywordsRawList, ...originalKeywords, ...newKeywords]
+
+        // Если keywords изменены, то записываем в массив и в filedata, если нет, пишем null
+        if (originalKeywords.join('') !== newKeywords.join('')) {
+            const updatedKeywordsSet = new Set([...newKeywords, ...originalKeywords])
+            filedata[i].keywords = [...updatedKeywordsSet]
+            return [...updatedKeywordsSet]
+        } else {
+            return null
+        }
+    })
+
+    // Записываем измененные ключевые слова в файлы в папке темп
+    await pushExif(pathsArr, changedKeywordsArr)
+
+    // Переносим картинки в папку библиотеки
+    filedata.forEach(item => {
+        const targetPath = targetFolder + '/' + item.originalname
+        try {
+            fs.moveSync(item.path, targetPath)
+        } catch (e) {
+            console.error(e)
+            throw createError(500, `oops..`);
+        }
     })
 
     // Складываем список keywords в config
     const configKeywords = JSON.parse(getConfig()).keywords
-    const keywordsSet = new Set([ ...configKeywords, ...keywordsRawList ])
+    const keywordsSet = new Set([...configKeywords, ...keywordsRawList])
     const configObj = {keywords: [...keywordsSet].sort()}
     fs.writeFileSync(configPath, JSON.stringify(configObj))
 
+    // Подготавливаем файл базы данных
+    filedata = filedata.map(image => ({
+        originalname: image.originalname,
+        encoding: image.encoding,
+        mimetype: image.mimetype,
+        size: image.size,
+        keywords: image.keywords,
+        changeDate: image.changeDate,
+        originalDate: image.originalDate,
+    }))
 
-    mongoClient.connect((err, client) => {
+    const mongoClient = new MongoClient("mongodb://localhost:27017/", {
+        useUnifiedTopology: true,
+        useNewUrlParser: true
+    });
+
+    await mongoClient.connect((err, client) => {
         if (err) {
             console.log("Connection error: ", err);
             throw createError(400, `oops..`);
@@ -161,8 +190,8 @@ app.post("/upload", middleware(), async function (req, res) {
             }
             console.log(result);
             res.send("Файл загружен");
-            // client.close();
-            // console.log("Connect close");
+            client.close();
+            console.log("Connect close");
         });
     });
 });
