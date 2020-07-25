@@ -12,20 +12,17 @@ const exiftoolBin = require('dist-exiftool')
 const ep = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express();
 const configPath = 'config.json'
+const tempFolder = 'temp'
 
 const getExif = async (photoPath) => {
     const rs = fs.createReadStream(photoPath)
     let keywords = []
-    await ep
-        .open()
-        .then((pid) => console.log('Started exiftool process %s', pid))
-        .then(() => ep.readMetadata(rs, ['Keywords']))
-        .then(k => {
-            keywords = k
-        }, console.error)
-        .then(() => ep.close())
-        .then(() => console.log('Closed exiftool'))
-        .catch(console.error)
+    const pid = await ep.open()
+    console.log('Started exiftool process %s', pid)
+    keywords = await ep.readMetadata(rs, ['Keywords'])
+    console.log('keywords', keywords)
+    await ep.close()
+    console.log('Closed exiftool')
     return keywords
 }
 
@@ -53,13 +50,15 @@ const getConfig = () => {
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        fs.mkdirsSync(req.headers.path);
-        cb(null, req.headers.path)
+        // fs.mkdirsSync(req.headers.path);
+        // cb(null, req.headers.path)
+        cb(null, tempFolder)
     },
-    filename: function (req, file, cb) {
-        // console.log("file-----", file)
-        cb(null, file.originalname)
-    }
+    // filename: function (req, file, cb) {
+    //     console.log("file-----", file)
+    //     console.log("req-----", req)
+    //     cb(null, file.originalname)
+    // }
 })
 
 const upload = multer({storage: storage})
@@ -82,10 +81,10 @@ app.get("/keywords", function (req, res) {
 })
 
 app.post("/upload", middleware(), async function (req, res) {
+    const targetFolder = req.headers.path
     let filedata = req.files;
     if (!filedata) res.send("Ошибка при загрузке файла");
     // console.log('req.body', req.body);
-    const filePath = req.headers.path
 
     // парсим массив с параметрами, затем добавляем параметры в общий файл "filedata"
     const exifDataArr = JSON.parse(req.body.exifDataArr)
@@ -98,15 +97,15 @@ app.post("/upload", middleware(), async function (req, res) {
 
     // Получаем exif из всех фоточек в папке, и помещаем промисы в массив
     const exifDataPromiseArr = filedata.map(async (item) => {
-        let path = filePath + '/' + item.originalname;
-        return await getExif(path)
+        return await getExif(item.path)
     })
+
+    // const exifDataPromiseArr = await getExif(filedata)
 
     // Достаем массив массивов keyword
     const exifResponse = await Promise.all(exifDataPromiseArr)
-
     // Сравниваем keywords из картинок и пришедшие (возможно измененные), дописываем новые в картинки,
-    // затем сохраняем все слова в Set
+    // затем сохраняем все слова в массив keywordsRawList
     let keywordsRawList = []
     exifResponse.forEach((item, i) => {
         // keywords с фронта (возможно дополненные)
@@ -117,8 +116,24 @@ app.post("/upload", middleware(), async function (req, res) {
         if (typeof originalKeywords === "string") originalKeywords = [originalKeywords]
         else originalKeywords = originalKeywords.map(item => item.trim())
 
+        // Дописываем keywords в картинки, если необходимо, и перемещаем картинки в целевую папку
+        const targetPath = targetFolder + '/' + filedata[i].originalname
         if (originalKeywords.join('') !== newKeywords.join('')) {
             pushExif(filedata[i].path, newKeywords)
+                .then(() => {
+                    return fs.move(filedata[i].path, targetPath)
+                })
+                .catch((err) => {
+                    console.log(err)
+                    throw createError(500, `oops..`);
+                })
+        } else {
+            try {
+                fs.move(filedata[i].path, targetPath)
+            } catch (err) {
+                console.log(err)
+                throw createError(500, `oops..`);
+            }
         }
         keywordsRawList = [...keywordsRawList, ...originalKeywords, ...newKeywords]
     })
@@ -167,6 +182,19 @@ app.use((error, req, res, next) => {
 
 const port = 5000;
 
-app.listen(port, function () {
+const server = app.listen(port, function () {
     console.log("Start listerning on port " + port);
+});
+
+process.on('SIGTERM', () => {
+    console.info('SIGTERM signal received.');
+    console.log('Closing http server.');
+    server.close(() => {
+        console.log('Http server closed.');
+        // boolean means [force], see in mongoose doc
+        mongoose.connection.close(false, () => {
+            console.log('MongoDb connection closed.');
+            process.exit(0);
+        });
+    });
 });
