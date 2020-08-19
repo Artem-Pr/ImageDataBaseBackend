@@ -1,7 +1,10 @@
+const moment = require('moment');
+const url = require('url');
 const express = require("express");
 const createError = require('http-errors')
 const multer = require("multer");
 let fs = require('fs-extra');
+const sharp = require('sharp');
 const MongoClient = require("mongodb").MongoClient;
 const cors = require("cors");
 // пакет для работы с exifTool
@@ -13,15 +16,35 @@ const ep = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express();
 const configPath = 'config.json'
 const tempFolder = 'temp'
+const port = 5000;
 
-const getExif = async (pathsArr) => {
+
+const getExifFormPhoto = async (tempImgPath) => {
+    try {
+        const pid = await ep.open()
+        console.log('Started exiftool process %s', pid)
+
+        const rs = fs.createReadStream(tempImgPath)
+        const exifResponse = await ep.readMetadata(rs, ['-File:all'])
+
+        await ep.close()
+        console.log('Closed exiftool')
+
+        return exifResponse.data
+    } catch (e) {
+        console.error(e)
+        throw createError(500, `oops..`);
+    }
+}
+
+const getExifFromArr = async (pathsArr) => {
     try {
         const pid = await ep.open()
         console.log('Started exiftool process %s', pid)
 
         const keywordsPromiseArr = pathsArr.map(async tempImgPath => {
             const rs = fs.createReadStream(tempImgPath)
-            return await ep.readMetadata(rs, ['Keywords'])
+            return await ep.readMetadata(rs, ['-File:all'])
         })
         const exifResponse = await Promise.all(keywordsPromiseArr)
 
@@ -41,7 +64,7 @@ const pushExif = async (pathsArr, changedKeywordsArr) => {
         console.log('Started exiftool process %s', pid)
 
         const response = pathsArr.map(async (tempImgPath, i) => {
-            if (changedKeywordsArr[i]) {
+            if (changedKeywordsArr[i] && changedKeywordsArr[i].length) {
                 const currentPhotoPath = tempImgPath.replace(/\//g, '\\')
                 return await ep.writeMetadata(currentPhotoPath, {
                     'Keywords+': changedKeywordsArr[i],
@@ -69,6 +92,11 @@ const getConfig = () => {
     }
 }
 
+const moveFileAndCleanTemp = async (tempPath, targetPath) => {
+    await fs.moveSync(tempPath, targetPath)
+    await fs.remove(tempPath + '-preview.jpg')
+}
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // fs.mkdirsSync(req.headers.path);
@@ -85,6 +113,8 @@ const storage = multer.diskStorage({
 const upload = multer({storage: storage})
 
 app.use(cors());
+app.use('/images', express.static(__dirname + '/temp'));
+
 
 function middleware() {
     // console.log('parser: ', jsonParser)
@@ -92,34 +122,81 @@ function middleware() {
 }
 
 app.get("/keywords", function (req, res) {
+    // очищаем temp
+    fs.emptyDirSync(tempFolder);
+    // получаем конфиг
     const config = getConfig()
     res.send(config)
 })
 
-app.post("/upload", middleware(), async function (req, res) {
-    const targetFolder = req.headers.path
-    let filedata = req.files;
+app.post("/uploadItem", upload.single("filedata"), async function (req, res) {
+    let filedata = req.file;
     if (!filedata) res.send("Ошибка при загрузке файла");
-    // console.log('req.body', req.body);
+    console.log('filedata', filedata);
+
+    sharp(filedata.path)
+        .clone()
+        .resize(200)
+        .jpeg({ quality: 80 })
+        .toFile(filedata.path + '-preview.jpg')
+        .then(() => {
+            const photoProps = {
+                preview: 'http://localhost:5000/images/' + filedata.filename + '-preview.jpg',
+                tempPath: filedata.path,
+            }
+            res.send(photoProps)
+        })
+        .catch( err => console.log('err', err));
+})
+
+app.get("/image-exif", async function (req, res) {
+    const queryObject = url.parse(req.url,true).query;
+    const tempImgPath = queryObject.tempPath
+    console.log('tempImgPath', tempImgPath)
+    if (!tempImgPath) res.send("Ошибка при получении keywords");
+
+    const exifObject = await getExifFormPhoto(tempImgPath)
+    res.send(JSON.stringify(exifObject[0]))
+})
+
+app.use("/upload", express.json({extended: true}))
+
+app.post("/upload", async function (req, res) {
+    const targetFolder = req.headers.path
+    let filedata = req.body;
+    if (!filedata) res.send("Ошибка при загрузке файла");
+    console.log('filedata', filedata);
 
     // парсим массив с параметрами, затем добавляем параметры в общий файл "filedata"
-    const exifDataArr = JSON.parse(req.body.exifDataArr)
-    filedata.map((item, i) => {
-        item.keywords = exifDataArr[i].keywords
-        item.changeDate = exifDataArr[i].changeDate
-        item.originalDate = exifDataArr[i].originalDate || null
-        return item
-    })
+    // const exifDataArr = JSON.parse(req.body.exifDataArr)
+    // filedata.map((item, i) => {
+    //     item.keywords = exifDataArr[i].keywords
+    //     item.changeDate = exifDataArr[i].changeDate
+    //     item.originalDate = exifDataArr[i].originalDate || null
+    //     return item
+    // })
 
-    const pathsArr = filedata.map(dataItem => dataItem.path)
-    const exifResponse = await getExif(pathsArr)
+    let pathsArr = filedata.map(dataItem => dataItem.tempPath)
+
+    console.log('pathsArr', pathsArr)
+    const exifResponse = await getExifFromArr(pathsArr)
 
     // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
     // также походу добавляем все ключевые слова в массив keywordsRawList
     let keywordsRawList = []
     const changedKeywordsArr = exifResponse.map((item, i) => {
         // keywords с фронта (возможно дополненные)
-        const newKeywords = filedata[i].keywords || []
+        const newKeywords = filedata[i].keywords
+            ? filedata[i].keywords.map(item => item.trim())
+            : []
+
+        // добавляем в filedata дату создания фоточки
+        // нашел много разных вариантов даты, возможно надо их протестировать
+        const originalDate = item.data[0].DateTimeOriginal
+        if (originalDate) {
+            filedata[i].originalDate = moment(originalDate, 'YYYY:MM:DD hh:mm:ss').format('DD.MM.YYYY')
+        }
+
         // keywords из exifTools (возможно не существуют, тогда возвращаем null)
         let originalKeywords = item.data[0].Keywords || []
 
@@ -128,24 +205,22 @@ app.post("/upload", middleware(), async function (req, res) {
 
         keywordsRawList = [...keywordsRawList, ...originalKeywords, ...newKeywords]
 
-        // Если keywords изменены, то записываем в массив и в filedata, если нет, пишем null
-        if (originalKeywords.join('') !== newKeywords.join('')) {
-            const updatedKeywordsSet = new Set([...newKeywords, ...originalKeywords])
-            filedata[i].keywords = [...updatedKeywordsSet]
-            return [...updatedKeywordsSet]
-        } else {
-            return null
-        }
+        // Если keywords были удалены, то оставляем пустой массив
+        if (filedata[i].keywords && filedata[i].keywords.length === 0) return []
+        // Если keywords не изменены, то записываем в filedata оригинальные
+        if (newKeywords.length) return newKeywords
+        else return originalKeywords
     })
+    console.log('changedKeywordsArr', changedKeywordsArr)
 
     // Записываем измененные ключевые слова в файлы в папке темп
     await pushExif(pathsArr, changedKeywordsArr)
 
     // Переносим картинки в папку библиотеки
     filedata.forEach(item => {
-        const targetPath = targetFolder + '/' + item.originalname
+        const targetPath = targetFolder + '/' + item.name
         try {
-            fs.moveSync(item.path, targetPath)
+            moveFileAndCleanTemp(item.tempPath, targetPath)
         } catch (e) {
             console.error(e)
             throw createError(500, `oops..`);
@@ -159,12 +234,12 @@ app.post("/upload", middleware(), async function (req, res) {
     fs.writeFileSync(configPath, JSON.stringify(configObj))
 
     // Подготавливаем файл базы данных
-    filedata = filedata.map(image => ({
-        originalname: image.originalname,
-        encoding: image.encoding,
-        mimetype: image.mimetype,
+    filedata = filedata.map((image, i) => ({
+        originalname: image.name,
+        mimetype: image.type,
         size: image.size,
-        keywords: image.keywords,
+        megapixels: image.megapixels,
+        keywords: changedKeywordsArr[i],
         changeDate: image.changeDate,
         originalDate: image.originalDate,
     }))
@@ -208,8 +283,6 @@ app.use((error, req, res, next) => {
         stack: error.stack
     })
 })
-
-const port = 5000;
 
 const server = app.listen(port, function () {
     console.log("Start listerning on port " + port);
