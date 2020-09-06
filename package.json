@@ -2,19 +2,16 @@
   "name": "image_db-back",
   "version": "1.0.0",
   "scripts": {
-    "start": "node app",
-    "dev": "nodemon app"
+    "start": "node -r esm app",
+    "dev": "nodemon -r esm app"
   },
   "dependencies": {
-    "blueimp-load-image": "^5.12.0",
-    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dist-exiftool": "^10.53.0",
+    "esm": "^3.2.25",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.9",
     "fs-extra": "^9.0.1",
-    "gridfs": "^1.0.0",
-    "gridfs-stream": "^1.1.1",
     "http-errors": "^1.7.3",
     "moment": "^2.27.0",
     "mongodb": "^3.5.7",
