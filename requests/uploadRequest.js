@@ -3,13 +3,12 @@ import moment from "moment"
 import {getConfig, moveFileAndCleanTemp} from "../utils/common"
 import createError from "http-errors"
 import fs from "fs-extra"
-import {mongoClient, pushDataToDB} from "../utils/mongoClient";
 
 // Складываем список keywords в config
 const putKeywordsToConfigFile = (configPath, keywordsRawList) => {
-	const configKeywords = JSON.parse(getConfig(configPath)).keywords
-	const keywordsSet = new Set([...configKeywords, ...keywordsRawList])
-	const configObj = {keywords: [...keywordsSet].sort()}
+	const config = JSON.parse(getConfig(configPath))
+	const keywordsSet = new Set([...config.keywords, ...keywordsRawList])
+	const configObj = { ...config, keywords: [...keywordsSet].sort() }
 	fs.writeFileSync(configPath, JSON.stringify(configObj))
 }
 
@@ -32,11 +31,13 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata) => {
 		// keywords из exifTools (возможно не существуют, тогда возвращаем null)
 		let originalKeywords = item.data[0].Keywords || []
 		
-		if (typeof originalKeywords === "string") originalKeywords = [originalKeywords]
-		else originalKeywords = originalKeywords.map(item => {
-			console.log('item', item.toString())
-			return item.toString().trim()
-		})
+		if (!Array.isArray(originalKeywords)) originalKeywords = [originalKeywords]
+		else {
+			originalKeywords = originalKeywords.map(item => {
+				console.log('item', item.toString())
+				return item.toString().trim()
+			})
+		}
 		
 		keywordsRawList = [...keywordsRawList, ...originalKeywords, ...newKeywords]
 		
@@ -50,7 +51,7 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata) => {
 
 
 
-export const uploadRequest = async (req, res, exiftoolProcess, configPath, DBClient) => {
+export const uploadRequest = async (req, res, exiftoolProcess, configPath) => {
 	const targetFolder = req.headers.path
 	let filedata = req.body
 	if (!filedata) res.send("Ошибка при загрузке файла")
@@ -73,15 +74,28 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, DBCli
 	
 	// Записываем измененные ключевые слова в файлы в папке темп
 	await pushExif(pathsArr, changedKeywordsArr, exiftoolProcess)
-	// Переносим картинки в папку библиотеки
-	filedata.forEach(item => {
+	
+	// Получаем корневой адрес библиотеки
+	const libPath = JSON.parse(getConfig(configPath)).libPath
+	
+	// Переносим картинки в папку библиотеки и добавляем в filedata относительные пути к картинкам
+	filedata = filedata.map(item => {
 		const targetPath = targetFolder + '/' + item.name
 		try {
 			moveFileAndCleanTemp(item.tempPath, targetPath)
 		} catch (e) {
 			console.error(e)
-			throw createError(500, `oops..`)
+			throw createError(500, `moveFileAndCleanTemp error`)
 		}
+		
+		if (targetPath.startsWith(libPath)) {
+			item.filePath = targetPath.slice(libPath.length)
+		} else {
+			console.error('Lib Path Error! Oy-Oy!')
+			throw createError(500, 'Lib Path Error! Oy-Oy!')
+		}
+		
+		return item
 	})
 	
 	// Складываем список keywords в config
@@ -96,7 +110,16 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, DBCli
 		keywords: changedKeywordsArr[i],
 		changeDate: image.changeDate,
 		originalDate: image.originalDate,
+		filePath: image.filePath,
 	}))
-
-	await pushDataToDB(res, DBClient, filedata)
+	
+	const collection = req.app.locals.collection;
+	collection.insertMany(filedata, function (err, result) {
+		if (err) {
+			console.log("collection insert error", err)
+			throw createError(400, `collection insert error`)
+		}
+		console.log(result)
+		res.send("Файл загружен")
+	})
 }

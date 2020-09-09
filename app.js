@@ -3,7 +3,8 @@ import {keywordsRequest} from "./requests/keywordsRequest";
 import {uploadItemRequest} from "./requests/uploadItemRequest";
 import {imageItemRequest} from "./requests/imageItemRequest";
 import {uploadRequest} from "./requests/uploadRequest";
-import {mongoClient} from "./utils/mongoClient";
+import {getFilesFromDB} from "./requests/getPhotos";
+import {MongoClient} from "mongodb";
 import express from 'express'
 import cors from 'cors'
 
@@ -18,7 +19,11 @@ const app = express();
 const configPath = 'config.json'
 const tempFolder = 'temp'
 const port = 5000;
-const DBClient = mongoClient
+const mongoClient = new MongoClient("mongodb://localhost:27017/", {
+	useUnifiedTopology: true,
+	useNewUrlParser: true
+})
+let dbClient
 
 const upload = getMulterSettings(tempFolder)
 
@@ -42,8 +47,13 @@ app.use("/upload", express.json({extended: true}))
 
 app.post("/upload",
 	(req, res) =>
-		uploadRequest(req, res, exiftoolProcess, configPath, DBClient)
+		uploadRequest(req, res, exiftoolProcess, configPath)
 )
+
+app.get("/filtered-photos",
+	(req, res) => getFilesFromDB(req, res, tempFolder, configPath)
+)
+
 
 app.use((error, req, res, next) => {
 	res.status(error.status || 500)
@@ -54,19 +64,18 @@ app.use((error, req, res, next) => {
 	})
 })
 
-const server = app.listen(port, function () {
-	console.log("Start listening on port " + port);
+mongoClient.connect(function(err, client){
+	if(err) return console.log(err);
+	dbClient = client;
+	app.locals.collection = client.db("IDB").collection("photos");
+	app.listen(port, function(){
+		console.log("Start listening on port " + port);
+	});
 });
 
-process.on('SIGTERM', () => {
-	console.info('SIGTERM signal received.');
-	console.log('Closing http server.');
-	server.close(() => {
-		console.log('Http server closed.');
-		// boolean means [force], see in mongoose doc
-		mongoose.connection.close(false, () => {
-			console.log('MongoDb connection closed.');
-			process.exit(0);
-		});
-	});
+// прослушиваем прерывание работы программы (ctrl-c)
+process.on("SIGINT", () => {
+	dbClient.close();
+	process.exit();
+	console.log('MongoDb connection closed.');
 });

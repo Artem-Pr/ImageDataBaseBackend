@@ -6,6 +6,7 @@ export const uploadItemRequest = (req, res) => {
 	console.log('filedata', filedata);
 	
 	sharp(filedata.path)
+		.withMetadata()
 		.clone()
 		.resize(200)
 		.jpeg({ quality: 80 })
