@@ -25,7 +25,8 @@ export const getExifFromArr = async (pathsArr, exiftoolProcess) => {
 		console.log('Started exiftool process %s', pid)
 		
 		const keywordsPromiseArr = pathsArr.map(async tempImgPath => {
-			const rs = fs.createReadStream(tempImgPath)
+			// const rs = fs.createReadStream(tempImgPath)
+			const rs = tempImgPath.replace(/\//g, '\/')
 			return await exiftoolProcess.readMetadata(rs, ['-File:all'])
 		})
 		const exifResponse = await Promise.all(keywordsPromiseArr)

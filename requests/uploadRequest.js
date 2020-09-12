@@ -13,9 +13,11 @@ const putKeywordsToConfigFile = (configPath, keywordsRawList) => {
 }
 
 // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
-// также походу добавляем все ключевые слова в массив keywordsRawList
-const getKeywordsArr = (keywordsRawList, exifResponse, filedata) => {
-	return exifResponse.map((item, i) => {
+// также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
+const getKeywordsArr = (keywordsRawList, exifResponse, filedata, configPath) => {
+	let newkeywordsRawList = []
+	
+	const keywordsArr = exifResponse.map((item, i) => {
 		// keywords с фронта (возможно дополненные)
 		const newKeywords = filedata[i].keywords
 			? filedata[i].keywords.map(item => item.toString().trim())
@@ -31,7 +33,7 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata) => {
 		// keywords из exifTools (возможно не существуют, тогда возвращаем null)
 		let originalKeywords = item.data[0].Keywords || []
 		
-		if (!Array.isArray(originalKeywords)) originalKeywords = [originalKeywords]
+		if (!Array.isArray(originalKeywords)) originalKeywords = [originalKeywords.toString()]
 		else {
 			originalKeywords = originalKeywords.map(item => {
 				console.log('item', item.toString())
@@ -39,7 +41,7 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata) => {
 			})
 		}
 		
-		keywordsRawList = [...keywordsRawList, ...originalKeywords, ...newKeywords]
+		newkeywordsRawList = [...keywordsRawList, ...originalKeywords, ...newKeywords, ...newkeywordsRawList]
 		
 		// Если keywords были удалены, то оставляем пустой массив
 		if (filedata[i].keywords && filedata[i].keywords.length === 0) return []
@@ -47,6 +49,11 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata) => {
 		if (newKeywords.length) return newKeywords
 		else return originalKeywords
 	})
+	
+	// Складываем список keywords в config
+	putKeywordsToConfigFile(configPath, newkeywordsRawList)
+	
+	return keywordsArr
 }
 
 
@@ -67,9 +74,9 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath) => {
 	
 	// Сравниваем keywords из картинок и пришедшие (возможно измененные) внутри getKeywordsArr,
 	// записываем в массив changedKeywordsArr новые keywords или null
-	// также походу добавляем все ключевые слова в массив keywordsRawList
+	// также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
 	let keywordsRawList = []
-	const changedKeywordsArr = getKeywordsArr(keywordsRawList, exifResponse, filedata)
+	const changedKeywordsArr = getKeywordsArr(keywordsRawList, exifResponse, filedata, configPath)
 	console.log('changedKeywordsArr', changedKeywordsArr)
 	
 	// Записываем измененные ключевые слова в файлы в папке темп
@@ -97,9 +104,6 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath) => {
 		
 		return item
 	})
-	
-	// Складываем список keywords в config
-	putKeywordsToConfigFile(configPath, keywordsRawList)
 	
 	// Подготавливаем файл базы данных
 	filedata = filedata.map((image, i) => ({
