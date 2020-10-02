@@ -88,6 +88,24 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath) => {
 	// Переносим картинки в папку библиотеки и добавляем в filedata относительные пути к картинкам
 	filedata = filedata.map(item => {
 		const targetPath = targetFolder + '/' + item.name
+		console.log('item.tempPath', item.tempPath)
+		console.log('targetPath', targetPath)
+		
+		//  Переносим видео превью туда же, куда и видео файлы
+		let previewTargetPath = ''
+		if(item.type.startsWith('video')) {
+			const tempName = item.tempPath.slice('temp/'.length)
+			const previewTempName = item.preview.slice('http://localhost:5000/images/'.length)
+			const originalNamePreview = previewTempName.replace(tempName, item.name.slice(0, -4))
+			previewTargetPath = targetFolder + '/' + originalNamePreview
+			try {
+				moveFileAndCleanTemp('temp/' + previewTempName, previewTargetPath)
+			} catch (e) {
+				console.error(e)
+				throw createError(500, `moveFileAndCleanTemp error`)
+			}
+		}
+		
 		try {
 			moveFileAndCleanTemp(item.tempPath, targetPath)
 		} catch (e) {
@@ -97,6 +115,7 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath) => {
 		
 		if (targetPath.startsWith(libPath)) {
 			item.filePath = targetPath.slice(libPath.length)
+			item.filePathPreview = previewTargetPath.slice(libPath.length)
 		} else {
 			console.error('Lib Path Error! Oy-Oy!')
 			throw createError(500, 'Lib Path Error! Oy-Oy!')
@@ -115,6 +134,7 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath) => {
 		changeDate: image.changeDate,
 		originalDate: image.originalDate,
 		filePath: image.filePath,
+		preview: image.filePathPreview,
 	}))
 	
 	const collection = req.app.locals.collection;
