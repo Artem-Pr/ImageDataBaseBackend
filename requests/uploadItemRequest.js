@@ -16,7 +16,7 @@ export const uploadItemRequest = (req, res) => {
 		tg.generate({
 			percent: 1,
 			count: 1,
-			size: '200x?'
+			size: '1000x?'
 		})
 			.then((preview) => {
 				console.log('video-preview', preview)
