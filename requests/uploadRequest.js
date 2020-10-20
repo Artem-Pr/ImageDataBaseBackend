@@ -58,8 +58,8 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata, configPath) => 
 
 
 
-export const uploadRequest = async (req, res, exiftoolProcess, configPath) => {
-	const targetFolder = req.headers.path
+export const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFolder) => {
+	const targetFolder = databaseFolder + '/' + req.headers.path
 	let filedata = req.body
 	if (!filedata) res.send("Ошибка при загрузке файла")
 	console.log('filedataArr', filedata)

@@ -40,33 +40,25 @@ export const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 		console.log('photos', photos)
 		const filesWithTempPathPromise = photos.map(async item => {
 			const fullPath = libPath + item.filePath
-			const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
-			const fileExtension = item.originalName.slice(-4)
-			fs.copy(fullPath, 'temp/' + randomName + fileExtension)
 			
-			let fullPreviewPath = ''
-			if (item.preview) {
-				fullPreviewPath = libPath + item.preview
-				fs.copy(fullPreviewPath, 'temp/' + randomName + '-thumbnail.png')
-			}
-			
-			// если тип "video", то не делаем превью, а просто достаем его из папки
+			// если тип "video", то не делаем превью, а просто достаем его из папки, иначе делаем превью
 			if (item.mimetype.startsWith('video')) {
-				item.originalPath = 'http://localhost:5000/images/' + randomName + fileExtension
-				item.preview = 'http://localhost:5000/images/' + randomName + '-thumbnail.png'
-				item.tempPath = 'temp/' + randomName
+				const fullPreviewPath = libPath + item.preview
+				item.originalPath = 'http://localhost:5000/' + fullPath
+				item.preview = 'http://localhost:5000/' + fullPreviewPath
+				item.tempPath = fullPath
 			} else {
+				const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
 				await sharp(fullPath)
 					.withMetadata()
 					.clone()
 					.resize(200)
 					.jpeg({quality: 80})
-					// .toBuffer({ resolveWithObject: true })
 					.toFile('temp/' + randomName + '-preview.jpg')
 					.then(() => {
-						item.originalPath = 'http://localhost:5000/images/' + randomName + fileExtension
+						item.originalPath = 'http://localhost:5000/' + fullPath
 						item.preview = 'http://localhost:5000/images/' + randomName + '-preview.jpg'
-						item.tempPath = 'temp/' + randomName
+						item.tempPath = fullPath
 					})
 					.catch(err => console.log('err', err));
 			}

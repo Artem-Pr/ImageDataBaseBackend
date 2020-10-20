@@ -18,6 +18,7 @@ const app = express();
 
 const configPath = 'config.json'
 const tempFolder = 'temp'
+const databaseFolder = 'database'
 const port = 5000;
 const mongoClient = new MongoClient("mongodb://localhost:27017/", {
 	useUnifiedTopology: true,
@@ -29,6 +30,7 @@ const upload = getMulterSettings(tempFolder)
 
 app.use(cors());
 app.use('/images', express.static(__dirname + '/temp'));
+app.use('/database', express.static(__dirname + '/database'));
 
 app.get("/keywords",
 	(req, res) => keywordsRequest(res, tempFolder, configPath)
@@ -47,7 +49,7 @@ app.use("/upload", express.json({extended: true}))
 
 app.post("/upload",
 	(req, res) =>
-		uploadRequest(req, res, exiftoolProcess, configPath)
+		uploadRequest(req, res, exiftoolProcess, configPath, databaseFolder)
 )
 
 app.get("/filtered-photos",
@@ -64,11 +66,11 @@ app.use((error, req, res, next) => {
 	})
 })
 
-mongoClient.connect(function(err, client){
-	if(err) return console.log(err);
+mongoClient.connect(function (err, client) {
+	if (err) return console.log(err);
 	dbClient = client;
 	app.locals.collection = client.db("IDB").collection("photos");
-	app.listen(port, function(){
+	app.listen(port, function () {
 		console.log("Start listening on port " + port);
 	});
 });
