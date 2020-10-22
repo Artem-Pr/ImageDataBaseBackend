@@ -67,9 +67,10 @@ app.use((error, req, res, next) => {
 })
 
 mongoClient.connect(function (err, client) {
-	if (err) return console.log(err);
+	if (err) return console.log('mongoClient.connect - oops!', err);
 	dbClient = client;
 	app.locals.collection = client.db("IDB").collection("photos");
+	app.locals.configCollection = client.db("IDB").collection("config");
 	app.listen(port, function () {
 		console.log("Start listening on port " + port);
 	});

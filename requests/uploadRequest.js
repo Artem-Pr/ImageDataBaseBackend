@@ -3,12 +3,13 @@ import moment from "moment"
 import {getConfig, moveFileAndCleanTemp} from "../utils/common"
 import createError from "http-errors"
 import fs from "fs-extra"
+import addPathToBase from "../utils/addPathToBase";
 
 // Складываем список keywords в config
 const putKeywordsToConfigFile = (configPath, keywordsRawList) => {
 	const config = JSON.parse(getConfig(configPath))
 	const keywordsSet = new Set([...config.keywords, ...keywordsRawList])
-	const configObj = { ...config, keywords: [...keywordsSet].sort() }
+	const configObj = {...config, keywords: [...keywordsSet].sort()}
 	fs.writeFileSync(configPath, JSON.stringify(configObj))
 }
 
@@ -57,9 +58,9 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata, configPath) => 
 }
 
 
-
 export const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFolder) => {
-	const targetFolder = databaseFolder + '/' + req.headers.path
+	const basePathWithoutRootDirectory = req.headers.path
+	const targetFolder = databaseFolder + '/' + basePathWithoutRootDirectory
 	let filedata = req.body
 	if (!filedata) res.send("Ошибка при загрузке файла")
 	console.log('filedataArr', filedata)
@@ -93,7 +94,7 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, datab
 		
 		//  Переносим видео превью туда же, куда и видео файлы
 		let previewTargetPath = ''
-		if(item.type.startsWith('video')) {
+		if (item.type.startsWith('video')) {
 			const tempName = item.tempPath.slice('temp/'.length)
 			const previewTempName = item.preview.slice('http://localhost:5000/images/'.length)
 			const originalNamePreview = previewTempName.replace(tempName, item.name.slice(0, -4))
@@ -138,6 +139,12 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, datab
 		preview: image.filePathPreview,
 	}))
 	
+	
+	//записываем путь в базу если он не равен ""
+	basePathWithoutRootDirectory.trim() && addPathToBase(req, basePathWithoutRootDirectory)
+	
+	
+	//записываем медиа файлы в базу
 	const collection = req.app.locals.collection;
 	collection.insertMany(filedata, function (err, result) {
 		if (err) {
