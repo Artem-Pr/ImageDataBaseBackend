@@ -4,6 +4,7 @@ import {uploadItemRequest} from "./requests/uploadItemRequest";
 import {imageItemRequest} from "./requests/imageItemRequest";
 import {uploadRequest} from "./requests/uploadRequest";
 import {getFilesFromDB} from "./requests/getPhotos";
+import {pathRequest} from "./requests/pathsRequest";
 import {MongoClient} from "mongodb";
 import express from 'express'
 import cors from 'cors'
@@ -36,6 +37,10 @@ app.get("/keywords",
 	(req, res) => keywordsRequest(res, tempFolder, configPath)
 )
 
+app.get("/paths",
+	(req, res) => pathRequest(req, res)
+)
+
 app.post("/uploadItem",
 	upload.single("filedata"),
 	(req, res) => uploadItemRequest(req, res)
@@ -45,7 +50,9 @@ app.get("/image-exif",
 	(req, res) => imageItemRequest(req, res, exiftoolProcess)
 )
 
-app.use("/upload", express.json({extended: true}))
+app.use("/upload",
+	express.json({extended: true})
+)
 
 app.post("/upload",
 	(req, res) =>
