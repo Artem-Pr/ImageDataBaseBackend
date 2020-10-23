@@ -2,20 +2,40 @@ import {getExifFromArr, pushExif} from "../utils/exifTool"
 import moment from "moment"
 import {getConfig, moveFileAndCleanTemp} from "../utils/common"
 import createError from "http-errors"
-import fs from "fs-extra"
 import addPathToBase from "../utils/addPathToBase";
 
 // Складываем список keywords в config
-const putKeywordsToConfigFile = (configPath, keywordsRawList) => {
-	const config = JSON.parse(getConfig(configPath))
-	const keywordsSet = new Set([...config.keywords, ...keywordsRawList])
-	const configObj = {...config, keywords: [...keywordsSet].sort()}
-	fs.writeFileSync(configPath, JSON.stringify(configObj))
+const putKeywordsToConfig = (req, configPath, keywordsRawList) => {
+	const configCollection = req.app.locals.configCollection;
+	configCollection.findOne({name: "keywords"}, function (err, res) {
+		if (err) {
+			console.log('configCollection.findOne (keywords) - oops!', err)
+			throw createError(400, `configCollection find keywords error`)
+		}
+		if (!res) {
+			configCollection.insertOne({name: "keywords", keywordsArr: keywordsRawList.sort()}, function (err) {
+				if (err) {
+					console.log("Oops!- configCollection insert keywords error", err)
+					throw createError(400, `configCollection insert keywords error`)
+				}
+			})
+		} else {
+			const keywordsSet = new Set([...res.keywordsArr, ...keywordsRawList])
+			keywordsSet.delete('')
+			const newKeywordsArr = Array.from(keywordsSet).sort()
+			configCollection.updateOne({name: "keywords"}, {$set: {keywordsArr: newKeywordsArr}}, function (err) {
+				if (err) {
+					console.log("Oops!- configCollection updateOne keywordsArr Error - ", err)
+					throw createError(400, `configCollection updateOne keywordsArr error`)
+				}
+			})
+		}
+	})
 }
 
 // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
 // также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
-const getKeywordsArr = (keywordsRawList, exifResponse, filedata, configPath) => {
+const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata, configPath) => {
 	let newkeywordsRawList = []
 	
 	const keywordsArr = exifResponse.map((item, i) => {
@@ -52,7 +72,7 @@ const getKeywordsArr = (keywordsRawList, exifResponse, filedata, configPath) => 
 	})
 	
 	// Складываем список keywords в config
-	putKeywordsToConfigFile(configPath, newkeywordsRawList)
+	putKeywordsToConfig(req, configPath, newkeywordsRawList)
 	
 	return keywordsArr
 }
@@ -77,7 +97,7 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, datab
 	// записываем в массив changedKeywordsArr новые keywords или null
 	// также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
 	let keywordsRawList = []
-	const changedKeywordsArr = getKeywordsArr(keywordsRawList, exifResponse, filedata, configPath)
+	const changedKeywordsArr = getKeywordsArr(req, keywordsRawList, exifResponse, filedata, configPath)
 	console.log('changedKeywordsArr', changedKeywordsArr)
 	
 	// Записываем измененные ключевые слова в файлы в папке темп

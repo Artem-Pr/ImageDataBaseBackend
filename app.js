@@ -34,7 +34,7 @@ app.use('/images', express.static(__dirname + '/temp'));
 app.use('/database', express.static(__dirname + '/database'));
 
 app.get("/keywords",
-	(req, res) => keywordsRequest(res, tempFolder, configPath)
+	(req, res) => keywordsRequest(req, res, tempFolder)
 )
 
 app.get("/paths",
