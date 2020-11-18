@@ -1,4 +1,5 @@
 import fs from 'fs-extra'
+import moment from "moment";
 
 export const getExifFormPhoto = async (tempImgPath, exiftoolProcess) => {
 	try {
@@ -41,25 +42,30 @@ export const getExifFromArr = async (pathsArr, exiftoolProcess) => {
 	}
 }
 
-export const pushExif = async (pathsArr, changedKeywordsArr, exiftoolProcess) => {
+export const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess) => {
 	try {
 		const pid = await exiftoolProcess.open()
 		console.log('Started exiftool process %s', pid)
 		
 		const response = pathsArr.map(async (tempImgPath, i) => {
-			if (changedKeywordsArr[i] && changedKeywordsArr[i].length) {
+			// if (changedKeywordsArr[i] && changedKeywordsArr[i].length) {
 				const currentPhotoPath = tempImgPath.replace(/\//g, '\/')
+				
+				const originalDate = moment(filedata[i].originalDate, 'DD.MM.YYYY').format('YYYY:MM:DD hh:mm:ss')
 				
 				const response = await exiftoolProcess.writeMetadata(currentPhotoPath, {
 					'keywords': changedKeywordsArr[i],
 					'Subject': changedKeywordsArr[i],
+					'DateTimeOriginal': originalDate,
 				}, ['overwrite_original'])
 				
 				console.log('writeMetadata-response: ', response)
+				// if (!response.data && response.error) throw new Error(response.error)
+				
 				return response
-			} else {
-				return null
-			}
+			// } else {
+			// 	return null
+			// }
 		})
 		await Promise.all(response)
 		

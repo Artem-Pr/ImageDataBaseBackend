@@ -44,11 +44,14 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata, configPath
 			? filedata[i].keywords.map(item => item.toString().trim())
 			: []
 		
-		// добавляем в filedata дату создания фоточки
+		// добавляем в filedata дату создания фоточки (при необходимости)
 		// нашел много разных вариантов даты, возможно надо их протестировать
-		const originalDate = item.data[0].DateTimeOriginal
-		if (originalDate) {
-			filedata[i].originalDate = moment(originalDate, 'YYYY:MM:DD hh:mm:ss').format('DD.MM.YYYY')
+		
+		if (
+			(filedata[i].originalDate === '' || filedata[i].originalDate === '-') &&
+			item.data[0].DateTimeOriginal
+		) {
+			filedata[i].originalDate = moment(item.data[0].DateTimeOriginal, 'YYYY:MM:DD hh:mm:ss').format('DD.MM.YYYY')
 		}
 		
 		// keywords из exifTools (возможно не существуют, тогда возвращаем null)
@@ -101,7 +104,7 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, datab
 	console.log('changedKeywordsArr', changedKeywordsArr)
 	
 	// Записываем измененные ключевые слова в файлы в папке темп
-	await pushExif(pathsArr, changedKeywordsArr, exiftoolProcess)
+	await pushExif(pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
 	
 	// Получаем корневой адрес библиотеки
 	const libPath = JSON.parse(getConfig(configPath)).libPath
