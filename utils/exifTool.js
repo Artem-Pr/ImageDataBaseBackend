@@ -3,7 +3,7 @@ import moment from "moment";
 
 export const getExifFormPhoto = async (tempImgPath, exiftoolProcess) => {
 	try {
-		const pid = await exiftoolProcess.open()
+		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
 		
 		console.log('getExifFormPhoto - tempImgPath', tempImgPath)
@@ -22,7 +22,7 @@ export const getExifFormPhoto = async (tempImgPath, exiftoolProcess) => {
 
 export const getExifFromArr = async (pathsArr, exiftoolProcess) => {
 	try {
-		const pid = await exiftoolProcess.open()
+		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
 		
 		const keywordsPromiseArr = pathsArr.map(async tempImgPath => {
@@ -44,7 +44,7 @@ export const getExifFromArr = async (pathsArr, exiftoolProcess) => {
 
 export const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess) => {
 	try {
-		const pid = await exiftoolProcess.open()
+		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
 		
 		const response = pathsArr.map(async (tempImgPath, i) => {
@@ -57,8 +57,7 @@ export const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolP
 					'keywords': changedKeywordsArr[i],
 					'Subject': changedKeywordsArr[i],
 					'DateTimeOriginal': originalDate,
-				}, ['overwrite_original'])
-				
+				}, ['overwrite_original', 'codedcharacterset=utf8'])
 				console.log('writeMetadata-response: ', response)
 				// if (!response.data && response.error) throw new Error(response.error)
 				
