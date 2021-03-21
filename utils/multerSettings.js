@@ -1,6 +1,6 @@
-import multer from "multer";
+const multer = require("multer")
 
-export const getMulterSettings = (tempFolder) => {
+const getMulterSettings = (tempFolder) => {
 	const storage = multer.diskStorage({
 		destination: function (req, file, cb) {
 			// fs.mkdirsSync(req.headers.path);
@@ -16,3 +16,5 @@ export const getMulterSettings = (tempFolder) => {
 	
 	return multer({storage: storage})
 }
+
+module.exports = {getMulterSettings}

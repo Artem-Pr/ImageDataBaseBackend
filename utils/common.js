@@ -1,7 +1,16 @@
-import fs from 'fs-extra'
-import createError from 'http-errors'
+const fs = require('fs-extra')
+const createError = require('http-errors')
+const ObjectId = require('mongodb').ObjectID
 
-export const getConfig = (configPath) => {
+const DBFilters = {
+	getFilterByIds: idsArr => ({
+		_id: {
+			$in: idsArr.map(id => ObjectId(id))
+		}
+	})
+}
+
+const getConfig = (configPath) => {
 	try {
 		return fs.readFileSync(configPath, "utf8")
 	} catch (err) {
@@ -10,7 +19,23 @@ export const getConfig = (configPath) => {
 	}
 }
 
-export const moveFileAndCleanTemp = async (tempPath, targetPath) => {
+const moveFileAndCleanTemp = async (tempPath, targetPath) => {
 	await fs.moveSync(tempPath, targetPath)
 	await fs.remove(tempPath + '-preview.jpg')
 }
+
+const renameFile = async (originalName, newName) => {
+	return await new Promise((resolve, reject) => {
+		return fs.rename(originalName, newName, function (err) {
+			if (err) {
+				console.log('fs.rename ' + err)
+				reject(new Error('fs.rename ERROR: ' + newName))
+			} else {
+				console.log('fs.rename SUCCESS: ' + newName)
+				resolve(newName)
+			}
+		})
+	})
+}
+
+module.exports = {getConfig, moveFileAndCleanTemp, renameFile, DBFilters}

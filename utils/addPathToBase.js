@@ -1,4 +1,4 @@
-import createError from "http-errors";
+const createError = require("http-errors")
 
 const addPathToBase = (req, basePathWithoutRootDirectory) => {
 	const configCollection = req.app.locals.configCollection;
@@ -29,4 +29,4 @@ const addPathToBase = (req, basePathWithoutRootDirectory) => {
 	})
 }
 
-export default addPathToBase
+module.exports = {addPathToBase}

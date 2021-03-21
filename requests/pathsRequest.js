@@ -1,6 +1,6 @@
-import createError from "http-errors";
+const createError = require("http-errors")
 
-export const pathRequest = (req, response) => {
+const pathRequest = (req, response) => {
 	const configCollection = req.app.locals.configCollection;
 	configCollection.findOne({name: "paths"}, function (err, res) {
 		if (err) {
@@ -14,3 +14,5 @@ export const pathRequest = (req, response) => {
 		}
 	})
 }
+
+module.exports = {pathRequest}

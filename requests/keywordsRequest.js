@@ -1,7 +1,7 @@
-import fs from "fs-extra";
-import createError from "http-errors";
+const fs = require("fs-extra")
+const createError = require("http-errors")
 
-export const keywordsRequest = (request, response, tempFolder) => {
+const keywordsRequest = (request, response, tempFolder) => {
 	console.log('tempFolder', tempFolder)
 	// очищаем temp
 	fs.emptyDirSync(tempFolder);
@@ -19,3 +19,5 @@ export const keywordsRequest = (request, response, tempFolder) => {
 		}
 	})
 }
+
+module.exports = {keywordsRequest}

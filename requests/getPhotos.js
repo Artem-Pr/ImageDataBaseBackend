@@ -1,10 +1,10 @@
-import url from "url";
-import fs from "fs-extra";
-import createError from "http-errors";
-import {getConfig} from "../utils/common";
-import sharp from "sharp";
+const url = require("url")
+const fs = require("fs-extra")
+const createError = require("http-errors")
+const {getConfig} = require("../utils/common")
+const sharp = require("sharp")
 
-export const getFilesFromDB = async (req, res, tempFolder, configPath) => {
+const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 	const queryObject = url.parse(req.url, true).query
 	const nPerPage = +queryObject['perPage'] || 0
 	let currentPage = +queryObject['page'] || 1
@@ -73,7 +73,7 @@ export const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 							item.preview = 'http://localhost:5000/images/' + randomName + '-preview.jpg'
 							item.tempPath = fullPath
 						})
-						.catch(err => console.log('err', err));
+						.catch(err => console.log('OOPS!, Sharp ERROR: ', err))
 				}
 				return item
 			})
@@ -85,3 +85,5 @@ export const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 			res.send(responseObject)
 		});
 }
+
+module.exports = {getFilesFromDB}

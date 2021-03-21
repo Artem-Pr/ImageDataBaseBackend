@@ -1,7 +1,23 @@
-import fs from 'fs-extra'
-import moment from "moment";
+const fs = require('fs-extra')
+const moment = require("moment")
+const createError = require("http-errors")
 
-export const getExifFormPhoto = async (tempImgPath, exiftoolProcess) => {
+const preparedResponse = exifToolResponseArr => {
+	return exifToolResponseArr.reduce((sum, item, i) => {
+		if (item.data) {
+			console.log('exifTool-' + i + ':', item.data)
+			return sum && true
+		}
+		if (item.error.includes('1 image files updated')) {
+			console.log('exifTool-' + i + ':', '1 image files updated with WARNING')
+			return sum && true
+		}
+		console.log('exifTool-' + i + ':', 'OOPS!', item.error)
+		throw new Error('exifTool-' + i + ': OOPS!' + item.error)
+	}, true)
+}
+
+const getExifFormPhoto = async (tempImgPath, exiftoolProcess) => {
 	try {
 		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
@@ -20,7 +36,14 @@ export const getExifFormPhoto = async (tempImgPath, exiftoolProcess) => {
 	}
 }
 
-export const getExifFromArr = async (pathsArr, exiftoolProcess) => {
+/**
+ * Return array of exif strings
+ *
+ * @param {string[]} pathsArr - array of paths to the files
+ * @param {any} exiftoolProcess
+ * @returns {string[]}
+ */
+const getExifFromArr = async (pathsArr, exiftoolProcess) => {
 	try {
 		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
@@ -42,36 +65,42 @@ export const getExifFromArr = async (pathsArr, exiftoolProcess) => {
 	}
 }
 
-export const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess) => {
-	try {
-		const pid = await exiftoolProcess.open('utf8')
-		console.log('Started exiftool process %s', pid)
+/**
+ * Push exif array.
+ *
+ * @param {string[]} pathsArr - array of paths to the files
+ * @param {string[][]} changedKeywordsArr - array of keywords arrays
+ * @param {[]} filedata - array of dataBase objects
+ * @param {any} exiftoolProcess
+ */
+const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess) => {
+	const pid = await exiftoolProcess.open('utf8')
+	
+	console.log('Started exiftool process %s', pid)
+	
+	const responsePromise = await pathsArr.map(async (tempImgPath, i) => {
+		const currentPhotoPath = tempImgPath.replace(/\//g, '\/')
+		const keywords = changedKeywordsArr[i]?.length ? changedKeywordsArr[i] : ""
 		
-		const response = pathsArr.map(async (tempImgPath, i) => {
-			// if (changedKeywordsArr[i] && changedKeywordsArr[i].length) {
-				const currentPhotoPath = tempImgPath.replace(/\//g, '\/')
-				
-				const originalDate = moment(filedata[i].originalDate, 'DD.MM.YYYY').format('YYYY:MM:DD hh:mm:ss')
-				
-				const response = await exiftoolProcess.writeMetadata(currentPhotoPath, {
-					'keywords': changedKeywordsArr[i],
-					'Subject': changedKeywordsArr[i],
-					'DateTimeOriginal': originalDate,
-				}, ['overwrite_original', 'codedcharacterset=utf8'])
-				console.log('writeMetadata-response: ', response)
-				// if (!response.data && response.error) throw new Error(response.error)
-				
-				return response
-			// } else {
-			// 	return null
-			// }
-		})
-		await Promise.all(response)
+		let originalDate = null
+		if (filedata[i].originalDate !== '' && filedata[i].originalDate !== '-') {
+			originalDate = moment(filedata[i].originalDate, 'DD.MM.YYYY').format('YYYY:MM:DD hh:mm:ss')
+		}
 		
-		await exiftoolProcess.close()
-		console.log('Closed exiftool')
-	} catch (e) {
-		console.error(e)
-		throw createError(500, `oops..`);
-	}
+		return await exiftoolProcess.writeMetadata(currentPhotoPath, {
+			'keywords': keywords,
+			'Subject': keywords,
+			...(originalDate && {'DateTimeOriginal': originalDate}),
+			...(originalDate && {'CreateDate': originalDate}),
+			...(originalDate && {'MediaCreateDate': originalDate}),
+		}, ['overwrite_original', 'codedcharacterset=utf8'])
+	})
+	const response = await Promise.all(responsePromise)
+	
+	await exiftoolProcess.close()
+	console.log('Closed exiftool')
+	
+	return preparedResponse(response)
 }
+
+module.exports = {getExifFormPhoto, getExifFromArr, pushExif, preparedResponse}

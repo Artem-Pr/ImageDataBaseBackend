@@ -1,26 +1,27 @@
-import {getMulterSettings} from "./utils/multerSettings";
-import {keywordsRequest} from "./requests/keywordsRequest";
-import {uploadItemRequest} from "./requests/uploadItemRequest";
-import {imageItemRequest} from "./requests/imageItemRequest";
-import {uploadRequest} from "./requests/uploadRequest";
-import {getFilesFromDB} from "./requests/getPhotos";
-import {pathRequest} from "./requests/pathsRequest";
-import {MongoClient} from "mongodb";
-import express from 'express'
-import cors from 'cors'
+const {getMulterSettings} = require("./utils/multerSettings")
+const {keywordsRequest} = require("./requests/keywordsRequest")
+const {uploadItemRequest} = require("./requests/uploadItemRequest")
+const {imageItemRequest} = require("./requests/imageItemRequest")
+const {uploadRequest} = require("./requests/uploadRequest")
+const {updateRequest} = require("./requests/updateRequest")
+const {getFilesFromDB} = require("./requests/getPhotos")
+const {pathRequest} = require("./requests/pathsRequest")
+const {MongoClient} = require("mongodb")
+const express = require('express')
+const cors = require('cors')
 
 // пакет для работы с exifTool
-import exiftool from 'node-exiftool'
+const exiftool = require('node-exiftool')
 // пакет для получения пути к исполняемому файлу exifTool
-import exiftoolBin from 'dist-exiftool'
+const exiftoolBin = require('dist-exiftool')
 // запускаем exifTool
 const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
-const app = express();
+const app = express()
 
 const configPath = 'config.json'
 const tempFolder = 'temp'
 const databaseFolder = 'database'
-const port = 5000;
+const port = 5000
 const mongoClient = new MongoClient("mongodb://localhost:27017/", {
 	useUnifiedTopology: true,
 	useNewUrlParser: true
@@ -59,10 +60,18 @@ app.post("/upload",
 		uploadRequest(req, res, exiftoolProcess, configPath, databaseFolder)
 )
 
+app.use("/update",
+	express.json({extended: true})
+)
+
+app.put("/update",
+	(req, res) =>
+		updateRequest(req, res, exiftoolProcess, configPath, databaseFolder)
+)
+
 app.get("/filtered-photos",
 	(req, res) => getFilesFromDB(req, res, tempFolder, configPath)
 )
-
 
 app.use((error, req, res, next) => {
 	res.status(error.status || 500)
@@ -74,18 +83,20 @@ app.use((error, req, res, next) => {
 })
 
 mongoClient.connect(function (err, client) {
-	if (err) return console.log('mongoClient.connect - oops!', err);
-	dbClient = client;
-	app.locals.collection = client.db("IDB").collection("photos");
-	app.locals.configCollection = client.db("IDB").collection("config");
+	if (err) return console.log('mongoClient.connect - oops!', err)
+	dbClient = client
+	app.locals.collection = client.db("IDB").collection("photos")
+	app.locals.configCollection = client.db("IDB").collection("config")
 	app.listen(port, function () {
-		console.log("Start listening on port " + port);
-	});
-});
+		console.log("Start listening on port " + port)
+	})
+})
 
 // прослушиваем прерывание работы программы (ctrl-c)
 process.on("SIGINT", () => {
-	dbClient.close();
-	process.exit();
-	console.log('MongoDb connection closed.');
-});
+	dbClient.close()
+	process.exit()
+	console.log('MongoDb connection closed.')
+})
+
+module.exports = {app}

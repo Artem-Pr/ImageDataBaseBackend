@@ -1,8 +1,8 @@
-import {getExifFromArr, pushExif} from "../utils/exifTool"
-import moment from "moment"
-import {getConfig, moveFileAndCleanTemp} from "../utils/common"
-import createError from "http-errors"
-import addPathToBase from "../utils/addPathToBase";
+const {getExifFromArr, pushExif} = require("../utils/exifTool")
+const moment = require("moment")
+const {getConfig, moveFileAndCleanTemp} = require("../utils/common")
+const createError = require("http-errors")
+const addPathToBase = require("../utils/addPathToBase")
 
 // Складываем список keywords в config
 const putKeywordsToConfig = (req, configPath, keywordsRawList) => {
@@ -46,12 +46,16 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata, configPath
 		
 		// добавляем в filedata дату создания фоточки (при необходимости)
 		// нашел много разных вариантов даты, возможно надо их протестировать
-		
+		const originalDate =
+			item.data[0].DateTimeOriginal ||
+			item.data[0].CreateDate ||
+			item.data[0].MediaCreateDate
+		console.log('originalDate-------------', originalDate)
+		console.log('filedata[i].originalDate-------------', filedata[i].originalDate)
 		if (
-			(filedata[i].originalDate === '' || filedata[i].originalDate === '-') &&
-			item.data[0].DateTimeOriginal
+			originalDate && (filedata[i].originalDate === '' || filedata[i].originalDate === '-')
 		) {
-			filedata[i].originalDate = moment(item.data[0].DateTimeOriginal, 'YYYY:MM:DD hh:mm:ss').format('DD.MM.YYYY')
+			filedata[i].originalDate = moment(originalDate, 'YYYY:MM:DD hh:mm:ss').format('DD.MM.YYYY')
 		}
 		
 		// keywords из exifTools (возможно не существуют, тогда возвращаем null)
@@ -81,7 +85,7 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata, configPath
 }
 
 
-export const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFolder) => {
+const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFolder) => {
 	const basePathWithoutRootDirectory = req.headers.path
 	const targetFolder = databaseFolder + '/' + basePathWithoutRootDirectory
 	let filedata = req.body
@@ -95,6 +99,8 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, datab
 	
 	console.log('pathsArr', pathsArr)
 	const exifResponse = await getExifFromArr(pathsArr, exiftoolProcess)
+	console.log('exifResponse---------', exifResponse.map(item => item.data))
+	console.log('filedataArr----------', filedata)
 	
 	// Сравниваем keywords из картинок и пришедшие (возможно измененные) внутри getKeywordsArr,
 	// записываем в массив changedKeywordsArr новые keywords или null
@@ -104,6 +110,7 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, datab
 	console.log('changedKeywordsArr', changedKeywordsArr)
 	
 	// Записываем измененные ключевые слова в файлы в папке темп
+	// Todo: cover all functions with try catch and return "throw createError(500, `oops..`)"
 	await pushExif(pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
 	
 	// Получаем корневой адрес библиотеки
@@ -178,3 +185,5 @@ export const uploadRequest = async (req, res, exiftoolProcess, configPath, datab
 		res.send("Файл загружен")
 	})
 }
+
+module.exports = {uploadRequest}

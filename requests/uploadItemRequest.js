@@ -1,7 +1,7 @@
-import sharp from "sharp"
-import ThumbnailGenerator from 'video-thumbnail-generator'
+const sharp = require("sharp")
+const ThumbnailGenerator = require('video-thumbnail-generator')
 
-export const uploadItemRequest = (req, res) => {
+const uploadItemRequest = (req, res) => {
 	let filedata = req.file
 	if (!filedata) res.send("Ошибка при загрузке файла")
 	console.log('filedata', filedata)
@@ -26,14 +26,14 @@ export const uploadItemRequest = (req, res) => {
 				}
 				res.send(photoProps)
 			})
-			.catch( err => console.log('err', err));
+			.catch(err => console.log('err', err));
 		
 	} else {
 		sharp(filedata.path)
 			.withMetadata()
 			.clone()
 			.resize(200)
-			.jpeg({ quality: 80 })
+			.jpeg({quality: 80})
 			.toFile(filedata.path + '-preview.jpg')
 			.then(() => {
 				const photoProps = {
@@ -42,6 +42,8 @@ export const uploadItemRequest = (req, res) => {
 				}
 				res.send(photoProps)
 			})
-			.catch( err => console.log('err', err));
+			.catch(err => console.log('err', err));
 	}
 }
+
+module.exports = {uploadItemRequest}
