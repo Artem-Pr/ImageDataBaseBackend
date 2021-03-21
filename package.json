@@ -4,6 +4,7 @@
   "scripts": {
     "start": "node -r esm app",
     "dev": "nodemon -r esm app",
+    "postversion": "git push",
     "test": "jest"
   },
   "dependencies": {
