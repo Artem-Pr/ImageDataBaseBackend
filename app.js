@@ -47,7 +47,11 @@ app.post("/uploadItem",
 	(req, res) => uploadItemRequest(req, res)
 )
 
-app.get("/image-exif",
+app.use("/image-exif",
+	express.json({extended: true})
+)
+
+app.post("/image-exif",
 	(req, res) => imageItemRequest(req, res, exiftoolProcess)
 )
 

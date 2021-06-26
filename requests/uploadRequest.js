@@ -55,7 +55,7 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata, configPath
 		if (
 			originalDate && (filedata[i].originalDate === '' || filedata[i].originalDate === '-')
 		) {
-			filedata[i].originalDate = moment(originalDate, 'YYYY:MM:DD hh:mm:ss').format('DD.MM.YYYY')
+			filedata[i].originalDate = moment(originalDate, 'YYYY:MM:DD hh:mm:ss').format('YYYY.MM.DD')
 		}
 		
 		// keywords из exifTools (возможно не существуют, тогда возвращаем null)

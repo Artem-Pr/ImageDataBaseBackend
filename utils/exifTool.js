@@ -84,7 +84,7 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
 		
 		let originalDate = null
 		if (filedata[i].originalDate !== '' && filedata[i].originalDate !== '-') {
-			originalDate = moment(filedata[i].originalDate, 'DD.MM.YYYY').format('YYYY:MM:DD hh:mm:ss')
+			originalDate = moment(filedata[i].originalDate, 'YYYY.MM.DD').format('YYYY:MM:DD hh:mm:ss')
 		}
 		
 		return await exiftoolProcess.writeMetadata(currentPhotoPath, {
