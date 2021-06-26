@@ -2,7 +2,7 @@ const {getExifFromArr, pushExif} = require("../utils/exifTool")
 const moment = require("moment")
 const {getConfig, moveFileAndCleanTemp} = require("../utils/common")
 const createError = require("http-errors")
-const addPathToBase = require("../utils/addPathToBase")
+const {addPathToBase} = require("../utils/addPathToBase")
 
 // Складываем список keywords в config
 const putKeywordsToConfig = (req, configPath, keywordsRawList) => {
@@ -86,10 +86,11 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata, configPath
 
 
 const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFolder) => {
-	const basePathWithoutRootDirectory = req.headers.path
+	const url = new URL('http://localhost:5000' + req.url)
+	const basePathWithoutRootDirectory = url.searchParams.get('path')
 	const targetFolder = databaseFolder + '/' + basePathWithoutRootDirectory
 	let filedata = req.body
-	if (!filedata) res.send("Ошибка при загрузке файла")
+	if (!filedata) res.send("Ошибка при загрузке файлов")
 	console.log('filedataArr', filedata)
 	
 	let pathsArr = filedata.map(dataItem => {
@@ -182,7 +183,7 @@ const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFold
 			throw createError(400, `collection insert error`)
 		}
 		console.log(result)
-		res.send("Файл загружен")
+		res.send("Файлы загружены")
 	})
 }
 

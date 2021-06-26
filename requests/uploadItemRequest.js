@@ -1,5 +1,5 @@
 const sharp = require("sharp")
-const ThumbnailGenerator = require('video-thumbnail-generator')
+const ThumbnailGenerator = require('video-thumbnail-generator').default
 
 const uploadItemRequest = (req, res) => {
 	let filedata = req.file
