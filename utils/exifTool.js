@@ -79,6 +79,11 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
 	console.log('Started exiftool process %s', pid)
 	
 	const responsePromise = await pathsArr.map(async (tempImgPath, i) => {
+		const isInvalidFormat = filedata[i].type === 'video/avi'
+		if (isInvalidFormat) {
+			console.log('omit invalid format - ', filedata[i].type)
+			return 'invalidFormat'
+		}
 		const currentPhotoPath = tempImgPath.replace(/\//g, '\/')
 		const keywords = changedKeywordsArr[i]?.length ? changedKeywordsArr[i] : ""
 		
@@ -100,7 +105,9 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
 	await exiftoolProcess.close()
 	console.log('Closed exiftool')
 	
-	return preparedResponse(response)
+	const resWithoutInvalidFormats = response.filter(item => item !== 'invalidFormat')
+	
+	return preparedResponse(resWithoutInvalidFormats)
 }
 
 module.exports = {getExifFormPhoto, getExifFromArr, pushExif, preparedResponse}
