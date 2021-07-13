@@ -69,7 +69,7 @@ describe('updateRequest: ', () => {
 	
 	describe('updateFile: ', () => {
 		test('should return correct response.value from database', async () => {
-			const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\"],\"changeDate\":\"11.11.2011\",\"originalDate\":\"20.06.2019\",\"filePath\":\"tests/test-images/bom-bom.jpg.jpg\",\"preview\":\"\"}"
+			const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}"
 			const id = "5fef484b497f3af84699e88c"
 			const updatedFields = Object.assign(updateFiledata[1].updatedFields)
 			const collection = req.app.locals.collection
@@ -80,8 +80,8 @@ describe('updateRequest: ', () => {
 	
 	describe('updateDatabase: ', () => {
 		test('should return correct Array of updated data', async () => {
-			const firstResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"11.11.2011\",\"originalDate\":\"24.06.2019\",\"filePath\":\"tests/test-images/123.jpg.jpg\",\"preview\":\"\"}"
-			const secondResponse = "{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"12.12.2011\",\"originalDate\":\"20.06.2019\",\"filePath\":\"tests/test-images/bom-bom.jpg.jpg\",\"preview\":\"\"}"
+			const firstResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"}"
+			const secondResponse = "{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}"
 			const filedata = req.body
 			const collection = req.app.locals.collection
 			const response = await updateDatabase(filedata, collection, res)
@@ -103,7 +103,7 @@ describe('updateRequest: ', () => {
 			expect(JSON.stringify(response[1])).toBe(secondResponse)
 		})
 		
-		test('should return [] if cant find object in DB', async () => {
+		test('should throw Error if cant find object in DB', async () => {
 			const id1 = ObjectId("5fef484b497f3af84699e77b")
 			const id2 = ObjectId("5fef484b497f3af84699e77c")
 			const idsArr = [id1, id2]
@@ -111,7 +111,7 @@ describe('updateRequest: ', () => {
 			try {
 				await findObjects(idsArr, collection)
 			} catch (error) {
-				expect(error.message).toBe('ERROR: "findObjects" cant find DB object')
+				expect(error.message).toBe('OOPS! ERROR: "findObjects" can\'t find DB object')
 			}
 		})
 	})
@@ -247,7 +247,7 @@ describe('updateRequest: ', () => {
 		test('should return correct response.value from updateRequest', async () => {
 			const updatedFileName1 = 'tests/test-images/123.jpg'
 			const updatedFileName2 = 'tests/test-images/bom-bom.jpg'
-			const correctResponse = "[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"11.11.2011\",\"originalDate\":\"24.06.2019\",\"filePath\":\"tests/test-images/123.jpg.jpg\",\"preview\":\"\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"12.12.2011\",\"originalDate\":\"20.06.2019\",\"filePath\":\"tests/test-images/bom-bom.jpg.jpg\",\"preview\":\"\"}]"
+			const correctResponse = "[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}]"
 			// const correctResponse = [
 			// 	{_id: '5fef484b497f3af84699e88c',
 			// 		originalName:'123.jpg',

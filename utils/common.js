@@ -38,4 +38,29 @@ const renameFile = async (originalName, newName) => {
 	})
 }
 
-module.exports = {getConfig, moveFileAndCleanTemp, renameFile, DBFilters}
+/**
+ * move file to new directory if there is no same file
+ *
+ * @param {string} fileName
+ * @param {string} src - original filePath
+ * @param {string} dest - new filePath
+ * @returns {Promise} true or Error
+ */
+const asyncMoveFile = async ( fileName, src, dest) => {
+	return await new Promise(((resolve, reject) => {
+		const srcWithName = src + '/' + fileName
+		const destWithName = dest + '/' + fileName
+		return fs.move(srcWithName, destWithName, err => {
+			if (err) {
+				const errorMessage = `fs.move ${err} - ${destWithName}`
+				console.log(errorMessage)
+				reject(new Error(errorMessage))
+			} else {
+				console.log('fs.move SUCCESS: ' + destWithName)
+				resolve(dest)
+			}
+		})
+	}))
+}
+
+module.exports = {getConfig, moveFileAndCleanTemp, renameFile, asyncMoveFile, DBFilters}

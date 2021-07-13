@@ -7,7 +7,7 @@ const ObjectId = require('mongodb').ObjectID
 const updateFile = async (id, updatedFields, collection) => {
 	const updatedFieldsWithFilePath = {
 		...updatedFields,
-		...(updatedFields.originalName && {filePath: `tests/test-images/${updatedFields.originalName}.jpg`})
+		...(updatedFields.originalName && {filePath: `tests/test-images/${updatedFields.originalName}`})
 	}
 	const filter = {_id: ObjectId(id)}
 	const update = {$set: updatedFieldsWithFilePath}
@@ -34,7 +34,7 @@ const findObjects = async (idsArr, collection) => {
 	const filter = DBFilters.getFilterByIds(idsArr)
 	const response = await collection.find(filter).toArray()
 	if (!response) throw new Error('OOPS! ERROR - something wrong with collection.find')
-	if (!response.length) throw new Error('ERROR: "findObjects" cant find DB object')
+	if (!response.length) throw new Error('OOPS! ERROR: "findObjects" can\'t find DB object')
 	return response
 }
 
