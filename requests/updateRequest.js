@@ -1,14 +1,30 @@
+const fs = require('fs-extra')
 const createError = require('http-errors')
-const {DBFilters} = require("../utils/common")
 const {pushExif} = require("../utils/exifTool")
-const {renameFile} = require("../utils/common")
+const {
+	asyncMoveFile,
+	asyncCopyFile,
+	renameFile,
+	getError,
+	updateNamePath,
+	DBFilters,
+} = require("../utils/common")
 const ObjectId = require('mongodb').ObjectID
 
-const updateFile = async (id, updatedFields, collection) => {
-	const updatedFieldsWithFilePath = {
-		...updatedFields,
-		...(updatedFields.originalName && {filePath: `tests/test-images/${updatedFields.originalName}`})
-	}
+/**
+ * Update DB file object (originalName, filePath, originalDate, keywords)
+ *
+ * @param id
+ * @param updatedFields
+ * @param DBObject
+ * @param collection
+ * @return {Promise<*>}
+ */
+const updateFile = async (id, updatedFields, DBObject, collection) => {
+	const filePath = updatedFields.filePath
+		? updatedFields.filePath + '/' + updatedFields.originalName || DBObject.originalName
+		: updateNamePath(DBObject, { id, updatedFields })
+	const updatedFieldsWithFilePath = { ...updatedFields, filePath }
 	const filter = {_id: ObjectId(id)}
 	const update = {$set: updatedFieldsWithFilePath}
 	const options = {returnOriginal: false}
@@ -23,9 +39,9 @@ const updateFile = async (id, updatedFields, collection) => {
 	}
 }
 
-const updateDatabase = async (filedata, collection) => {
-	const dataResponseArr = filedata.map(({id, updatedFields}) => {
-		return updateFile(id, updatedFields, collection)
+const updateDatabase = async (filedata, DBObjectArr, collection) => {
+	const dataResponseArr = filedata.map(({id, updatedFields}, i) => {
+		return updateFile(id, updatedFields, DBObjectArr[i], collection)
 	})
 	return await Promise.all(dataResponseArr)
 }
@@ -46,35 +62,57 @@ const isDifferentNames = (DBObject, uploadedFileDataItem) => {
 	return true
 }
 
-const updateNamePath = (DBObject, updatedFileDataItem) => {
-	const newDBObject = Object.assign(DBObject)
-	return newDBObject.filePath.replace(
-		newDBObject.originalName,
-		updatedFileDataItem.updatedFields.originalName
-	)
-}
-
-const renameFileIfNeeded = async (DBObject, updatedFiledataItem) => {
+/**
+ *
+ * @param {Object} DBObject
+ * @param {Object} updatedFiledataItem
+ * @param {string} dbFolder
+ * @return {Promise<boolean|*>}
+ */
+const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder) => {
+	const isNeedMoveToNewDest = !!updatedFiledataItem.updatedFields?.filePath // if true - use fs.copy, not fs.rename
+	const isNeedUpdateName = !!updatedFiledataItem.updatedFields?.originalName
+	
 	if (
-		updatedFiledataItem.updatedFields?.originalName &&
+		!isNeedMoveToNewDest &&
+		isNeedUpdateName &&
 		isDifferentNames(DBObject, updatedFiledataItem)
 	) {
 		const newNamePath = updateNamePath(DBObject, updatedFiledataItem)
-		return await renameFile(DBObject.filePath, newNamePath)
+		return await renameFile(dbFolder + DBObject.filePath, dbFolder + newNamePath)
+	} else {
+		return false
 	}
-	return false
 }
 
-const returnValuesIfError = (error, res) => {
-	if (error.message.includes('fs.rename ERROR:')) {
-		res.send(error.message)
-		return
+const returnValuesIfError = (error) => {
+	const has = message => error.message.includes(message)
+	return (
+		has('fs.rename ERROR:') ||
+		has('exifTool-') ||
+		has('fs.move Error:') ||
+		has('fs.copy Error:')
+	)
+}
+
+/**
+ * move file to new directory and change file name if needed
+ *
+ * @param {string} src - original full file path
+ * @param {string} destWithoutName - new file path
+ * @param {string} originalName
+ * @param {string} dbFolder
+ * @param {string | undefined} newFileName
+ * @return {Promise<boolean>}
+ */
+const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileName = undefined) => {
+	if (newFileName) {
+		await asyncCopyFile(dbFolder + src, dbFolder + destWithoutName + '/' + newFileName)
+		await fs.remove(src)
+	} else {
+		await asyncMoveFile(dbFolder + src, dbFolder + destWithoutName + '/' + originalName)
 	}
-	if (error.message.includes('exifTool-')) {
-		res.send(error.message)
-		return
-	}
-	res.send('OOPS! Something went wrong...')
+	return true
 }
 
 //Todo: add returning all parameters if something went wrong
@@ -88,9 +126,10 @@ const returnValuesIfError = (error, res) => {
  * }
  * @param {object} res - response object. Minimal: {send: null}
  * @param {any} exiftoolProcess
+ * @param {string} dbFolder
  * @returns {Array} array of DB objects
  */
-const updateRequest = async (req, res, exiftoolProcess) => {
+const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 	let filedata = req.body
 	if (!filedata) {
 		res.send("update request - File loading error")
@@ -104,30 +143,33 @@ const updateRequest = async (req, res, exiftoolProcess) => {
 	
 	try {
 		const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
-		const pathsArr = savedOriginalDBObjectsArr.map(DBObject => DBObject.filePath)
+		const pathsArr = savedOriginalDBObjectsArr.map(DBObject => dbFolder + DBObject.filePath)
 		
 		if (isUpdatedKeywords || isUpdateOriginalDate) {
 			await pushExif(pathsArr, updatedKeywords, updateFields, exiftoolProcess)
 		}
 		
 		const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-			await renameFileIfNeeded(DBObject, filedata[i])
+			await renameFileIfNeeded(DBObject, filedata[i], dbFolder)
 			return true
 		})
-		const isRenamedArr = await Promise.all(renameFilePromiseArr)
+		const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
+			const filePath = filedata[i].updatedFields?.filePath
+			const newFileName = filedata[i].updatedFields?.originalName
+			if (filePath) await moveFile(DBObject.filePath, filePath, DBObject.originalName, dbFolder, newFileName)
+			return true
+		})
+		await Promise.all(renameFilePromiseArr)
+		await Promise.all(updateFilePathPromiseArr)
 		
-		let response
-		// if there are no errors with renameFileIfNeeded
-		if (!isRenamedArr.some(item => item !== true)) {
-			response = await updateDatabase(filedata, req.app.locals.collection)
-		} else {
-			response = 'Error: renameFileIfNeeded'
-		}
+		const	response = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
 		
 		res.send(response)
 		return response
 	} catch (error) {
 		returnValuesIfError(error)
+			? res.send(getError(error.message))
+			: res.send(getError('OOPS! Something went wrong...'))
 	}
 }
 
@@ -137,6 +179,6 @@ module.exports = {
 	updateFile,
 	findObjects,
 	isDifferentNames,
-	updateNamePath,
+	moveFile,
 	renameFileIfNeeded
 }

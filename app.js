@@ -70,20 +70,21 @@ app.use("/update",
 
 app.put("/update",
 	(req, res) =>
-		updateRequest(req, res, exiftoolProcess, configPath, databaseFolder)
+		updateRequest(req, res, exiftoolProcess, databaseFolder)
 )
 
 app.get("/filtered-photos",
 	(req, res) => getFilesFromDB(req, res, tempFolder, configPath)
 )
 
-app.use((error, req, res, next) => {
-	res.status(error.status || 500)
+app.use((req, res, next) => {
+	res.status(res.status || 500)
 	res.json({
-		status: error.status,
-		message: error.message,
-		stack: error.stack
+		status: res.status,
+		message: res.message,
+		stack: res.stack
 	})
+	next()
 })
 
 mongoClient.connect(function (err, client) {

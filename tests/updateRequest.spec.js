@@ -3,6 +3,7 @@ const {MongoClient} = require('mongodb')
 const ObjectId = require('mongodb').ObjectID
 const exiftool = require('node-exiftool')
 const exiftoolBin = require('dist-exiftool')
+const {updateFileDataWithFilePath} = require("./Data")
 const {pushExif, getExifFormPhoto} = require("../utils/exifTool")
 const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const {
@@ -14,12 +15,12 @@ const {
 const {renameFile, DBFilters} = require("../utils/common")
 const {
 	renameFileIfNeeded,
-	updateNamePath,
 	isDifferentNames,
 	findObjects,
 	updateDatabase,
 	updateFile,
-	updateRequest
+	updateRequest,
+	moveFile
 } = require("../requests/updateRequest")
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
@@ -72,8 +73,18 @@ describe('updateRequest: ', () => {
 			const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}"
 			const id = "5fef484b497f3af84699e88c"
 			const updatedFields = Object.assign(updateFiledata[1].updatedFields)
+			const filedata = Object.assign(originalFiledata[0])
 			const collection = req.app.locals.collection
-			const response = await updateFile(id, updatedFields, collection, res)
+			const response = await updateFile(id, updatedFields, filedata, collection)
+			expect(JSON.stringify(response)).toBe(correctResponse)
+		})
+		test('should return correct response.value from database if send new filePath', async () => {
+			const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/testDirectory/проверка локализации/123.jpg\",\"preview\":\"\"}"
+			const id = "5fef484b497f3af84699e88c"
+			const updatedFields = Object.assign(updateFileDataWithFilePath[0].updatedFields)
+			const filedata = Object.assign(originalFiledata[0])
+			const collection = req.app.locals.collection
+			const response = await updateFile(id, updatedFields, filedata, collection)
 			expect(JSON.stringify(response)).toBe(correctResponse)
 		})
 	})
@@ -84,7 +95,8 @@ describe('updateRequest: ', () => {
 			const secondResponse = "{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}"
 			const filedata = req.body
 			const collection = req.app.locals.collection
-			const response = await updateDatabase(filedata, collection, res)
+			const fileDataArr = deepCopy(originalFiledata)
+			const response = await updateDatabase(filedata, fileDataArr, collection)
 			expect(JSON.stringify(response[0])).toBe(firstResponse)
 			expect(JSON.stringify(response[1])).toBe(secondResponse)
 		})
@@ -134,17 +146,11 @@ describe('updateRequest: ', () => {
 		})
 	})
 	
-	describe('updateNamePath: ', () => {
-		test('should return new namePath', async () => {
-			const newNamePath = updateNamePath(originalFiledata[0], updateFiledata[0])
-			expect(newNamePath).toBe('tests/test-images/123.jpg')
-		})
-	})
-	
+	//Todo: add test for isNeedMoveToNewDest
 	describe('renameFileIfNeeded: ', () => {
 		test('should rename file if updateFiledata has originalName field', async () => {
 			const updatedFileName = 'tests/test-images/123.jpg'
-			const response = await renameFileIfNeeded(originalFiledata[0], updateFiledata[0])
+			const response = await renameFileIfNeeded(originalFiledata[0], updateFiledata[0], '')
 			expect(response).toBe(updatedFileName)
 			await renameFile(updatedFileName, originalFiledata[0].filePath)
 			expect(fs.existsSync(originalFiledata[0].filePath)).toBe(true)
@@ -152,7 +158,7 @@ describe('updateRequest: ', () => {
 		test('should return "false" if updateFiledata does not has originalName field', async () => {
 			const updateFiledataItem = req.body[1]
 			delete updateFiledataItem.updatedFields.originalName
-			const response = await renameFileIfNeeded(originalFiledata[0], updateFiledataItem)
+			const response = await renameFileIfNeeded(originalFiledata[0], updateFiledataItem, '')
 			expect(response).toBeFalsy()
 		})
 		test('should return ERROR if originalName is duplicated', async () => {
@@ -166,6 +172,78 @@ describe('updateRequest: ', () => {
 			} catch (error) {
 				expect(error.message).toBe('ERROR - isDifferentNames: duplicated originalName')
 			}
+		})
+	})
+	
+	describe('moveFile: ', () => {
+		test('should return Error if there is fs.copy Error', async () => {
+			const originalName = 'image001-map.jpg'
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const destWithoutName = 'tests/testDirectory/проверка локализации'
+			const newFilePath = '123.jpg'
+			
+			fs.copySync(originalFilePath, destWithoutName + '/' + newFilePath)
+			try {
+				await moveFile(originalFilePath, destWithoutName, originalName, '', newFilePath)
+			} catch (error) {
+				expect(error.message).toBe(`fs.copy Error: '${destWithoutName}/${newFilePath}' already exists`)
+			}
+
+			// remove copied file
+			fs.removeSync(destWithoutName + '/' + newFilePath)
+		})
+		test('should return Error if there is fs.move Error', async () => {
+			const originalName = 'image001-map.jpg'
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const destWithoutName = 'tests/testDirectory/проверка локализации'
+			
+			fs.copySync(originalFilePath, destWithoutName + '/' + originalName)
+			try {
+				await moveFile(originalFilePath, destWithoutName, originalName, '')
+			} catch (error) {
+				expect(error.message).toBe(`fs.move Error: dest already exists. - ${destWithoutName}/${originalName}`)
+			}
+			
+			// remove copied file
+			fs.removeSync(destWithoutName + '/' + originalName)
+		})
+		test('should move file', async () => {
+			const originalName = 'image001-map.jpg'
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const destWithoutName = 'tests/testDirectory/проверка локализации'
+			const newFullPath = destWithoutName + '/' + originalName
+			
+			try {
+				await moveFile(originalFilePath, destWithoutName, originalName, '')
+			} catch (error) {
+				console.log(error)
+			}
+			
+			expect(fs.existsSync(newFullPath)).toBeTruthy()
+			expect(fs.existsSync(originalFilePath)).toBeFalsy()
+			
+			//return file place
+			fs.moveSync(newFullPath, originalFilePath)
+		})
+		test('should move file and update file name', async () => {
+			const originalName = 'image001-map.jpg'
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const destWithoutName = 'tests/testDirectory/проверка локализации'
+			const newFileName = '123.jpg'
+			const newFullPath = destWithoutName + '/' + newFileName
+			
+			try {
+				await moveFile(originalFilePath, destWithoutName, originalName, '', newFileName)
+			} catch (error) {
+				console.log(error)
+			}
+			
+			expect(fs.existsSync(newFullPath)).toBeTruthy()
+			expect(fs.existsSync(originalFilePath)).toBeFalsy()
+			
+			//return file place
+			fs.copySync(newFullPath, originalFilePath)
+			fs.removeSync(newFullPath)
 		})
 	})
 	
@@ -202,6 +280,43 @@ describe('updateRequest: ', () => {
 			expect(res.send).toBeCalled()
 			expect(res.send).lastReturnedWith("update request - File loading error")
 		})
+		test('should return send Error message "fs.copy Error: ... already exists" if there is fs.copy Error', async () => {
+			req.body = updateFileDataWithFilePath
+			res.send = jest.fn(value => JSON.stringify(value))
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const originalFilePath2 = 'tests/test-images/image002-map.jpg'
+			const updatedFileName = 'tests/test-images/bom-bom.jpg'
+			const newFilePath = 'tests/testDirectory/проверка локализации/123.jpg'
+			
+			fs.copySync(originalFilePath, newFilePath)
+			await updateRequest(req, res, exiftoolProcess)
+			expect(res.send).toBeCalled()
+			expect(res.send).lastReturnedWith("{\"error\":\"fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists\"}")
+			
+			//return file place
+			fs.copySync(newFilePath, originalFilePath)
+			fs.removeSync(newFilePath)
+			await renameFile(updatedFileName, originalFilePath2)
+		})
+		test('should return send Error message "fs.move Error: dest already exists..." if there is fs.move Error', async () => {
+			req.body = updateFileDataWithFilePath
+			req.body[0].updatedFields.originalName = undefined
+			res.send = jest.fn(value => JSON.stringify(value))
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const originalFilePath2 = 'tests/test-images/image002-map.jpg'
+			const updatedFileName = 'tests/test-images/bom-bom.jpg'
+			const newFileName = 'tests/testDirectory/проверка локализации/image001-map.jpg'
+			
+			fs.copySync(originalFilePath, newFileName)
+			await updateRequest(req, res, exiftoolProcess)
+			expect(res.send).toBeCalled()
+			expect(res.send).lastReturnedWith("{\"error\":\"fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg\"}")
+			
+			//return file place
+			fs.copySync(newFileName, originalFilePath)
+			fs.removeSync(newFileName)
+			await renameFile(updatedFileName, originalFilePath2)
+		})
 		test('should rename file if updateFiledata has originalName field', async () => {
 			const updatedFileName1 = 'tests/test-images/123.jpg'
 			const updatedFileName2 = 'tests/test-images/bom-bom.jpg'
@@ -230,7 +345,6 @@ describe('updateRequest: ', () => {
 			expect(originalExif[0].DateTimeOriginal).toBe('2019:06:24 12:00:00')
 
 			await updateRequest(request, response, exiftoolProcess)
-			// image001-map
 			
 			const updatedExif1 = await getExifFormPhoto(updatedFileName1, exiftoolProcess)
 			const updatedExif2 = await getExifFormPhoto(updatedFileName2, exiftoolProcess)
@@ -242,8 +356,6 @@ describe('updateRequest: ', () => {
 			await renameFile(updatedFileName1, originalData[0].filePath)
 			await renameFile(updatedFileName2, originalData[1].filePath)
 		})
-		
-		
 		test('should return correct response.value from updateRequest', async () => {
 			const updatedFileName1 = 'tests/test-images/123.jpg'
 			const updatedFileName2 = 'tests/test-images/bom-bom.jpg'
@@ -275,7 +387,6 @@ describe('updateRequest: ', () => {
 			await updateRequest(req, res, exiftoolProcess)
 			expect(res.send).toBeCalled()
 			expect(res.send).lastReturnedWith(correctResponse)
-			// image001-map
 
 			await renameFile(updatedFileName1, originalData[0].filePath)
 			await renameFile(updatedFileName2, originalData[1].filePath)

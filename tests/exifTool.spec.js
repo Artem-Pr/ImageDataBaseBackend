@@ -81,7 +81,7 @@ describe('ExifTool: ', () => {
 			test('should update DateTimeOriginal', async () => {
 				const originalExif = await getExifFormPhoto(pathsArr[0], exiftoolProcess)
 				expect(originalExif[0].DateTimeOriginal).toBe('2019:06:24 12:00:00')
-				exifFiledata[0].originalDate = '25.06.2019'
+				exifFiledata[0].originalDate = '2019.06.25'
 				const exifToolResponse = await pushExif(pathsArr, [], exifFiledata, exiftoolProcess)
 				expect(exifToolResponse).toBeTruthy()
 				const updatedExif = await getExifFormPhoto(pathsArr[0], exiftoolProcess)
@@ -90,7 +90,7 @@ describe('ExifTool: ', () => {
 			test('should update CreateDate', async () => {
 				const originalExif = await getExifFormPhoto(pathsArr[0], exiftoolProcess)
 				expect(originalExif[0].CreateDate).toBe('2019:06:25 12:00:00')
-				exifFiledata[0].originalDate = '24.06.2019'
+				exifFiledata[0].originalDate = '2019.06.24'
 				const exifToolResponse = await pushExif(pathsArr, [], exifFiledata, exiftoolProcess)
 				expect(exifToolResponse).toBeTruthy()
 				const updatedExif = await getExifFormPhoto(pathsArr[0], exiftoolProcess)

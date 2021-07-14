@@ -32,6 +32,7 @@ const updateFiledata = [
 		updatedFields: {
 			originalName: '123.jpg',
 			originalDate: '2019.06.24',
+			//filePath: 'tests/testDirectory/проверка локализации'   // used in updateFileDataWithFilePath
 			keywords: []
 		}
 	},
@@ -44,6 +45,16 @@ const updateFiledata = [
 		}
 	}
 ]
+
+const updateFileDataWithFilePath = updateFiledata.map((item, idx) => {
+	return idx === 0 ? {
+		...item,
+		updatedFields: {
+			...item.updatedFields,
+			filePath: 'tests/testDirectory/проверка локализации',
+		}
+	}	: item
+})
 
 const updatedFileDateForReturningValues = [
 	{
@@ -107,6 +118,7 @@ module.exports = {
 	originalFiledata,
 	updateFiledata,
 	pushExifFiledata,
+	updateFileDataWithFilePath,
 	pushExifFiledataVideo,
-	updatedFileDateForReturningValues
+	updatedFileDateForReturningValues,
 }

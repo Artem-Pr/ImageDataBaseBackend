@@ -1,6 +1,10 @@
 const fs = require('fs-extra')
-const {asyncMoveFile} = require("../utils/common")
-const {renameFile} = require("../utils/common")
+const {updateFiledata, originalFiledata} = require("./Data")
+const {
+	renameFile,
+	asyncMoveFile,
+	updateNamePath,
+} = require("../utils/common")
 
 describe('Common functions: ', () => {
 	describe('Rename File func: ', () => {
@@ -32,39 +36,42 @@ describe('Common functions: ', () => {
 			expect(fs.existsSync(originalFileName)).toBe(true)
 		})
 	})
-	
 	describe('asyncMoveFile: ', () => {
 		test('should move file to new directory', async () => {
-			const fileName = 'image001-map.jpg'
-			const originalFilePath = 'tests/test-images'
-			const newFilePath = 'tests/testDirectory/проверка локализации'
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const newFilePath = 'tests/testDirectory/проверка локализации/image001-map.jpg'
 			
-			const response = await asyncMoveFile(fileName, originalFilePath, newFilePath)
+			const response = await asyncMoveFile(originalFilePath, newFilePath)
 			expect(response).toBe(newFilePath)
-			expect(fs.existsSync(originalFilePath + '/' + fileName)).toBeFalsy()
-			expect(fs.existsSync(newFilePath + '/' + fileName)).toBeTruthy()
+			expect(fs.existsSync(originalFilePath)).toBeFalsy()
+			expect(fs.existsSync(newFilePath)).toBeTruthy()
 			
 			// move to original directory
-			const response2 = await asyncMoveFile(fileName, newFilePath, originalFilePath)
+			const response2 = await asyncMoveFile(newFilePath, originalFilePath)
 			expect(response2).toBe(originalFilePath)
-			expect(fs.existsSync(originalFilePath + '/' + fileName)).toBeTruthy()
-			expect(fs.existsSync(newFilePath + '/' + fileName)).toBeFalsy()
+			expect(fs.existsSync(originalFilePath)).toBeTruthy()
+			expect(fs.existsSync(newFilePath)).toBeFalsy()
 		})
 		
 		test('should return an error if the same file exists', async () => {
-			const fileName = 'image001-map.jpg'
-			const originalFilePath = 'tests/test-images'
-			const newFilePath = 'tests/testDirectory/проверка локализации'
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const newFilePath = 'tests/testDirectory/проверка локализации/image001-map.jpg'
 			
-			fs.copySync(originalFilePath + '/' + fileName, newFilePath + '/' + fileName)
+			fs.copySync(originalFilePath, newFilePath)
 			try {
-				await asyncMoveFile(fileName, originalFilePath, newFilePath)
+				await asyncMoveFile(originalFilePath, newFilePath)
 			} catch (error) {
-				expect(error.message).toBe(`fs.move Error: dest already exists. - ${newFilePath}/${fileName}`)
+				expect(error.message).toBe(`fs.move Error: dest already exists. - ${newFilePath}`)
 			}
 			
 			// remove copied file
-			fs.removeSync(newFilePath + '/' + fileName)
+			fs.removeSync(newFilePath)
+		})
+	})
+	describe('updateNamePath: ', () => {
+		test('should return new namePath', async () => {
+			const newNamePath = updateNamePath(originalFiledata[0], updateFiledata[0])
+			expect(newNamePath).toBe('tests/test-images/123.jpg')
 		})
 	})
 })
