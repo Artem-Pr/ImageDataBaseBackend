@@ -10,8 +10,19 @@ const {
 } = require("../utils/common")
 
 describe('Common functions: ', () => {
+	beforeAll(() => {
+		// temp cleaning
+		console.log('temp cleaning')
+		fs.emptyDirSync('temp')
+	})
+	afterAll(() => {
+		// temp cleaning
+		console.log('temp cleaning')
+		fs.emptyDirSync('temp')
+	})
 	afterEach(() => {
 		// temp cleaning
+		console.log('temp cleaning')
 		fs.emptyDirSync('temp')
 	})
 	
@@ -60,7 +71,6 @@ describe('Common functions: ', () => {
 			expect(fs.existsSync(originalFilePath)).toBeTruthy()
 			expect(fs.existsSync(newFilePath)).toBeFalsy()
 		})
-		
 		test('should return an error if the same file exists', async () => {
 			const originalFilePath = 'tests/test-images/image001-map.jpg'
 			const newFilePath = 'tests/testDirectory/проверка локализации/image001-map.jpg'
@@ -88,15 +98,17 @@ describe('Common functions: ', () => {
 			const originalFileName2 = 'tests/test-images/image002-map.jpg'
 			const filesBackup = await backupFiles([originalFileName1, originalFileName2])
 			
+			// const filesBackup = await Promise.all(filesBackupPromise)
+			
 			expect(filesBackup).toHaveLength(2)
 			
 			const backup1 = filesBackup[0]
 			const backup2 = filesBackup[1]
 			
 			expect(backup1?.backupPath.startsWith('temp/backup')).toBeTruthy()
-			expect(backup1?.backupPath).toHaveLength(11)
+			expect(backup1?.backupPath).toHaveLength(17)
 			expect(backup2?.backupPath.startsWith('temp/backup')).toBeTruthy()
-			expect(backup2?.backupPath).toHaveLength(11)
+			expect(backup2?.backupPath).toHaveLength(17)
 			expect(backup1?.originalPath.startsWith('tests/')).toBeTruthy()
 			expect(backup2?.originalPath.startsWith('tests/')).toBeTruthy()
 		})
@@ -114,12 +126,12 @@ describe('Common functions: ', () => {
 			expect(fs.existsSync(backup2?.originalPath)).toBeTruthy()
 		})
 		test('should return Error if originalPath is wrong', async () => {
-			const originalFileName1 = 'tests/test-images/image001-map.jpg'
-			const originalFileName2 = 'tests/test-images/wrong-address.jpg'
+			const originalFileName1 = 'tests/test-images/wrong-address.jpg'
+			const originalFileName2 = 'tests/test-images/image001-map.jpg'
 			try {
 				await backupFiles([originalFileName1, originalFileName2])
 			} catch (error) {
-				expect(error.message).toBe(`BACKUP_FILES: fs.copy Error:`)
+				expect(error.message).toBe('BACKUP_FILES: fs.copy Error: ENOENT: no such file or directory, stat \'tests/test-images/wrong-address.jpg\'')
 			}
 		})
 	})

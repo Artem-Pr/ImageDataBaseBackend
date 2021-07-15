@@ -2,6 +2,14 @@ const fs = require('fs-extra')
 const createError = require('http-errors')
 const ObjectId = require('mongodb').ObjectID
 
+/**
+ * @param {number} codeLength
+ * @return {string}
+ */
+const getRandomCode = (codeLength) => {
+	return Math.floor(Math.random() * Math.pow(10, codeLength)).toString().padStart(codeLength, "0")
+}
+
 const DBFilters = {
 	getFilterByIds: idsArr => ({
 		_id: {
@@ -76,8 +84,6 @@ const asyncMoveFile = async ( src, dest) => {
 }
 
 /**
- * copy file
- *
  * @param {string} src - original full filePath
  * @param {string} dest - new full filePath
  * @return {Promise<string>} dest
@@ -92,7 +98,6 @@ const asyncCopyFile = async ( src, dest) => {
 			if (err) {
 				const errorMessage = `fs.copy ${err}`
 				console.log(errorMessage)
-				// throw new Error(errorMessage)
 				reject(new Error(errorMessage))
 			} else {
 				console.log('fs.copy SUCCESS: ' + dest)
@@ -120,10 +125,22 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
 
 /**
  * @param {Array<string>} pathArr - paths for backup
- * @return {Promise<Array<Object>>} [{backupPath: string, originalPath: string}]
+ * @return {Array<Promise<Object>>} [{backupPath: string, originalPath: string}]
  */
 const backupFiles = async (pathArr) => {
-
+	const getBackupPath = () => 'temp/backup' + getRandomCode(6)
+	try {
+		const PromiseArr = pathArr.map( async (originalPath) => {
+			const dest = getBackupPath()
+			const backupPath = await asyncCopyFile(originalPath, dest)
+			return {backupPath, originalPath}
+		})
+		const backupArr = await Promise.all(PromiseArr)
+		console.log('BACKUP_FILES: Success!')
+		return backupArr
+	} catch (error) {
+		throw new Error('BACKUP_FILES: ' + error.message)
+	}
 }
 
 /**
