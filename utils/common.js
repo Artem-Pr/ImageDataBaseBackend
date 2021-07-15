@@ -118,6 +118,30 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
 	)
 }
 
+/**
+ * @param {Array<string>} pathArr - paths for backup
+ * @return {Promise<Array<Object>>} [{backupPath: string, originalPath: string}]
+ */
+const backupFiles = async (pathArr) => {
+
+}
+
+/**
+ * @param {Array<Object>} tempPathObjArr - [{backupPath: string, originalPath: string}]
+ * @return {Promise<any>}
+ */
+const cleanBackup = async (tempPathObjArr) => {
+
+}
+
+/**
+ * @param {Array<Object>} tempPathObjArr - [{backupPath: string, originalPath: string}]
+ * @return {Promise<boolean | string>} - true or Error string
+ */
+const fileRecovery = async (tempPathObjArr) => {
+
+}
+
 module.exports = {
 	getConfig,
 	getError,
@@ -126,5 +150,8 @@ module.exports = {
 	asyncMoveFile,
 	asyncCopyFile,
 	updateNamePath,
+	backupFiles,
+	cleanBackup,
+	fileRecovery,
 	DBFilters
 }

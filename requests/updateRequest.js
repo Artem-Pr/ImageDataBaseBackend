@@ -7,6 +7,9 @@ const {
 	renameFile,
 	getError,
 	updateNamePath,
+	backupFiles,
+	cleanBackup,
+	fileRecovery,
 	DBFilters,
 } = require("../utils/common")
 const ObjectId = require('mongodb').ObjectID
@@ -91,7 +94,8 @@ const returnValuesIfError = (error) => {
 		has('fs.rename ERROR:') ||
 		has('exifTool-') ||
 		has('fs.move Error:') ||
-		has('fs.copy Error:')
+		has('fs.copy Error:') ||
+		has('BACKUP_FILES:')
 	)
 }
 
@@ -115,10 +119,8 @@ const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileNam
 	return true
 }
 
-//Todo: add returning all parameters if something went wrong
 /**
- * Push new exif to files, rename files if needed.
- * add functionality to return old version if something went wrong
+ * Push new exif to files, rename files if needed, update filePath and DB info
  *
  * @param {object} req - request object. Minimal: {
  *   app: {locals: {collection: null}},
@@ -135,6 +137,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		res.send("update request - File loading error")
 		return null
 	}
+	let filesBackup = []
 	const idsArr = filedata.map(item => item.id)
 	const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
 	const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
@@ -144,6 +147,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 	try {
 		const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
 		const pathsArr = savedOriginalDBObjectsArr.map(DBObject => dbFolder + DBObject.filePath)
+		filesBackup = await backupFiles(pathsArr)
 		
 		if (isUpdatedKeywords || isUpdateOriginalDate) {
 			await pushExif(pathsArr, updatedKeywords, updateFields, exiftoolProcess)
@@ -164,12 +168,19 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		
 		const	response = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
 		
+		cleanBackup(filesBackup)
+		
 		res.send(response)
 		return response
+		
 	} catch (error) {
-		returnValuesIfError(error)
-			? res.send(getError(error.message))
-			: res.send(getError('OOPS! Something went wrong...'))
+		const recoveryResponse = await fileRecovery(filesBackup)
+		const errorMessage = returnValuesIfError(error)
+			? getError(error.message)
+			: getError('OOPS! Something went wrong...')
+		const recoveryError = recoveryResponse === true ? '' : recoveryResponse
+		
+		res.send(errorMessage + recoveryError)
 	}
 }
 

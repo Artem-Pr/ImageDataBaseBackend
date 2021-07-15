@@ -3,7 +3,7 @@ const createError = require("http-errors")
 
 const keywordsRequest = (request, response, tempFolder) => {
 	console.log('tempFolder', tempFolder)
-	// очищаем temp
+	// temp clearing
 	fs.emptyDirSync(tempFolder);
 	
 	const configCollection = request.app.locals.configCollection;
