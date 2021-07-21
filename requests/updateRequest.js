@@ -9,7 +9,7 @@ const {
 	updateNamePath,
 	backupFiles,
 	cleanBackup,
-	fileRecovery,
+	filesRecovery,
 	DBFilters,
 } = require("../utils/common")
 const ObjectId = require('mongodb').ObjectID
@@ -174,7 +174,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		return response
 		
 	} catch (error) {
-		const recoveryResponse = await fileRecovery(filesBackup)
+		const recoveryResponse = await filesRecovery(filesBackup)
 		const errorMessage = returnValuesIfError(error)
 			? getError(error.message)
 			: getError('OOPS! Something went wrong...')

@@ -66,11 +66,13 @@ const renameFile = async (originalName, newName) => {
  *
  * @param {string} src - original filePath
  * @param {string} dest - new filePath
+ * @param {boolean} isOverwrite
  * @returns {Promise} true or Error
  */
-const asyncMoveFile = async ( src, dest) => {
+const asyncMoveFile = async ( src, dest, isOverwrite = false) => {
+	const options = { overwrite: !!isOverwrite }
 	return await new Promise(((resolve, reject) => {
-		return fs.move(src, dest, err => {
+		return fs.move(src, dest, options, err => {
 			if (err) {
 				const errorMessage = `fs.move ${err} - ${dest}`
 				console.log(errorMessage)
@@ -130,12 +132,12 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
 const backupFiles = async (pathArr) => {
 	const getBackupPath = () => 'temp/backup' + getRandomCode(6)
 	try {
-		const PromiseArr = pathArr.map( async (originalPath) => {
+		const promiseArr = pathArr.map(async (originalPath) => {
 			const dest = getBackupPath()
 			const backupPath = await asyncCopyFile(originalPath, dest)
 			return {backupPath, originalPath}
 		})
-		const backupArr = await Promise.all(PromiseArr)
+		const backupArr = await Promise.all(promiseArr)
 		console.log('BACKUP_FILES: Success!')
 		return backupArr
 	} catch (error) {
@@ -153,10 +155,19 @@ const cleanBackup = async (tempPathObjArr) => {
 
 /**
  * @param {Array<Object>} tempPathObjArr - [{backupPath: string, originalPath: string}]
- * @return {Promise<boolean | string>} - true or Error string
+ * @return {Array<Promise<any>>}
  */
-const fileRecovery = async (tempPathObjArr) => {
-
+const filesRecovery = async (tempPathObjArr) => {
+	try {
+		const promiseArr = tempPathObjArr.map(async ({ backupPath, originalPath }) => {
+			return await asyncMoveFile(backupPath, originalPath, true)
+		})
+		await Promise.all(promiseArr)
+		console.log('FILES_RECOVERY: Success!')
+		return true
+	} catch (error) {
+		throw new Error('RECOVERY_ERROR: ' + error.message)
+	}
 }
 
 module.exports = {
@@ -169,6 +180,6 @@ module.exports = {
 	updateNamePath,
 	backupFiles,
 	cleanBackup,
-	fileRecovery,
+	filesRecovery,
 	DBFilters
 }

@@ -6,7 +6,7 @@ const {
 	updateNamePath,
 	backupFiles,
 	cleanBackup,
-	fileRecovery,
+	filesRecovery,
 } = require("../utils/common")
 
 describe('Common functions: ', () => {
@@ -84,6 +84,13 @@ describe('Common functions: ', () => {
 			
 			// remove copied file
 			fs.removeSync(newFilePath)
+		})
+		test('should overwrite file if needed', async () => {
+			const originalFilePath = 'tests/test-images/image001-map.jpg'
+			const newFilePath = 'tests/testDirectory/проверка локализации/image001-map.jpg'
+			
+			fs.copySync(originalFilePath, newFilePath)
+			await asyncMoveFile(newFilePath, originalFilePath, true)
 		})
 	})
 	describe('updateNamePath: ', () => {
@@ -181,7 +188,7 @@ describe('Common functions: ', () => {
 			fs.moveSync(originalFileName1, newFile1)
 			fs.copySync(originalFileName2, newFile2)
 			
-			const res = await fileRecovery(tempPathObjArr)
+			const res = await filesRecovery(tempPathObjArr)
 			
 			expect(res).toBe(true)
 			expect(fs.existsSync(originalFileName1)).toBeTruthy()
@@ -202,9 +209,9 @@ describe('Common functions: ', () => {
 			]
 			
 			try {
-				await fileRecovery(tempPathObjArr)
+				await filesRecovery(tempPathObjArr)
 			} catch (error) {
-				expect(error.message).toBe(`RECOVERY_ERROR: fs.copy Error:`)
+				expect(error.message).toBe(`RECOVERY_ERROR: fs.move Error: ENOENT: no such file or directory, stat 'temp/backup123456' - tests/test-images/image001-map.jpg`)
 			}
 		})
 	})
