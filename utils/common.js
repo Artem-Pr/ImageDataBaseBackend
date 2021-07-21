@@ -150,7 +150,16 @@ const backupFiles = async (pathArr) => {
  * @return {Promise<any>}
  */
 const cleanBackup = async (tempPathObjArr) => {
-
+		try {
+			const promiseArr = tempPathObjArr.map(async ({ backupPath }) => {
+				return await fs.remove(backupPath)
+			})
+			await Promise.all(promiseArr)
+			console.log('CLEAN_BACKUP: Success!:')
+			return true
+		} catch (error) {
+			throw new Error(`CLEAN_BACKUP: ${error}`)
+		}
 }
 
 /**
