@@ -163,15 +163,36 @@ const cleanBackup = async (tempPathObjArr) => {
 }
 
 /**
+ * @param {Array<string>} removingFilesArr
+ * @return {Promise<boolean>}
+ */
+const removeFilesArr = async (removingFilesArr) => {
+	try {
+		const promiseArr = removingFilesArr.map(async filePath => {
+			return await fs.remove(filePath)
+		})
+		await Promise.all(promiseArr)
+		return true
+	} catch (error) {
+		throw new Error(`removeFilesArr: ${error}`)
+	}
+}
+
+/**
+ * Recover files, remove files with updated names if needed
+ *
  * @param {Array<Object>} tempPathObjArr - [{backupPath: string, originalPath: string}]
+ * @param {Array<string>} removingFilesArr - paths to old files with updated names
  * @return {Array<Promise<any>>}
  */
-const filesRecovery = async (tempPathObjArr) => {
+const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
+	console.log('FILES_RECOVERY - removingFilesArr: ', removingFilesArr)
 	try {
 		const promiseArr = tempPathObjArr.map(async ({ backupPath, originalPath }) => {
 			return await asyncMoveFile(backupPath, originalPath, true)
 		})
 		await Promise.all(promiseArr)
+		await removeFilesArr(removingFilesArr)
 		console.log('FILES_RECOVERY: Success!')
 		return true
 	} catch (error) {
@@ -190,5 +211,6 @@ module.exports = {
 	backupFiles,
 	cleanBackup,
 	filesRecovery,
+	removeFilesArr,
 	DBFilters
 }

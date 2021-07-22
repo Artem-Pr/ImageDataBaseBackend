@@ -6,6 +6,7 @@ const {
 	updateNamePath,
 	backupFiles,
 	cleanBackup,
+	removeFilesArr,
 	filesRecovery,
 } = require("../utils/common")
 
@@ -170,6 +171,23 @@ describe('Common functions: ', () => {
 			expect(fs.existsSync(newFile2)).toBeFalsy()
 		})
 	})
+	describe('removeFilesArr: ', () => {
+		test('should remove all files from array', async () => {
+			const originalFileName1 = 'tests/test-images/image001-map.jpg'
+			const originalFileName2 = 'tests/test-images/image002-map.jpg'
+			const File1NewDist = 'temp/image001-map.jpg'
+			const File2NewDist = 'temp/image002-map.jpg'
+			fs.copySync(originalFileName1, File1NewDist)
+			fs.copySync(originalFileName2, File2NewDist)
+			expect(fs.existsSync(File1NewDist)).toBeTruthy()
+			expect(fs.existsSync(File2NewDist)).toBeTruthy()
+			
+			await removeFilesArr([File1NewDist, File2NewDist])
+			
+			expect(fs.existsSync(File1NewDist)).toBeFalsy()
+			expect(fs.existsSync(File2NewDist)).toBeFalsy()
+		})
+	})
 	describe('fileRecovery: ', () => {
 		test('should recover files', async () => {
 			const originalFileName1 = 'tests/test-images/image001-map.jpg'
@@ -188,13 +206,40 @@ describe('Common functions: ', () => {
 			fs.moveSync(originalFileName1, newFile1)
 			fs.copySync(originalFileName2, newFile2)
 			
-			const res = await filesRecovery(tempPathObjArr)
+			const res = await filesRecovery(tempPathObjArr, [])
 			
 			expect(res).toBe(true)
 			expect(fs.existsSync(originalFileName1)).toBeTruthy()
 			expect(fs.existsSync(originalFileName2)).toBeTruthy()
 			expect(fs.existsSync(File1NewDist)).toBeTruthy()
 			expect(fs.existsSync(File2NewDist)).toBeTruthy()
+			expect(fs.existsSync(newFile1)).toBeFalsy()
+			expect(fs.existsSync(newFile2)).toBeFalsy()
+		})
+		test('should remove excessive files', async () => {
+			const originalFileName1 = 'tests/test-images/image001-map.jpg'
+			const originalFileName2 = 'tests/test-images/image002-map.jpg'
+			const updatedName1 = 'tests/test-images/bom1.jpg'
+			const updatedName2 = 'tests/test-images/bom2.jpg'
+			const newFile1 = 'temp/backup123456'
+			const newFile2 = 'temp/backup654321'
+			const tempPathObjArr = [
+				{backupPath: newFile1, originalPath: originalFileName1},
+				{backupPath: newFile2, originalPath: originalFileName2},
+			]
+			
+			fs.copySync(originalFileName1, newFile1)
+			fs.copySync(originalFileName2, newFile2)
+			fs.copySync(originalFileName1, updatedName1)
+			fs.copySync(originalFileName2, updatedName2)
+			
+			const res = await filesRecovery(tempPathObjArr, [updatedName1, updatedName2])
+			
+			expect(res).toBe(true)
+			expect(fs.existsSync(originalFileName1)).toBeTruthy()
+			expect(fs.existsSync(originalFileName2)).toBeTruthy()
+			expect(fs.existsSync(updatedName1)).toBeFalsy()
+			expect(fs.existsSync(updatedName2)).toBeFalsy()
 			expect(fs.existsSync(newFile1)).toBeFalsy()
 			expect(fs.existsSync(newFile2)).toBeFalsy()
 		})

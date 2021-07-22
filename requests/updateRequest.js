@@ -70,7 +70,7 @@ const isDifferentNames = (DBObject, uploadedFileDataItem) => {
  * @param {Object} DBObject
  * @param {Object} updatedFiledataItem
  * @param {string} dbFolder
- * @return {Promise<boolean|*>}
+ * @return {Promise<string | boolean>} new full filePath
  */
 const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder) => {
 	const isNeedMoveToNewDest = !!updatedFiledataItem.updatedFields?.filePath // if true - use fs.copy, not fs.rename
@@ -82,7 +82,8 @@ const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder) => {
 		isDifferentNames(DBObject, updatedFiledataItem)
 	) {
 		const newNamePath = updateNamePath(DBObject, updatedFiledataItem)
-		return await renameFile(dbFolder + DBObject.filePath, dbFolder + newNamePath)
+		await renameFile(dbFolder + DBObject.filePath, dbFolder + newNamePath)
+		return newNamePath
 	} else {
 		return false
 	}
@@ -95,7 +96,8 @@ const returnValuesIfError = (error) => {
 		has('exifTool-') ||
 		has('fs.move Error:') ||
 		has('fs.copy Error:') ||
-		has('BACKUP_FILES:')
+		has('BACKUP_FILES:') ||
+		has('CLEAN_BACKUP:')
 	)
 }
 
@@ -107,16 +109,17 @@ const returnValuesIfError = (error) => {
  * @param {string} originalName
  * @param {string} dbFolder
  * @param {string | undefined} newFileName
- * @return {Promise<boolean>}
+ * @return {Promise<string>} updated full file path
  */
 const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileName = undefined) => {
 	if (newFileName) {
 		await asyncCopyFile(dbFolder + src, dbFolder + destWithoutName + '/' + newFileName)
-		await fs.remove(src)
+		await fs.remove(dbFolder + src)
+		return destWithoutName + '/' + newFileName
 	} else {
 		await asyncMoveFile(dbFolder + src, dbFolder + destWithoutName + '/' + originalName)
+		return destWithoutName + '/' + originalName
 	}
-	return true
 }
 
 /**
@@ -138,6 +141,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		return null
 	}
 	let filesBackup = []
+	let filesNewNameArr = [] // saving full filePaths for filesRecovery
 	const idsArr = filedata.map(item => item.id)
 	const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
 	const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
@@ -154,13 +158,17 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		}
 		
 		const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-			await renameFileIfNeeded(DBObject, filedata[i], dbFolder)
+			const newNamePath = await renameFileIfNeeded(DBObject, filedata[i], dbFolder)
+			newNamePath && filesNewNameArr.push(newNamePath)
 			return true
 		})
 		const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
 			const filePath = filedata[i].updatedFields?.filePath
 			const newFileName = filedata[i].updatedFields?.originalName
-			if (filePath) await moveFile(DBObject.filePath, filePath, DBObject.originalName, dbFolder, newFileName)
+			if (filePath) {
+				const newNamePath = await moveFile(DBObject.filePath, filePath, DBObject.originalName, dbFolder, newFileName)
+				filesNewNameArr.push(newNamePath)
+			}
 			return true
 		})
 		await Promise.all(renameFilePromiseArr)
@@ -174,13 +182,13 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		return response
 		
 	} catch (error) {
-		const recoveryResponse = await filesRecovery(filesBackup)
-		const errorMessage = returnValuesIfError(error)
-			? getError(error.message)
-			: getError('OOPS! Something went wrong...')
+		const recoveryResponse = await filesRecovery(filesBackup, filesNewNameArr)
 		const recoveryError = recoveryResponse === true ? '' : recoveryResponse
+		const errorMessage = returnValuesIfError(error)
+			? getError(error.message + recoveryError)
+			: getError('OOPS! Something went wrong...' + recoveryError)
 		
-		res.send(errorMessage + recoveryError)
+		res.send(errorMessage)
 	}
 }
 
