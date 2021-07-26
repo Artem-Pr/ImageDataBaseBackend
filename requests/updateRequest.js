@@ -7,6 +7,7 @@ const {
 	renameFile,
 	getError,
 	updateNamePath,
+	updatePreviewPath,
 	backupFiles,
 	cleanBackup,
 	filesRecovery,
@@ -27,7 +28,8 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
 	const filePath = updatedFields.filePath
 		? updatedFields.filePath + '/' + updatedFields.originalName || DBObject.originalName
 		: updateNamePath(DBObject, { id, updatedFields })
-	const updatedFieldsWithFilePath = { ...updatedFields, filePath }
+	const preview = updatePreviewPath(DBObject, { id, updatedFields })
+	const updatedFieldsWithFilePath = { ...updatedFields, filePath, preview }
 	const filter = {_id: ObjectId(id)}
 	const update = {$set: updatedFieldsWithFilePath}
 	const options = {returnOriginal: false}

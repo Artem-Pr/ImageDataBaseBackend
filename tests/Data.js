@@ -46,6 +46,31 @@ const updateFiledata = [
 	}
 ]
 
+const videoOriginalFileData = [{
+	_id: ObjectId("60fd9b60e52cbf5832df4bb7"),
+	originalName: 'YDXJ1442.mp4',
+	mimetype: 'video/mp4',
+	size: 2000000,
+	megapixels: 8,
+	imageSize: '3000x3000',
+	keywords: null,
+	changeDate: '2011.11.11',
+	originalDate: '2010.10.10',
+	filePath: 'tests/tempVideos/YDXJ1442.mp4',
+	preview: 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png',
+}]
+
+const videoUpdatedData = [
+	{
+		id: '60fd9b60e52cbf5832df4bb7',
+		updatedFields: {
+			originalName: 'bom-bom.mp4',
+			originalDate: '2021.07.26',
+			keywords: ['green', 'песня про озеро']
+		}
+	}
+]
+
 const updateFileDataWithFilePath = updateFiledata.map((item, idx) => {
 	return idx === 0 ? {
 		...item,
@@ -104,7 +129,7 @@ const pushExifFiledataVideo = [
 	{
 		originalDate: '2019.06.24',
 		changeDate: '2019.06.24',
-		name: 'IMG_20190624_102400.jpg',
+		name: 'YDXJ1442.mp4',
 		tempPath: 'tests/tempVideos/YDXJ1442.mp4',
 		type: 'image/jpeg',
 		size: 1932980,
@@ -117,6 +142,8 @@ const pushExifFiledataVideo = [
 module.exports = {
 	originalFiledata,
 	updateFiledata,
+	videoOriginalFileData,
+	videoUpdatedData,
 	pushExifFiledata,
 	updateFileDataWithFilePath,
 	pushExifFiledataVideo,

@@ -2,6 +2,8 @@ const fs = require('fs-extra')
 const createError = require('http-errors')
 const ObjectId = require('mongodb').ObjectID
 
+const deepCopy = obj => JSON.parse(JSON.stringify(obj))
+
 /**
  * @param {number} codeLength
  * @return {string}
@@ -126,6 +128,24 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
 }
 
 /**
+ * Update preview path using new file name
+ *
+ * @param {Object} DBObject - file object from DB
+ * @param {Object} updatedFileDataItem - object for update ({id: number, updatedFields: {}})
+ * @return {string} new preview path
+ */
+const updatePreviewPath = (DBObject, updatedFileDataItem) => {
+	const getNameWithoutExt = name => name.split('.')[0]
+	const updatedName = updatedFileDataItem.updatedFields?.originalName
+	const preview = DBObject.preview
+	if (updatedName && preview) {
+		return preview.replace(getNameWithoutExt(DBObject.originalName), getNameWithoutExt(updatedName))
+	} else {
+		return preview
+	}
+}
+
+/**
  * @param {Array<string>} pathArr - paths for backup
  * @return {Array<Promise<Object>>} [{backupPath: string, originalPath: string}]
  */
@@ -201,6 +221,7 @@ const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
 }
 
 module.exports = {
+	deepCopy,
 	getConfig,
 	getError,
 	moveFileAndCleanTemp,
@@ -208,6 +229,7 @@ module.exports = {
 	asyncMoveFile,
 	asyncCopyFile,
 	updateNamePath,
+	updatePreviewPath,
 	backupFiles,
 	cleanBackup,
 	filesRecovery,

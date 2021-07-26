@@ -9,10 +9,12 @@ const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const {
 	originalFiledata,
 	updateFiledata,
+	videoOriginalFileData,
+	videoUpdatedData,
 	updatedFileDateForReturningValues,
 	pushExifFiledata
 } = require("./Data")
-const {renameFile, DBFilters} = require("../utils/common")
+const {deepCopy, renameFile, DBFilters} = require("../utils/common")
 const {
 	renameFileIfNeeded,
 	isDifferentNames,
@@ -22,8 +24,6 @@ const {
 	updateRequest,
 	moveFile
 } = require("../requests/updateRequest")
-
-const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 
 describe('updateRequest: ', () => {
 	let req = {
@@ -87,6 +87,25 @@ describe('updateRequest: ', () => {
 			const response = await updateFile(id, updatedFields, filedata, collection)
 			expect(JSON.stringify(response)).toBe(correctResponse)
 		})
+		test('should return correct preview from database if send new originalName', async () => {
+			await testCollections.insertMany(videoOriginalFileData, function (err) {
+				if (err) {
+					console.log("videoFileData insert error", err)
+				}
+				console.log("videoFileData is created")
+			})
+			
+			const correctResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\"}"
+			const id = "60fd9b60e52cbf5832df4bb7"
+			const updatedFields = { ...videoUpdatedData[0].updatedFields }
+			const filedata = { ...videoOriginalFileData[0] }
+			
+			const response = await updateFile(id, updatedFields, filedata, testCollections)
+			expect(JSON.stringify(response)).toBe(correctResponse)
+			
+			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
+			await testCollections.deleteMany(deleteObject)
+		})
 	})
 	describe('updateDatabase: ', () => {
 		test('should return correct Array of updated data', async () => {
@@ -98,6 +117,24 @@ describe('updateRequest: ', () => {
 			const response = await updateDatabase(filedata, fileDataArr, collection)
 			expect(JSON.stringify(response[0])).toBe(firstResponse)
 			expect(JSON.stringify(response[1])).toBe(secondResponse)
+		})
+		test('should correctly update video file', async () => {
+			await testCollections.insertMany(videoOriginalFileData, function (err) {
+				if (err) {
+					console.log("videoFileData insert error", err)
+				}
+				console.log("videoFileData is created")
+			})
+			req.app.locals.collection = testCollections
+			
+			const updatedFiles = deepCopy(videoUpdatedData)
+			const videoFormatResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\"}"
+			const collection = req.app.locals.collection
+			const response = await updateDatabase(updatedFiles, videoOriginalFileData, collection)
+			expect(JSON.stringify(response[0])).toBe(videoFormatResponse)
+			
+			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
+			await testCollections.deleteMany(deleteObject)
 		})
 	})
 	describe('findObject: ', () => {

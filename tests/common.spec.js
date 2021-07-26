@@ -1,9 +1,11 @@
 const fs = require('fs-extra')
-const {updateFiledata, originalFiledata} = require("./Data")
+const {updateFiledata, originalFiledata, videoOriginalFileData, videoUpdatedData} = require("./Data")
 const {
+	deepCopy,
 	renameFile,
 	asyncMoveFile,
 	updateNamePath,
+	updatePreviewPath,
 	backupFiles,
 	cleanBackup,
 	removeFilesArr,
@@ -98,6 +100,27 @@ describe('Common functions: ', () => {
 		test('should return new namePath', async () => {
 			const newNamePath = updateNamePath(originalFiledata[0], updateFiledata[0])
 			expect(newNamePath).toBe('tests/test-images/123.jpg')
+		})
+	})
+	describe('updatePreviewPath: ', () => {
+		test('should return updated preview', async () => {
+			const videoOriginalFileDataItem = { ...videoOriginalFileData[0]}
+			const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
+			const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
+			expect(newNamePath).toBe('tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png')
+		})
+		test('should return old preview if there is no preview', async () => {
+			const videoOriginalFileDataItem = { ...videoOriginalFileData[0], preview: '' }
+			const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
+			const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
+			expect(newNamePath).toBe('')
+		})
+		test('should return old preview if there is no updatedName', async () => {
+			const videoOriginalFileDataItem = Object.assign(videoOriginalFileData[0])
+			const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
+			videoUpdatedDataItem.updatedFields.originalName = undefined
+			const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
+			expect(newNamePath).toBe('tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png')
 		})
 	})
 	describe('backupFiles: ', () => {
