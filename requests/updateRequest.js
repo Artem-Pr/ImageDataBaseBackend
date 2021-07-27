@@ -4,9 +4,11 @@ const {pushExif} = require("../utils/exifTool")
 const {
 	asyncMoveFile,
 	asyncCopyFile,
+	pickFileName,
 	renameFile,
 	getError,
 	updateNamePath,
+	replaceWithoutExt,
 	updatePreviewPath,
 	backupFiles,
 	cleanBackup,
@@ -39,7 +41,7 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
 		console.log('findOneAndUpdate - update SUCCESS')
 		return updatedResponse.value
 	} catch (error) {
-		console.log("findOneAndUpdate - ERROR", error)
+		console.log("findOneAndUpdate - ERROR", error.message)
 		throw createError(500, `file update error`)
 	}
 }
@@ -72,9 +74,10 @@ const isDifferentNames = (DBObject, uploadedFileDataItem) => {
  * @param {Object} DBObject
  * @param {Object} updatedFiledataItem
  * @param {string} dbFolder
- * @return {Promise<string | boolean>} new full filePath
+ * @param {Array<string>} filesNewNameArr - mutating array for clearing files if something went wrong
+ * @return {Promise<Object | boolean>} new full filePath {newNamePath, newPreviewPath}
  */
-const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder) => {
+const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder= '', filesNewNameArr = []) => {
 	const isNeedMoveToNewDest = !!updatedFiledataItem.updatedFields?.filePath // if true - use fs.copy, not fs.rename
 	const isNeedUpdateName = !!updatedFiledataItem.updatedFields?.originalName
 	
@@ -84,10 +87,51 @@ const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder) => {
 		isDifferentNames(DBObject, updatedFiledataItem)
 	) {
 		const newNamePath = updateNamePath(DBObject, updatedFiledataItem)
+		filesNewNameArr.push(dbFolder + newNamePath)
 		await renameFile(dbFolder + DBObject.filePath, dbFolder + newNamePath)
-		return newNamePath
+		
+		let newPreviewPath = ''
+		if (DBObject.preview) {
+			newPreviewPath = replaceWithoutExt(newNamePath, DBObject.filePath, DBObject.preview)
+			filesNewNameArr.push(dbFolder + newPreviewPath)
+			await renameFile(dbFolder + DBObject.preview, dbFolder + newPreviewPath)
+		}
+		return {newNamePath, newPreviewPath}
 	} else {
 		return false
+	}
+}
+
+/**
+ * Get previews full path array
+ *
+ * @param {Array<Object>} DBObjectArr - DB objects arr
+ * @param {string} dbFolder - root directory
+ * @return {Array<string>}
+ */
+const getPreviewArray = (DBObjectArr, dbFolder = '') => {
+	return DBObjectArr
+		.filter(({ preview }) => preview)
+		.map(({ preview }) => dbFolder + preview)
+}
+
+/**
+ * Move preview file to new directory, update name if needed, return a new preview path
+ *
+ * @param {Object} DBObject
+ * @param {string} filePathWithoutName
+ * @param {string | undefined} newFileName - new file name without path
+ * @param {string} dbFolder
+ * @return {Promise<string>} - new preview path
+ */
+const movePreviewFile = async (DBObject, filePathWithoutName, newFileName, dbFolder = '') => {
+	try {
+		const originalPreviewName = pickFileName(DBObject.preview)
+		const newPreviewName = newFileName ? replaceWithoutExt(newFileName, DBObject.originalName, originalPreviewName) : undefined
+		return await moveFile(DBObject.preview, filePathWithoutName, originalPreviewName, dbFolder, newPreviewName)
+	} catch (error) {
+		console.log('movePreviewFile - ERROR', error.message)
+		throw new Error('movePreviewFile: ' + error.message)
 	}
 }
 
@@ -99,7 +143,8 @@ const returnValuesIfError = (error) => {
 		has('fs.move Error:') ||
 		has('fs.copy Error:') ||
 		has('BACKUP_FILES:') ||
-		has('CLEAN_BACKUP:')
+		has('CLEAN_BACKUP:') ||
+		has('movePreviewFile:')
 	)
 }
 
@@ -107,7 +152,7 @@ const returnValuesIfError = (error) => {
  * move file to new directory and change file name if needed
  *
  * @param {string} src - original full file path
- * @param {string} destWithoutName - new file path
+ * @param {string} destWithoutName - new file path without name
  * @param {string} originalName
  * @param {string} dbFolder
  * @param {string | undefined} newFileName
@@ -153,23 +198,29 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 	try {
 		const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
 		const pathsArr = savedOriginalDBObjectsArr.map(DBObject => dbFolder + DBObject.filePath)
-		filesBackup = await backupFiles(pathsArr)
+		const previewArr = getPreviewArray(savedOriginalDBObjectsArr, dbFolder)
+		filesBackup = await backupFiles([ ...pathsArr, ...previewArr ])
 		
 		if (isUpdatedKeywords || isUpdateOriginalDate) {
 			await pushExif(pathsArr, updatedKeywords, updateFields, exiftoolProcess)
 		}
 		
 		const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-			const newNamePath = await renameFileIfNeeded(DBObject, filedata[i], dbFolder)
-			newNamePath && filesNewNameArr.push(newNamePath)
+			const newPaths = await renameFileIfNeeded(DBObject, filedata[i], dbFolder, filesNewNameArr)
+			newPaths.newNamePath && filesNewNameArr.push(newPaths.newNamePath)
+			newPaths.newPreviewPath && filesNewNameArr.push(newPaths.newPreviewPath)
 			return true
 		})
 		const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-			const filePath = filedata[i].updatedFields?.filePath
+			const filePathWithoutName = filedata[i].updatedFields?.filePath
 			const newFileName = filedata[i].updatedFields?.originalName
-			if (filePath) {
-				const newNamePath = await moveFile(DBObject.filePath, filePath, DBObject.originalName, dbFolder, newFileName)
+			if (filePathWithoutName) {
+				const newNamePath = await moveFile(DBObject.filePath, filePathWithoutName, DBObject.originalName, dbFolder, newFileName)
 				filesNewNameArr.push(newNamePath)
+			}
+			if (filePathWithoutName && DBObject.preview) {
+				const newPreviewPath = await movePreviewFile(DBObject, filePathWithoutName, newFileName, dbFolder)
+				filesNewNameArr.push(newPreviewPath)
 			}
 			return true
 		})
@@ -201,5 +252,7 @@ module.exports = {
 	findObjects,
 	isDifferentNames,
 	moveFile,
-	renameFileIfNeeded
+	renameFileIfNeeded,
+	movePreviewFile,
+	getPreviewArray
 }

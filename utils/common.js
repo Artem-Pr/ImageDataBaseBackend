@@ -44,6 +44,16 @@ const moveFileAndCleanTemp = async (tempPath, targetPath) => {
 }
 
 /**
+ * Get file name from file path
+ *
+ * @param {string} filePath
+ * @return {string} fileName
+ */
+const pickFileName = (filePath) => {
+	return filePath.split('/').slice(-1)[0]
+}
+
+/**
  *
  * @param {string} originalName - full path
  * @param {string} newName - full path
@@ -51,6 +61,11 @@ const moveFileAndCleanTemp = async (tempPath, targetPath) => {
  */
 const renameFile = async (originalName, newName) => {
 	return await new Promise((resolve, reject) => {
+		const isNewFileExists = fs.existsSync(newName)
+		if (isNewFileExists) {
+			console.log('fs.rename ERROR: this file already exists - ' + newName)
+			return reject(new Error('fs.rename ERROR: this file already exists - ' + newName))
+		}
 		return fs.rename(originalName, newName, function (err) {
 			if (err) {
 				console.log('fs.rename ' + err)
@@ -128,6 +143,20 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
 }
 
 /**
+ * Replace substring exclude file extension
+ * use TESTS for updatePreviewPath
+ *
+ * @param {string} nameWithExt - new file name with extension
+ * @param {string} oldNameWithExt - old file name with extension
+ * @param {string} stringForReplacement
+ * @return {string} replacement string
+ */
+const replaceWithoutExt = (nameWithExt, oldNameWithExt, stringForReplacement) => {
+	const getNameWithoutExt = name => name.split('.').slice(0, -1).join('.')
+	return stringForReplacement.replace(getNameWithoutExt(oldNameWithExt), getNameWithoutExt(nameWithExt))
+}
+
+/**
  * Update preview path using new file name
  *
  * @param {Object} DBObject - file object from DB
@@ -135,11 +164,14 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
  * @return {string} new preview path
  */
 const updatePreviewPath = (DBObject, updatedFileDataItem) => {
-	const getNameWithoutExt = name => name.split('.')[0]
+	const filePathWithoutName = updatedFileDataItem.updatedFields?.filePath
 	const updatedName = updatedFileDataItem.updatedFields?.originalName
-	const preview = DBObject.preview
+	const preview = filePathWithoutName && DBObject.preview
+		? `${filePathWithoutName}/${pickFileName(DBObject.preview)}`
+		: DBObject.preview
+	
 	if (updatedName && preview) {
-		return preview.replace(getNameWithoutExt(DBObject.originalName), getNameWithoutExt(updatedName))
+		return replaceWithoutExt(updatedName, DBObject.originalName, preview)
 	} else {
 		return preview
 	}
@@ -225,10 +257,12 @@ module.exports = {
 	getConfig,
 	getError,
 	moveFileAndCleanTemp,
+	pickFileName,
 	renameFile,
 	asyncMoveFile,
 	asyncCopyFile,
 	updateNamePath,
+	replaceWithoutExt,
 	updatePreviewPath,
 	backupFiles,
 	cleanBackup,

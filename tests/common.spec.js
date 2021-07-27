@@ -3,8 +3,10 @@ const {updateFiledata, originalFiledata, videoOriginalFileData, videoUpdatedData
 const {
 	deepCopy,
 	renameFile,
+	pickFileName,
 	asyncMoveFile,
 	updateNamePath,
+	replaceWithoutExt,
 	updatePreviewPath,
 	backupFiles,
 	cleanBackup,
@@ -14,11 +16,6 @@ const {
 
 describe('Common functions: ', () => {
 	beforeAll(() => {
-		// temp cleaning
-		console.log('temp cleaning')
-		fs.emptyDirSync('temp')
-	})
-	afterAll(() => {
 		// temp cleaning
 		console.log('temp cleaning')
 		fs.emptyDirSync('temp')
@@ -42,6 +39,18 @@ describe('Common functions: ', () => {
 			}
 		})
 		
+		test('should return ERROR if there is an existing new file name', async () => {
+			fs.copySync(originalFileName, newFileName)
+			expect(fs.existsSync(originalFileName)).toBe(true)
+			try {
+				await renameFile(originalFileName, newFileName)
+			} catch (error) {
+				expect(error.message).toBe('fs.rename ERROR: this file already exists - tests/test-images/image001-map__renamed.jpg')
+			} finally {
+				fs.removeSync(newFileName)
+			}
+		})
+		
 		test('should rename image file', async () => {
 			expect(fs.existsSync(originalFileName)).toBe(true)
 			await renameFile(originalFileName, newFileName)
@@ -56,6 +65,14 @@ describe('Common functions: ', () => {
 			expect(response).toBe(newFileName)
 			await renameFile(newFileName, originalFileName)
 			expect(fs.existsSync(originalFileName)).toBe(true)
+		})
+	})
+	describe('pickFileName:', () => {
+		test('should return file name from file path', () => {
+			const filePath = 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png'
+			const fileName = 'YDXJ1442.png'
+			expect(pickFileName(filePath)).toBe('YDXJ1442-thumbnail-1000x562-0001.png')
+			expect(pickFileName(fileName)).toBe('YDXJ1442.png')
 		})
 	})
 	describe('asyncMoveFile: ', () => {
@@ -102,6 +119,16 @@ describe('Common functions: ', () => {
 			expect(newNamePath).toBe('tests/test-images/123.jpg')
 		})
 	})
+	describe('replaceWithoutExt: ', () => {
+		test('should return new string with replaced file name in it', () => {
+			const newFileName = 'bom-bom.mp4'
+			const oldFileName = 'image002-map.jpg'
+			const stringForReplacement = 'tests/test-images/image002-map-thumbnail-1000x562-0001.png'
+			const resultString = 'tests/test-images/bom-bom-thumbnail-1000x562-0001.png'
+			
+			expect(replaceWithoutExt(newFileName, oldFileName, stringForReplacement)).toBe(resultString)
+		})
+	})
 	describe('updatePreviewPath: ', () => {
 		test('should return updated preview', async () => {
 			const videoOriginalFileDataItem = { ...videoOriginalFileData[0]}
@@ -121,6 +148,14 @@ describe('Common functions: ', () => {
 			videoUpdatedDataItem.updatedFields.originalName = undefined
 			const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
 			expect(newNamePath).toBe('tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png')
+		})
+		test('should return new preview path if there is a new filePath in updatedData', () => {
+			const newFilePath = 'tests/testDirectory/проверка локализации'
+			const videoOriginalFileDataItem = { ...videoOriginalFileData[0]}
+			const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
+			videoUpdatedDataItem.updatedFields.filePath = newFilePath
+			const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
+			expect(newNamePath).toBe(`${newFilePath}/bom-bom-thumbnail-1000x562-0001.png`)
 		})
 	})
 	describe('backupFiles: ', () => {

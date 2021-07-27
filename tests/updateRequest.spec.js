@@ -22,6 +22,8 @@ const {
 	updateDatabase,
 	updateFile,
 	updateRequest,
+	getPreviewArray,
+	movePreviewFile,
 	moveFile
 } = require("../requests/updateRequest")
 
@@ -65,6 +67,7 @@ describe('updateRequest: ', () => {
 	})
 	
 	afterAll(async () => {
+		fs.copySync('tests/tempPhotos/YDXJ1442.mp4', 'tests/tempVideos', { overwrite: true })
 		await connection.close()
 	})
 	
@@ -179,12 +182,13 @@ describe('updateRequest: ', () => {
 			expect(isDifferentNames(originalFiledata[0], updateFiledata[0])).toBeTruthy()
 		})
 	})
-	//Todo: add test for isNeedMoveToNewDest
 	describe('renameFileIfNeeded: ', () => {
 		test('should rename file if updateFiledata has originalName field', async () => {
 			const updatedFileName = 'tests/test-images/123.jpg'
-			const response = await renameFileIfNeeded(originalFiledata[0], updateFiledata[0], '')
-			expect(response).toBe(updatedFileName)
+			const {newNamePath, newPreviewPath} = await renameFileIfNeeded(originalFiledata[0], updateFiledata[0], '')
+			expect(newNamePath).toBe(updatedFileName)
+			expect(newPreviewPath).toBe('')
+			
 			await renameFile(updatedFileName, originalFiledata[0].filePath)
 			expect(fs.existsSync(originalFiledata[0].filePath)).toBe(true)
 		})
@@ -192,6 +196,10 @@ describe('updateRequest: ', () => {
 			const updateFiledataItem = req.body[1]
 			delete updateFiledataItem.updatedFields.originalName
 			const response = await renameFileIfNeeded(originalFiledata[0], updateFiledataItem, '')
+			expect(response).toBeFalsy()
+		})
+		test('should return "false" if updateFiledata has filePath', async () => {
+			const response = await renameFileIfNeeded(originalFiledata[0], deepCopy(updateFileDataWithFilePath[0]), '')
 			expect(response).toBeFalsy()
 		})
 		test('should return ERROR if originalName is duplicated', async () => {
@@ -204,6 +212,79 @@ describe('updateRequest: ', () => {
 				await renameFileIfNeeded(originalFiledata[0], duplicatedFileDataItem)
 			} catch (error) {
 				expect(error.message).toBe('ERROR - isDifferentNames: duplicated originalName')
+			}
+		})
+		test('should correctly rename video file and return renamed file and thumbnail', async () => {
+			const resultNamePath = 'tests/tempVideos/bom-bom.mp4'
+			const resultPreviewPath = 'tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png'
+			const {newNamePath, newPreviewPath} = await renameFileIfNeeded(videoOriginalFileData[0], deepCopy(videoUpdatedData)[0])
+			
+			expect(newNamePath).toBe(resultNamePath)
+			expect(newPreviewPath).toBe(resultPreviewPath)
+			
+			await renameFile(newNamePath, videoOriginalFileData[0].filePath)
+			await renameFile(newPreviewPath, videoOriginalFileData[0].preview)
+			expect(fs.existsSync(videoOriginalFileData[0].filePath)).toBeTruthy()
+			expect(fs.existsSync(videoOriginalFileData[0].preview)).toBeTruthy()
+			expect(fs.existsSync(resultNamePath)).toBeFalsy()
+			expect(fs.existsSync(resultPreviewPath)).toBeFalsy()
+		})
+	})
+	describe('getPreviewArray: ', () => {
+		test('should return preview paths array', () => {
+			const DBObjectsArr = [ ...originalFiledata, ...videoOriginalFileData ]
+			const previewArr = getPreviewArray(DBObjectsArr)
+			
+			expect(previewArr).toHaveLength(1)
+			expect(previewArr[0]).toBe('tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png')
+		})
+	})
+	describe('movePreviewFile: ', () => {
+		test('should move preview file to a new directory', async () => {
+			const originalFileDataItem = deepCopy(videoOriginalFileData[0])
+			const filePathWithoutName = 'tests/testDirectory/проверка локализации'
+			const newFullFileName = filePathWithoutName + '/YDXJ1442-thumbnail-1000x562-0001.png'
+			
+			await movePreviewFile(originalFileDataItem, filePathWithoutName, undefined)
+			expect(fs.existsSync(newFullFileName)).toBeTruthy()
+			
+			// return place
+			fs.moveSync(newFullFileName, originalFileDataItem.preview)
+		})
+		test('should move preview file and update file name', async () => {
+			const originalFileDataItem = deepCopy(videoOriginalFileData[0])
+			const filePathWithoutName = 'tests/testDirectory/проверка локализации'
+			const newFileName = 'песня про озеро.png'
+			const newFullFileName = `${filePathWithoutName}/песня про озеро-thumbnail-1000x562-0001.png`
+			
+			await movePreviewFile(originalFileDataItem, filePathWithoutName, newFileName)
+			expect(fs.existsSync(newFullFileName)).toBeTruthy()
+			
+			// return place
+			fs.moveSync(newFullFileName, originalFileDataItem.preview)
+		})
+		test('should return correct new full file name', async () => {
+			const originalFileDataItem = deepCopy(videoOriginalFileData[0])
+			const filePathWithoutName = 'tests/testDirectory/проверка локализации'
+			const newPreviewName = 'песня про озеро.png'
+			const newFullPreviewName = `${filePathWithoutName}/песня про озеро-thumbnail-1000x562-0001.png`
+			
+			const resultFullPreviewName = await movePreviewFile(originalFileDataItem, filePathWithoutName, newPreviewName)
+			
+			expect(resultFullPreviewName).toBe(newFullPreviewName)
+			
+			// return place
+			fs.moveSync(resultFullPreviewName, originalFileDataItem.preview)
+		})
+		test('should return an Error if there is no original file', async () => {
+			const originalFileDataItem = deepCopy(videoOriginalFileData[0])
+			originalFileDataItem.preview = 'tests/wrong directory/YDXJ1442-thumbnail-1000x562-0001.png'
+			const filePathWithoutName = 'tests/testDirectory/проверка локализации'
+			
+			try {
+				await movePreviewFile(originalFileDataItem, filePathWithoutName, undefined)
+			} catch (error) {
+				expect(error.message).toBe(`movePreviewFile: fs.move Error: ENOENT: no such file or directory, stat '${originalFileDataItem.preview}' - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png`)
 			}
 		})
 	})
@@ -312,7 +393,7 @@ describe('updateRequest: ', () => {
 			expect(res.send).lastReturnedWith("update request - File loading error")
 		})
 		test('should send Error message "fs.copy Error: ... already exists" if there is fs.copy Error', async () => {
-			req.body = updateFileDataWithFilePath
+			req.body = deepCopy(updateFileDataWithFilePath)
 			res.send = jest.fn(value => JSON.stringify(value))
 			const originalFilePath = 'tests/test-images/image001-map.jpg'
 			const newFilePath = 'tests/testDirectory/проверка локализации/123.jpg'
@@ -382,7 +463,9 @@ describe('updateRequest: ', () => {
 		test('should return correct response.value from updateRequest', async () => {
 			const updatedFileName1 = 'tests/test-images/123.jpg'
 			const updatedFileName2 = 'tests/test-images/bom-bom.jpg'
-			const correctResponse = "[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}]"
+			const updatedFileName3 = 'tests/testDirectory/проверка локализации/bom-bom.mp4'
+			const updatedFileName4 = 'tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png'
+			const correctResponse = "[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"},{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"preview\":\"tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png\"}]"
 			// const correctResponse = [
 			// 	{_id: '5fef484b497f3af84699e88c',
 			// 		originalName:'123.jpg',
@@ -405,14 +488,43 @@ describe('updateRequest: ', () => {
 			// 		originalDate:'20.06.2019',
 			// 		filePath:'tests/test-images/bom-bom.jpg.jpg',
 			// 		preview:""
+			// },{_id: '60fd9b60e52cbf5832df4bb7',
+			// 	  originalName: 'bom-bom.mp4',
+			// 		mimetype: 'video/mp4',
+			// 		size: 2000000,
+			// 		megapixels: 8,
+			// 		imageSize: '3000x3000',
+			// 		keywords: ['green', 'песня про озеро'],
+			// 		changeDate: '2011.11.11',
+			// 		originalDate: '2021.07.26',
+			// 		filePath: 'tests/testDirectory/проверка локализации/bom-bom.mp4',
+			// 		preview: 'tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png',
 			// }]
+			
 			res.send = jest.fn(value => JSON.stringify(value))
+			req.body = [ ...deepCopy(updateFiledata), ...deepCopy(videoUpdatedData) ]
+			req.body[2].updatedFields.filePath = 'tests/testDirectory/проверка локализации'
+			
+			await testCollections.insertMany(videoOriginalFileData, function (err) {
+				if (err) {
+					console.log("videoFileData insert error", err)
+				}
+				console.log("videoFileData is created")
+			})
+			
 			await updateRequest(req, res, exiftoolProcess)
 			expect(res.send).toBeCalled()
 			expect(res.send).lastReturnedWith(correctResponse)
 
+			// return place
 			await renameFile(updatedFileName1, originalData[0].filePath)
 			await renameFile(updatedFileName2, originalData[1].filePath)
+			await renameFile(updatedFileName3, videoOriginalFileData[0].filePath)
+			await renameFile(updatedFileName4, videoOriginalFileData[0].preview)
+			
+			// Collection cleaning
+			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
+			await req.app.locals.collection.deleteMany(deleteObject)
 		})
 		test('should recover files if there is fs.copy Error', async () => {
 			req.body = deepCopy(updateFileDataWithFilePath)
@@ -444,6 +556,85 @@ describe('updateRequest: ', () => {
 			
 			//return file place
 			fs.removeSync(newFileName)
+		})
+		test('should recover preview if there is rename Error', async () => {
+			req.body = [...deepCopy(updateFiledata), ...deepCopy(videoUpdatedData)]
+			res.send = jest.fn(value => value)
+			const originalFilePath = 'tests/tempVideos/YDXJ1442.mp4'
+			const originalPreviewPath = 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png'
+			const newPreviewPath = 'tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png'
+			
+			await testCollections.insertMany(videoOriginalFileData, function (err) {
+				if (err) {
+					console.log("videoFileData insert error", err)
+				}
+				console.log("videoFileData is created")
+			})
+			
+			fs.copySync(originalPreviewPath, newPreviewPath)
+			await updateRequest(req, res, exiftoolProcess)
+			
+			expect(fs.existsSync(originalFilePath)).toBeTruthy()
+			expect(fs.existsSync(originalPreviewPath)).toBeTruthy()
+			
+			fs.removeSync(newPreviewPath)
+			// Collection cleaning
+			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
+			await req.app.locals.collection.deleteMany(deleteObject)
+		})
+		test('should recover preview if there is fs.move Error', async () => {
+			const newFilePath = 'tests/testDirectory/проверка локализации'
+			req.body = [...deepCopy(updateFiledata), ...deepCopy(videoUpdatedData)]
+			req.body[2].updatedFields.filePath = newFilePath
+			req.body[2].updatedFields.originalName = undefined
+			res.send = jest.fn(value => value)
+			const originalPreviewPath = 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png'
+			const newPreviewPath = `${newFilePath}/YDXJ1442-thumbnail-1000x562-0001.png`
+			
+			await testCollections.insertMany(videoOriginalFileData, function (err) {
+				if (err) {
+					console.log("videoFileData insert error", err)
+				}
+				console.log("videoFileData is created")
+			})
+			
+			fs.copySync(originalPreviewPath, newPreviewPath)
+			await updateRequest(req, res, exiftoolProcess)
+			
+			expect(fs.existsSync(originalPreviewPath)).toBeTruthy()
+			
+			fs.removeSync(newPreviewPath)
+			// Collection cleaning
+			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
+			await req.app.locals.collection.deleteMany(deleteObject)
+		})
+		test('should return an Error if there is movePreviewFile Error', async () => {
+			const newFilePath = 'tests/testDirectory/проверка локализации'
+			req.body = [...deepCopy(updateFiledata), ...deepCopy(videoUpdatedData)]
+			req.body[2].updatedFields.filePath = newFilePath
+			req.body[2].updatedFields.originalName = undefined
+			res.send = jest.fn(value => JSON.stringify(value))
+			const originalPreviewPath = 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png'
+			const newPreviewPath = `${newFilePath}/YDXJ1442-thumbnail-1000x562-0001.png`
+			const correctResponse = '{\"error\":\"movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png\"}'
+			
+			await testCollections.insertMany(videoOriginalFileData, function (err) {
+				if (err) {
+					console.log("videoFileData insert error", err)
+				}
+				console.log("videoFileData is created")
+			})
+			
+			fs.copySync(originalPreviewPath, newPreviewPath)
+			await updateRequest(req, res, exiftoolProcess)
+			
+			expect(res.send).toBeCalled()
+			expect(res.send).lastReturnedWith(correctResponse)
+			
+			fs.removeSync(newPreviewPath)
+			// Collection cleaning
+			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
+			await req.app.locals.collection.deleteMany(deleteObject)
 		})
 	})
 })
