@@ -28,7 +28,7 @@ const ObjectId = require('mongodb').ObjectID
  */
 const updateFile = async (id, updatedFields, DBObject, collection) => {
 	const filePath = updatedFields.filePath
-		? updatedFields.filePath + '/' + updatedFields.originalName || DBObject.originalName
+		? updatedFields.filePath + '/' + (updatedFields.originalName || DBObject.originalName)
 		: updateNamePath(DBObject, { id, updatedFields })
 	const preview = updatePreviewPath(DBObject, { id, updatedFields })
 	const updatedFieldsWithFilePath = { ...updatedFields, filePath, preview }
@@ -192,7 +192,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 	const idsArr = filedata.map(item => item.id)
 	const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
 	const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
-	const isUpdatedKeywords = updatedKeywords.length && updatedKeywords.some(item => item.length)
+	const isUpdatedKeywords = updatedKeywords?.length && updatedKeywords.some(item => item?.length)
 	const isUpdateOriginalDate = updateFields.some(item => item.originalDate)
 	
 	try {

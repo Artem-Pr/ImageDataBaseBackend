@@ -5,6 +5,14 @@ const {getConfig} = require("../utils/common")
 const sharp = require("sharp")
 
 const getFilesFromDB = async (req, res, tempFolder, configPath) => {
+	
+	//Todo: deprecated method
+	// const url = new URL('http://localhost:5000' + req.url)
+	// const nPerPage = +url.searchParams.get('perPage') || 0
+	// let currentPage = +url.searchParams.get('page') || 1
+	// let searchTags = url.searchParams.get('searchTags[]') || []
+	// let excludeTags = url.searchParams.get('excludeTags[]') || []
+	
 	const queryObject = url.parse(req.url, true).query
 	const nPerPage = +queryObject['perPage'] || 0
 	let currentPage = +queryObject['page'] || 1

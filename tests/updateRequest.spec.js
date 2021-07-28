@@ -90,6 +90,16 @@ describe('updateRequest: ', () => {
 			const response = await updateFile(id, updatedFields, filedata, collection)
 			expect(JSON.stringify(response)).toBe(correctResponse)
 		})
+		test('should return correct response.value from database if send ONLY filePath', async () => {
+			const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"image001-map.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"map\",\"forest\",\"estonia\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2010.10.10\",\"filePath\":\"tests/testDirectory/проверка локализации/image001-map.jpg\",\"preview\":\"\"}"
+			const id = "5fef484b497f3af84699e88c"
+			const updatedFields = Object.assign(updateFileDataWithFilePath[0].updatedFields)
+			const currentUploadingFields = { filePath: updatedFields.filePath }
+			const filedata = Object.assign(originalFiledata[0])
+			const collection = req.app.locals.collection
+			const response = await updateFile(id, currentUploadingFields, filedata, collection)
+			expect(JSON.stringify(response)).toBe(correctResponse)
+		})
 		test('should return correct preview from database if send new originalName', async () => {
 			await testCollections.insertMany(videoOriginalFileData, function (err) {
 				if (err) {
