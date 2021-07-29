@@ -7,6 +7,12 @@ const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : 
 const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
 
 /**
+ * @param {string[]} strings
+ * @return {string[]}
+ */
+const getUniqStrings = (strings) => Array.from(new Set(strings))
+
+/**
  * @param {number} codeLength
  * @return {string}
  */
@@ -258,6 +264,7 @@ module.exports = {
 	deepCopy,
 	removeExtraSlash,
 	removeExtraFirstSlash,
+	getUniqStrings,
 	getConfig,
 	getError,
 	moveFileAndCleanTemp,

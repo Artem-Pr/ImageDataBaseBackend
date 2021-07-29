@@ -5,6 +5,7 @@ const {pushExif} = require("../utils/exifTool")
 const {
 	removeExtraSlash,
 	removeExtraFirstSlash,
+	getUniqStrings,
 	asyncMoveFile,
 	asyncCopyFile,
 	pickFileName,
@@ -173,22 +174,23 @@ const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileNam
 }
 
 /**
- * Add filePath without directory and fileName to "paths" list
- * Todo: add tests
+ * Add filePathWithoutDirectory to "paths" list
  *
- * @param req
- * @param updateFields
+ * @param {Object} req
+ * @param {Object} updateFields
+ * @return {Promise<string[]>}
  */
 const addNewFilePath = async (req, updateFields) => {
 	const cleanPath = path => removeExtraFirstSlash(removeExtraSlash(path))
 	
 	const paths = updateFields.map(item => item.filePath).filter(filePath => filePath)
 	if (paths.length) {
-		const uniqPathsSet = new Set(paths)
-		const uniqPaths = Array.from(uniqPathsSet)
+		const uniqPaths = getUniqStrings(paths)
 		const resPromiseArr = uniqPaths.map(path => addPathToBase(req, cleanPath(path)))
-		await Promise.all(resPromiseArr)
+		const response = await Promise.all(resPromiseArr)
+		return response.filter(item => item)
 	}
+	return []
 }
 
 /**
@@ -277,5 +279,6 @@ module.exports = {
 	moveFile,
 	renameFileIfNeeded,
 	movePreviewFile,
-	getPreviewArray
+	getPreviewArray,
+	addNewFilePath,
 }

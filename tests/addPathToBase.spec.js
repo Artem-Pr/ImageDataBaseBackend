@@ -1,23 +1,10 @@
 const {MongoClient} = require('mongodb')
 const {addPathToBase} = require("../utils/addPathToBase")
+const {originalPathsList} = require("./Data")
 
 describe('addPathToBase: ', () => {
 	const testFilePath = 'природа/nature'
 	const existingFilePath = 'природа/корпоратив'
-	const originalPathsList = [
-		"bom",
-		"bom/Банско",
-		"bom/Оля",
-		"bom/озеро",
-		"nature",
-		"nature/вода",
-		"природа",
-		"природа/активный отдых",
-		"природа/активный отдых/эстония",
-		"природа/видео",
-		"природа/видео/уточки",
-		"природа/корпоратив"
-	]
 	let req = {
 		app: {locals: {configCollection: null}},
 		body: null

@@ -139,6 +139,21 @@ const pushExifFiledataVideo = [
 	}
 ]
 
+const originalPathsList = [
+	"bom",
+	"bom/Банско",
+	"bom/Оля",
+	"bom/озеро",
+	"nature",
+	"nature/вода",
+	"природа",
+	"природа/активный отдых",
+	"природа/активный отдых/эстония",
+	"природа/видео",
+	"природа/видео/уточки",
+	"природа/корпоратив"
+]
+
 module.exports = {
 	originalFiledata,
 	updateFiledata,
@@ -148,4 +163,5 @@ module.exports = {
 	updateFileDataWithFilePath,
 	pushExifFiledataVideo,
 	updatedFileDateForReturningValues,
+	originalPathsList,
 }

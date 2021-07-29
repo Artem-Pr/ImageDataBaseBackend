@@ -3,7 +3,6 @@ const {MongoClient} = require('mongodb')
 const ObjectId = require('mongodb').ObjectID
 const exiftool = require('node-exiftool')
 const exiftoolBin = require('dist-exiftool')
-const {updateFileDataWithFilePath} = require("./Data")
 const {pushExif, getExifFormPhoto} = require("../utils/exifTool")
 const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const {
@@ -12,7 +11,9 @@ const {
 	videoOriginalFileData,
 	videoUpdatedData,
 	updatedFileDateForReturningValues,
-	pushExifFiledata
+	pushExifFiledata,
+	originalPathsList,
+	updateFileDataWithFilePath,
 } = require("./Data")
 const {deepCopy, renameFile, DBFilters} = require("../utils/common")
 const {
@@ -24,7 +25,8 @@ const {
 	updateRequest,
 	getPreviewArray,
 	movePreviewFile,
-	moveFile
+	moveFile,
+	addNewFilePath,
 } = require("../requests/updateRequest")
 
 describe('updateRequest: ', () => {
@@ -367,6 +369,57 @@ describe('updateRequest: ', () => {
 			//return file place
 			fs.copySync(newFullPath, originalFilePath)
 			fs.removeSync(newFullPath)
+		})
+	})
+	describe('addNewFilePath: ', () => {
+		const testFilePath = 'tests/testDirectory/проверка локализации'
+		const existingFilePath = 'природа/корпоратив'
+		let updatedFields = []
+		let updatedFieldsWithFilePath = []
+		let updatedFieldsWithExistingFilePath = []
+		let configCollection
+		
+		beforeEach(async() => {
+			configCollection = db.collection('testConfig')
+			req.app.locals.configCollection = configCollection
+			await configCollection.insertOne({name: "paths", pathsArr: originalPathsList})
+			
+			updatedFields = deepCopy(updateFiledata.map(item => item.updatedFields))
+			updatedFieldsWithFilePath = deepCopy(updateFileDataWithFilePath
+				.map((item, i) => ({ ...item.updatedFields, filePath: `${testFilePath}${i}` })))
+			updatedFieldsWithExistingFilePath = deepCopy(updateFiledata
+				.map(item => ({ ...item.updatedFields, filePath: existingFilePath })))
+		})
+		
+		afterEach(async () => {
+			await configCollection.deleteMany({})
+		})
+		
+		afterAll(async () => {
+			await configCollection.deleteMany({})
+		})
+		
+		test('should return Error if collection is broken', async () => {
+			req.app.locals.configCollection = null
+			try {
+				await addNewFilePath(req, updatedFieldsWithFilePath)
+			} catch (error) {
+				expect(error.message).toBe(`addPathToBase ERROR: insert path - ${testFilePath}0, TypeError: Cannot read property 'findOne' of null`)
+			}
+		})
+		test("should return an empty array if updateFiledata doesn't have filePath fields", async () => {
+			const response = await addNewFilePath(req, updatedFields)
+			expect(response).toHaveLength(0)
+		})
+		test('should return an empty array if new filePaths exist in pathsArr', async () => {
+			const response = await addNewFilePath(req, updatedFieldsWithExistingFilePath)
+			expect(response).toHaveLength(0)
+		})
+		test('should return new filePaths array if pathsArr originally does not contain them', async () => {
+			const response = await addNewFilePath(req, updatedFieldsWithFilePath)
+			expect(response).toHaveLength(2)
+			expect(response[0]).toBe('tests/testDirectory/проверка локализации0')
+			expect(response[1]).toBe('tests/testDirectory/проверка локализации1')
 		})
 	})
 	describe('updateRequest: ', () => {
