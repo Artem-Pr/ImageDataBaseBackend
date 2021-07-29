@@ -1,7 +1,10 @@
 const fs = require('fs-extra')
 const createError = require('http-errors')
+const {addPathToBase} = require("../utils/addPathToBase")
 const {pushExif} = require("../utils/exifTool")
 const {
+	removeExtraSlash,
+	removeExtraFirstSlash,
 	asyncMoveFile,
 	asyncCopyFile,
 	pickFileName,
@@ -170,6 +173,25 @@ const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileNam
 }
 
 /**
+ * Add filePath without directory and fileName to "paths" list
+ * Todo: add tests
+ *
+ * @param req
+ * @param updateFields
+ */
+const addNewFilePath = async (req, updateFields) => {
+	const cleanPath = path => removeExtraFirstSlash(removeExtraSlash(path))
+	
+	const paths = updateFields.map(item => item.filePath).filter(filePath => filePath)
+	if (paths.length) {
+		const uniqPathsSet = new Set(paths)
+		const uniqPaths = Array.from(uniqPathsSet)
+		const resPromiseArr = uniqPaths.map(path => addPathToBase(req, cleanPath(path)))
+		await Promise.all(resPromiseArr)
+	}
+}
+
+/**
  * Push new exif to files, rename files if needed, update filePath and DB info
  *
  * @param {object} req - request object. Minimal: {
@@ -228,6 +250,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		await Promise.all(updateFilePathPromiseArr)
 		
 		const	response = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
+		await addNewFilePath(req, updateFields)
 		
 		cleanBackup(filesBackup)
 		

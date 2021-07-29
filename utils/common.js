@@ -3,6 +3,8 @@ const createError = require('http-errors')
 const ObjectId = require('mongodb').ObjectID
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
+const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : value)
+const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
 
 /**
  * @param {number} codeLength
@@ -254,6 +256,8 @@ const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
 
 module.exports = {
 	deepCopy,
+	removeExtraSlash,
+	removeExtraFirstSlash,
 	getConfig,
 	getError,
 	moveFileAndCleanTemp,
