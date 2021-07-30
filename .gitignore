@@ -12,6 +12,7 @@
 # production
 /build
 /uploads
+/temp
 
 # misc
 .DS_Store

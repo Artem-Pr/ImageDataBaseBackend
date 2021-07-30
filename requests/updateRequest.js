@@ -148,7 +148,8 @@ const returnValuesIfError = (error) => {
 		has('fs.copy Error:') ||
 		has('BACKUP_FILES:') ||
 		has('CLEAN_BACKUP:') ||
-		has('movePreviewFile:')
+		has('movePreviewFile:') ||
+		has('addPathToBase ERROR:')
 	)
 }
 
@@ -203,7 +204,7 @@ const addNewFilePath = async (req, updateFields) => {
  * @param {object} res - response object. Minimal: {send: null}
  * @param {any} exiftoolProcess
  * @param {string} dbFolder
- * @returns {Array} array of DB objects
+ * @returns {Object} { files: filesResponse, newFilePath: filePathResponse } filesResponse - array of DB objects
  */
 const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 	let filedata = req.body
@@ -251,8 +252,9 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		await Promise.all(renameFilePromiseArr)
 		await Promise.all(updateFilePathPromiseArr)
 		
-		const	response = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
-		await addNewFilePath(req, updateFields)
+		const filePathResponse = await addNewFilePath(req, updateFields)
+		const	filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
+		const response = { files: filesResponse, newFilePath: filePathResponse }
 		
 		cleanBackup(filesBackup)
 		

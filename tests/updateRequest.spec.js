@@ -37,6 +37,7 @@ describe('updateRequest: ', () => {
 	let res = {send: null}
 	
 	let testCollections
+	let testConfigCollection
 	let connection
 	let db
 	
@@ -47,6 +48,7 @@ describe('updateRequest: ', () => {
 		})
 		db = await connection.db('IDB')
 		testCollections = db.collection('test')
+		testConfigCollection = db.collection("config")
 	})
 	
 	beforeEach(async () => {
@@ -437,15 +439,16 @@ describe('updateRequest: ', () => {
 			keywordsArrForReturning = updatedFileDateForReturningValues.map(dataItem => dataItem.updatedFields.keywords)
 			pathsArr = originalData.map(dataItem => dataItem.filePath)
 
-			req.app.locals.collection = testCollections
+			req.app.locals.configCollection = testConfigCollection
+			await testConfigCollection.insertOne({name: "paths", pathsArr: originalPathsList})
 		})
 		
 		afterEach(async () => {
 			await pushExif(pathsArr, keywordsArrForReturning, exifFiledata, exiftoolProcess)
 			
 			// Collection cleaning
-			const deleteObject = DBFilters.getFilterByIds(originalData.map(item => item._id))
-			await req.app.locals.collection.deleteMany(deleteObject)
+			await req.app.locals.collection.deleteMany({})
+			await req.app.locals.configCollection.deleteMany({})
 		})
 		
 		test('should return message "update request - File loading error" if there is no req.body', async () => {
@@ -528,7 +531,7 @@ describe('updateRequest: ', () => {
 			const updatedFileName2 = 'tests/test-images/bom-bom.jpg'
 			const updatedFileName3 = 'tests/testDirectory/проверка локализации/bom-bom.mp4'
 			const updatedFileName4 = 'tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png'
-			const correctResponse = "[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"},{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"preview\":\"tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png\"}]"
+			const correctResponse = "{\"files\":[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"},{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"preview\":\"tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png\"}],\"newFilePath\":[\"tests/testDirectory/проверка локализации\"]}"
 			// const correctResponse = [
 			// 	{_id: '5fef484b497f3af84699e88c',
 			// 		originalName:'123.jpg',
