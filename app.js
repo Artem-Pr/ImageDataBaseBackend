@@ -20,7 +20,7 @@ const app = express()
 
 const configPath = 'config.json'
 const tempFolder = 'temp'
-const databaseFolder = 'database'
+const databaseFolder = 'database' //Todo: duplicate in config.json
 const port = 5000
 const mongoClient = new MongoClient("mongodb://localhost:27017/", {
 	useUnifiedTopology: true,

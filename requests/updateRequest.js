@@ -1,5 +1,6 @@
 const fs = require('fs-extra')
 const createError = require('http-errors')
+const {getKeywordsFromUpdateFields, addKeywordsToBase} = require("../utils/addKeywordsToBase")
 const {addPathToBase} = require("../utils/addPathToBase")
 const {pushExif} = require("../utils/exifTool")
 const {
@@ -178,7 +179,12 @@ const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileNam
  * Add filePathWithoutDirectory to "paths" list
  *
  * @param {Object} req
- * @param {Object} updateFields
+ * @param {Array<Object>} updateFields {
+			originalName: string,
+			originalDate: string,
+			filePath: string
+			keywords: string[]
+		}[]
  * @return {Promise<string[]>}
  */
 const addNewFilePath = async (req, updateFields) => {
@@ -252,6 +258,8 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		await Promise.all(renameFilePromiseArr)
 		await Promise.all(updateFilePathPromiseArr)
 		
+		const newKeywordsList = getKeywordsFromUpdateFields(updateFields)
+		await addKeywordsToBase(req, newKeywordsList)
 		const filePathResponse = await addNewFilePath(req, updateFields)
 		const	filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
 		const preparedFilesRes = filesResponse.map(file => ({
