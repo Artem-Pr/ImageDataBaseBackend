@@ -254,7 +254,12 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		
 		const filePathResponse = await addNewFilePath(req, updateFields)
 		const	filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
-		const response = { files: filesResponse, newFilePath: filePathResponse }
+		const preparedFilesRes = filesResponse.map(file => ({
+			...file,
+			tempPath: `${dbFolder}${file.filePath}`,
+			originalPath: `http://localhost:5000/${dbFolder}${file.filePath}`
+		}))
+		const response = { files: preparedFilesRes, newFilePath: filePathResponse }
 		
 		cleanBackup(filesBackup)
 		

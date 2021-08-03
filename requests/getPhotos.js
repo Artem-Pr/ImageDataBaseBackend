@@ -57,8 +57,8 @@ const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 			}
 			
 			const libPath = JSON.parse(getConfig(configPath)).libPath
-			console.log('libPath', libPath)
-			console.log('photos', photos)
+			console.log('rootLibPath -', `"${libPath}"`)
+			console.log('Sharp start. Number of photos:', photos.length)
 			const filesWithTempPathPromise = photos.map(async item => {
 				const fullPath = libPath + item.filePath
 				
@@ -71,7 +71,7 @@ const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 				} else {
 					const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
 					await sharp(fullPath)
-						.withMetadata()
+						// .withMetadata()
 						.clone()
 						.resize(200)
 						.jpeg({quality: 80})
@@ -80,6 +80,7 @@ const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 							item.originalPath = 'http://localhost:5000/' + fullPath
 							item.preview = 'http://localhost:5000/images/' + randomName + '-preview.jpg'
 							item.tempPath = fullPath
+							console.log('Sharp SUCCESS:', item.originalName)
 						})
 						.catch(err => console.log('OOPS!, Sharp ERROR: ', err))
 				}

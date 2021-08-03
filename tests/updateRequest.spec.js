@@ -48,7 +48,7 @@ describe('updateRequest: ', () => {
 		})
 		db = await connection.db('IDB')
 		testCollections = db.collection('test')
-		testConfigCollection = db.collection("config")
+		testConfigCollection = db.collection("testConfig")
 	})
 	
 	beforeEach(async () => {

@@ -17,19 +17,28 @@ const preparedResponse = exifToolResponseArr => {
 	}, true)
 }
 
-const getExifFormPhoto = async (tempImgPath, exiftoolProcess) => {
+/**
+ * TODO: add tests
+ * @param {string[]} tempImgPathsArr
+ * @param exiftoolProcess
+ * @return {Promise<Object>}
+ */
+const getExifFormPhoto = async (tempImgPathsArr, exiftoolProcess) => {
 	try {
 		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
 		
-		console.log('getExifFormPhoto - tempImgPath', tempImgPath)
-		const rs = fs.createReadStream(tempImgPath)
-		const exifResponse = await exiftoolProcess.readMetadata(rs, ['-File:all'])
+		const exifObjArr = {}
+		for (let i = 0; i < tempImgPathsArr.length; i++) {
+			console.log('getExifFormPhoto - filePath', tempImgPathsArr[i])
+			const exifResponse = await exiftoolProcess.readMetadata(tempImgPathsArr[i], ['-File:all'])
+			exifObjArr[tempImgPathsArr[i]] = exifResponse.data[0]
+		}
 		
 		await exiftoolProcess.close()
 		console.log('Closed exiftool')
 		
-		return exifResponse.data
+		return exifObjArr
 	} catch (e) {
 		console.error(e)
 		throw createError(500, `oops..`);

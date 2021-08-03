@@ -4,8 +4,6 @@ const ThumbnailGenerator = require('video-thumbnail-generator').default
 const uploadItemRequest = (req, res) => {
 	let filedata = req.file
 	if (!filedata) res.send("Ошибка при загрузке файла")
-	console.log('filedata', filedata)
-	console.log('sharp')
 	
 	if (filedata.mimetype.startsWith('video')) {
 		const tg = new ThumbnailGenerator({
@@ -40,6 +38,7 @@ const uploadItemRequest = (req, res) => {
 					preview: 'http://localhost:5000/images/' + filedata.filename + '-preview.jpg',
 					tempPath: filedata.path,
 				}
+				console.log('sharp SUCCESS', filedata.originalname)
 				res.send(photoProps)
 			})
 			.catch(err => console.log('err', err));
