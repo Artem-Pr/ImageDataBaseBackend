@@ -1,43 +1,39 @@
-const url = require("url")
 const fs = require("fs-extra")
 const createError = require("http-errors")
 const {getConfig} = require("../utils/common")
 const sharp = require("sharp")
 
+//Todo: add tests
 const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 	
-	//Todo: deprecated method
-	// const url = new URL('http://localhost:5000' + req.url)
-	// const nPerPage = +url.searchParams.get('perPage') || 0
-	// let currentPage = +url.searchParams.get('page') || 1
-	// let searchTags = url.searchParams.get('searchTags[]') || []
-	// let excludeTags = url.searchParams.get('excludeTags[]') || []
+	const url = new URL('http://localhost:5000' + req.url)
+	const folderPath = url.searchParams.get('folderPath')
+	const nPerPage = +url.searchParams.get('perPage') || 0
+	let currentPage = +url.searchParams.get('page') || 1
+	let searchTags = url.searchParams.get('searchTags[]') || []
+	let excludeTags = url.searchParams.get('excludeTags[]') || []
 	
-	const queryObject = url.parse(req.url, true).query
-	const nPerPage = +queryObject['perPage'] || 0
-	let currentPage = +queryObject['page'] || 1
-	let searchTags = queryObject['searchTags[]'] || []
-	let excludeTags = queryObject['excludeTags[]'] || []
 	if (searchTags && !Array.isArray(searchTags)) searchTags = [searchTags]
 	if (excludeTags && !Array.isArray(excludeTags)) excludeTags = [excludeTags]
+	
+	console.log('folderPath', folderPath)
 	console.log('searchTags', searchTags)
 	console.log('excludeTags', excludeTags)
 	
 	// очищаем temp
-	fs.emptyDirSync(tempFolder);
+	fs.emptyDirSync(tempFolder)
 	
-	let findObject = {}
-	if (searchTags.length && excludeTags.length) findObject = {
-		$and:
-			[
-				{"keywords": {$in: searchTags || []}},
-				{"keywords": {$nin: excludeTags || []}}
-			]
+	const conditionArr = []
+	if (folderPath) {
+		const regExp = new RegExp(`/${folderPath}/`)
+		conditionArr.push({"filePath": regExp})
 	}
-	else if (searchTags.length && !excludeTags.length) findObject = {"keywords": {$in: searchTags || []}}
-	else if (!searchTags.length && excludeTags.length) findObject = {"keywords": {$nin: excludeTags || []}}
+	if (searchTags.length) conditionArr.push({"keywords": {$in: searchTags || []}})
+	if (excludeTags.length) conditionArr.push({"keywords": {$nin: excludeTags || []}})
 	
-	const collection = req.app.locals.collection;
+	const findObject = conditionArr.length ? {$and: conditionArr} : {}
+	
+	const collection = req.app.locals.collection
 	let resultsCount = 0
 	let totalPages = 0
 	
