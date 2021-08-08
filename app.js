@@ -73,7 +73,11 @@ app.put("/update",
 		updateRequest(req, res, exiftoolProcess, databaseFolder)
 )
 
-app.get("/filtered-photos",
+app.use("/filtered-photos",
+	express.json({extended: true})
+)
+
+app.post("/filtered-photos",
 	(req, res) => getFilesFromDB(req, res, tempFolder, databaseFolder)
 )
 
