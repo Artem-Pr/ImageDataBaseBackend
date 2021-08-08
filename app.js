@@ -18,9 +18,8 @@ const exiftoolBin = require('dist-exiftool')
 const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express()
 
-const configPath = 'config.json'
 const tempFolder = 'temp'
-const databaseFolder = 'database' //Todo: duplicate in config.json
+const databaseFolder = '../../../../../../../Volumes/Transcend V/IDBase'
 const port = 5000
 const mongoClient = new MongoClient("mongodb://localhost:27017/", {
 	useUnifiedTopology: true,
@@ -30,9 +29,10 @@ let dbClient
 
 const upload = getMulterSettings(tempFolder)
 
-app.use(cors());
-app.use('/images', express.static(__dirname + '/temp'));
-app.use('/database', express.static(__dirname + '/database'));
+app.use(cors())
+app.use('/images', express.static(__dirname + '/temp'))
+app.use('/database', express.static(databaseFolder))
+console.log('static database', databaseFolder + '/database')
 
 app.get("/keywords",
 	(req, res) => keywordsRequest(req, res, tempFolder)
@@ -52,7 +52,7 @@ app.use("/image-exif",
 )
 
 app.post("/image-exif",
-	(req, res) => imageItemRequest(req, res, exiftoolProcess)
+	(req, res) => imageItemRequest(req, res, databaseFolder, exiftoolProcess)
 )
 
 app.use("/upload",
@@ -61,7 +61,7 @@ app.use("/upload",
 
 app.post("/upload",
 	(req, res) =>
-		uploadRequest(req, res, exiftoolProcess, configPath, databaseFolder)
+		uploadRequest(req, res, exiftoolProcess, databaseFolder)
 )
 
 app.use("/update",
@@ -74,7 +74,7 @@ app.put("/update",
 )
 
 app.get("/filtered-photos",
-	(req, res) => getFilesFromDB(req, res, tempFolder, configPath)
+	(req, res) => getFilesFromDB(req, res, tempFolder, databaseFolder)
 )
 
 app.use((req, res, next) => {
@@ -90,8 +90,10 @@ app.use((req, res, next) => {
 mongoClient.connect(function (err, client) {
 	if (err) return console.log('mongoClient.connect - oops!', err)
 	dbClient = client
-	app.locals.collection = client.db("IDB").collection("photos")
-	app.locals.configCollection = client.db("IDB").collection("config")
+	// app.locals.collection = client.db("IDB").collection("photos")
+	// app.locals.configCollection = client.db("IDB").collection("config")
+	app.locals.collection = client.db("IDBase").collection("photos")
+	app.locals.configCollection = client.db("IDBase").collection("config")
 	app.listen(port, function () {
 		console.log("Start listening on port " + port)
 	})

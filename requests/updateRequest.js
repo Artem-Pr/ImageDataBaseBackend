@@ -259,7 +259,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		await Promise.all(updateFilePathPromiseArr)
 		
 		const newKeywordsList = getKeywordsFromUpdateFields(updateFields)
-		await addKeywordsToBase(req, newKeywordsList)
+		if (newKeywordsList.length) await addKeywordsToBase(req, newKeywordsList)
 		const filePathResponse = await addNewFilePath(req, updateFields)
 		const	filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
 		const preparedFilesRes = filesResponse.map(file => ({
@@ -275,6 +275,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		return response
 		
 	} catch (error) {
+		console.log('OOPS! need recovery', error.message)
 		const recoveryResponse = await filesRecovery(filesBackup, filesNewNameArr)
 		const recoveryError = recoveryResponse === true ? '' : recoveryResponse
 		const errorMessage = returnValuesIfError(error)

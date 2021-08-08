@@ -1,10 +1,9 @@
 const fs = require("fs-extra")
 const createError = require("http-errors")
-const {getConfig} = require("../utils/common")
 const sharp = require("sharp")
 
 //Todo: add tests
-const getFilesFromDB = async (req, res, tempFolder, configPath) => {
+const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	
 	const url = new URL('http://localhost:5000' + req.url)
 	const folderPath = url.searchParams.get('folderPath')
@@ -52,18 +51,18 @@ const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 				throw createError(400, `collection load error`)
 			}
 			
-			const libPath = JSON.parse(getConfig(configPath)).libPath
-			console.log('rootLibPath -', `"${libPath}"`)
+			console.log('rootLibPath -', `"${databaseFolder}"`)
 			console.log('Sharp start. Number of photos:', photos.length)
 			const filesWithTempPathPromise = photos.map(async item => {
-				const fullPath = libPath + item.filePath
+				const fullPath = databaseFolder + item.filePath
+				const staticPath = 'database' + item.filePath
 				
 				// если тип "video", то не делаем превью, а просто достаем его из папки, иначе делаем превью
 				if (item.mimetype.startsWith('video')) {
-					const fullPreviewPath = libPath + item.preview
-					item.originalPath = 'http://localhost:5000/' + fullPath
+					const fullPreviewPath = 'database' + item.preview
+					item.originalPath = 'http://localhost:5000/' + staticPath
 					item.preview = 'http://localhost:5000/' + fullPreviewPath
-					item.tempPath = fullPath
+					item.tempPath = item.filePath
 				} else {
 					const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
 					await sharp(fullPath)
@@ -73,9 +72,9 @@ const getFilesFromDB = async (req, res, tempFolder, configPath) => {
 						.jpeg({quality: 80})
 						.toFile('temp/' + randomName + '-preview.jpg')
 						.then(() => {
-							item.originalPath = 'http://localhost:5000/' + fullPath
+							item.originalPath = 'http://localhost:5000/' + staticPath
 							item.preview = 'http://localhost:5000/images/' + randomName + '-preview.jpg'
-							item.tempPath = fullPath
+							item.tempPath = item.filePath
 							console.log('Sharp SUCCESS:', item.originalName)
 						})
 						.catch(err => console.log('OOPS!, Sharp ERROR: ', err))

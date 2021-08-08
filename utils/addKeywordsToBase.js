@@ -1,4 +1,5 @@
 /**
+ * Todo: add test if there is no keywords field
  * @param {Array<Object>} updateFields {
 			originalName: string,
 			originalDate: string,
@@ -9,7 +10,7 @@
  */
 const getKeywordsFromUpdateFields = (updateFields) => {
 	const keywordsList = updateFields.reduce(((previousValue, currentValue) => {
-		return [ ...previousValue, ...currentValue.keywords ]
+		return currentValue.keywords ? [ ...previousValue, ...currentValue.keywords ] : previousValue
 	}), [])
 	return Array.from(new Set(keywordsList))
 }
@@ -46,6 +47,7 @@ const addKeywordsToBase = (req, keywordsRawList) => {
 					console.log("Oops!- configCollection updateOne keywordsArr Error - ", err)
 					throw createError(400, `configCollection updateOne keywordsArr error`)
 				}
+				console.log('addKeywordsToBase - SUCCESS')
 			})
 		}
 	})

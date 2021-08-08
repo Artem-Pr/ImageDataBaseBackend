@@ -1,6 +1,6 @@
 const {getExifFromArr, pushExif} = require("../utils/exifTool")
 const moment = require("moment")
-const {getConfig, moveFileAndCleanTemp} = require("../utils/common")
+const {moveFileAndCleanTemp} = require("../utils/common")
 const createError = require("http-errors")
 const {addKeywordsToBase} = require("../utils/addKeywordsToBase")
 const {addPathToBase} = require("../utils/addPathToBase")
@@ -22,8 +22,6 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
 			item.data[0].DateTimeOriginal ||
 			item.data[0].CreateDate ||
 			item.data[0].MediaCreateDate
-		console.log('originalDate-------------', originalDate)
-		console.log('filedata[i].originalDate-------------', filedata[i].originalDate)
 		if (
 			originalDate && (filedata[i].originalDate === '' || filedata[i].originalDate === '-')
 		) {
@@ -36,7 +34,6 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
 		if (!Array.isArray(originalKeywords)) originalKeywords = [originalKeywords.toString()]
 		else {
 			originalKeywords = originalKeywords.map(item => {
-				console.log('item', item.toString())
 				return item.toString().trim()
 			})
 		}
@@ -57,23 +54,22 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
 }
 
 
-const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFolder) => {
+const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
 	const url = new URL('http://localhost:5000' + req.url)
 	const basePathWithoutRootDirectory = url.searchParams.get('path')
 	const targetFolder = databaseFolder + '/' + basePathWithoutRootDirectory
+	console.log('uploadRequest - targetFolder', targetFolder)
 	let filedata = req.body
 	if (!filedata) res.send("Ошибка при загрузке файлов")
-	console.log('filedataArr', filedata)
 	
 	let pathsArr = filedata.map(dataItem => {
-		console.log('fileDataItem', dataItem)
+		console.log('fileDataItem', dataItem.name)
 		return dataItem.tempPath
 	})
 	
 	console.log('pathsArr', pathsArr)
 	const exifResponse = await getExifFromArr(pathsArr, exiftoolProcess)
-	console.log('exifResponse---------', exifResponse.map(item => item.data))
-	console.log('filedataArr----------', filedata)
+	console.log('exifResponse---------', exifResponse.map(item => item.data?.Megapixels))
 	
 	// Сравниваем keywords из картинок и пришедшие (возможно измененные) внутри getKeywordsArr,
 	// записываем в массив changedKeywordsArr новые keywords или null
@@ -86,13 +82,9 @@ const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFold
 	// Todo: cover all functions with try catch and return "throw createError(500, `oops..`)"
 	await pushExif(pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
 	
-	// Получаем корневой адрес библиотеки
-	const libPath = JSON.parse(getConfig(configPath)).libPath
-	
 	// Переносим картинки в папку библиотеки и добавляем в filedata относительные пути к картинкам
 	filedata = filedata.map(item => {
 		const targetPath = targetFolder + '/' + item.name
-		console.log('item.tempPath', item.tempPath)
 		console.log('targetPath', targetPath)
 		
 		//  Переносим видео превью туда же, куда и видео файлы
@@ -117,9 +109,9 @@ const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFold
 			throw createError(500, `moveFileAndCleanTemp error`)
 		}
 		
-		if (targetPath.startsWith(libPath)) {
-			item.filePath = targetPath.slice(libPath.length)
-			item.filePathPreview = previewTargetPath.slice(libPath.length)
+		if (targetPath.startsWith(databaseFolder)) {
+			item.filePath = targetPath.slice(databaseFolder.length)
+			item.filePathPreview = previewTargetPath.slice(databaseFolder.length)
 		} else {
 			console.error('Lib Path Error! Oy-Oy!')
 			throw createError(500, 'Lib Path Error! Oy-Oy!')
@@ -154,7 +146,8 @@ const uploadRequest = async (req, res, exiftoolProcess, configPath, databaseFold
 			console.log("collection insert error", err)
 			throw createError(400, `collection insert error`)
 		}
-		console.log(result)
+		console.log('UploadRequest - SUCCESS')
+		console.log('insertedIds:', result.insertedIds)
 		res.send("Файлы загружены")
 	})
 }

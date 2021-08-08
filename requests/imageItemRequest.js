@@ -1,14 +1,23 @@
 const {getExifFormPhoto} = require("../utils/exifTool")
 
-// Todo: get url params example
-// const url = new URL('http://localhost:5000' + request.url)
-// const tempImgPath = url.searchParams.get('tempPath')
+/**
+ * Get prepared path
+ *
+ * @param {string[]} shortPaths
+ * @param {string} databaseFolder
+ */
+const addFullPathToArr = (shortPaths, databaseFolder) => {
+	return shortPaths.map(shortPath => {
+		return shortPath.startsWith('temp') ? shortPath : databaseFolder + shortPath
+	})
+}
 
-const imageItemRequest = async (request, response, exiftoolProcess) => {
+const imageItemRequest = async (request, response, databaseFolder, exiftoolProcess) => {
 	let filedata = request.body
 	if (!filedata) response.send("Ошибка при загрузке файла")
 	
-	const exifListObj = await getExifFormPhoto(filedata, exiftoolProcess)
+	const fullPaths = addFullPathToArr(filedata, databaseFolder)
+	const exifListObj = await getExifFormPhoto(fullPaths, filedata, exiftoolProcess)
 	
 	response.send(JSON.stringify(exifListObj))
 }
