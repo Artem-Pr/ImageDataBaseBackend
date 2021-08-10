@@ -1,3 +1,4 @@
+const fs = require('fs-extra')
 const {getMulterSettings} = require("./utils/multerSettings")
 const {keywordsRequest} = require("./requests/keywordsRequest")
 const {uploadItemRequest} = require("./requests/uploadItemRequest")
@@ -26,6 +27,13 @@ const mongoClient = new MongoClient("mongodb://localhost:27017/", {
 	useNewUrlParser: true
 })
 let dbClient
+
+const isDataBaseExist = fs.existsSync(databaseFolder)
+if (!isDataBaseExist) {
+	console.log('Can not find database')
+	return
+}
+
 
 const upload = getMulterSettings(tempFolder)
 

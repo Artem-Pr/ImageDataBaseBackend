@@ -7,11 +7,11 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	let filedata = req.body
 	if (!filedata) res.send("Ошибка при загрузке файлов")
 	
-	const folderPath = filedata.folderPath
-	const nPerPage = +filedata.perPage || 0
-	let currentPage = +filedata.page || 1
-	let searchTags = filedata.searchTags || []
-	let excludeTags = filedata.excludeTags || []
+	const folderPath = filedata?.folderPath
+	const nPerPage = +filedata?.perPage || 0
+	let currentPage = +filedata?.page || 1
+	let searchTags = filedata?.searchTags || []
+	let excludeTags = filedata?.excludeTags || []
 	
 	if (searchTags && !Array.isArray(searchTags)) searchTags = [searchTags]
 	if (excludeTags && !Array.isArray(excludeTags)) excludeTags = [excludeTags]
@@ -24,10 +24,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	fs.emptyDirSync(tempFolder)
 	
 	const conditionArr = []
-	if (folderPath) {
-		const regExp = new RegExp(`/${folderPath}/`)
-		conditionArr.push({"filePath": regExp})
-	}
+	if (folderPath) conditionArr.push({$text:{$search:`\"${folderPath}\"`}})
 	if (searchTags.length) conditionArr.push({"keywords": {$in: searchTags || []}})
 	if (excludeTags.length) conditionArr.push({"keywords": {$nin: excludeTags || []}})
 	
@@ -37,6 +34,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	let resultsCount = 0
 	let totalPages = 0
 	
+	collection.createIndex({filePath: "text"})
 	const AllFoundedResults = collection.find(findObject)
 	AllFoundedResults.count().then(response => {
 		resultsCount = response
