@@ -70,13 +70,14 @@ describe('ExifTool: ', () => {
 				}
 			})
 			test('should update keywords', async () => {
-				const originalExif = await getExifFormPhoto(pathsArr[0], exiftoolProcess)
-				expect(JSON.stringify(originalExif[0].Keywords)).toBe('["big0","boss0"]')
+				const shortPaths = exifFiledata.map(({ tempPath }) => tempPath)
+				const originalExif = await getExifFormPhoto(pathsArr, shortPaths, exiftoolProcess)
+				expect(JSON.stringify(originalExif[shortPaths[0]].Keywords)).toBe('["big0","boss0"]')
 				const newKeywordsArr = exifFiledata.map(() => ['MGS5'])
 				const exifToolResponse = await pushExif(pathsArr, newKeywordsArr, exifFiledata, exiftoolProcess)
 				expect(exifToolResponse).toBeTruthy()
-				const updatedExif = await getExifFormPhoto(pathsArr[0], exiftoolProcess)
-				expect(JSON.stringify(updatedExif[0].Keywords)).toBe("\"MGS5\"")
+				const updatedExif = await getExifFormPhoto(pathsArr, shortPaths, exiftoolProcess)
+				expect(JSON.stringify(updatedExif[shortPaths[0]].Keywords)).toBe("\"MGS5\"")
 			})
 			test('should update DateTimeOriginal', async () => {
 				const originalExif = await getExifFormPhoto(pathsArr[0], exiftoolProcess)

@@ -13,7 +13,7 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
 	const keywordsArr = exifResponse.map((item, i) => {
 		// keywords с фронта (возможно дополненные)
 		const newKeywords = filedata[i].keywords
-			? filedata[i].keywords.map(item => item.toString().trim())
+			? filedata[i].keywords.map(keyword => keyword.toString().trim())
 			: []
 		
 		// добавляем в filedata дату создания фоточки (при необходимости)
@@ -48,7 +48,7 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
 	})
 	
 	// Складываем список keywords в config
-	addKeywordsToBase(req, newkeywordsRawList)
+	addKeywordsToBase(req, Array.from(new Set(newkeywordsRawList)))
 	
 	return keywordsArr
 }
@@ -69,7 +69,6 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
 	
 	console.log('pathsArr', pathsArr)
 	const exifResponse = await getExifFromArr(pathsArr, exiftoolProcess)
-	console.log('exifResponse---------', exifResponse.map(item => item.data?.Megapixels))
 	
 	// Сравниваем keywords из картинок и пришедшие (возможно измененные) внутри getKeywordsArr,
 	// записываем в массив changedKeywordsArr новые keywords или null

@@ -83,8 +83,9 @@ const isDifferentNames = (DBObject, uploadedFileDataItem) => {
  * @return {Promise<Object | boolean>} new full filePath {newNamePath, newPreviewPath}
  */
 const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder= '', filesNewNameArr = []) => {
-	const isNeedMoveToNewDest = !!updatedFiledataItem.updatedFields?.filePath // if true - use fs.copy, not fs.rename
-	const isNeedUpdateName = !!updatedFiledataItem.updatedFields?.originalName
+	const { updatedFields } = updatedFiledataItem
+	const isNeedMoveToNewDest = !!(updatedFields && updatedFields.filePath) // if true - use fs.copy, not fs.rename
+	const isNeedUpdateName = !!(updatedFields && updatedFields.originalName)
 	
 	if (
 		!isNeedMoveToNewDest &&
@@ -223,7 +224,7 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 	const idsArr = filedata.map(item => item.id)
 	const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
 	const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
-	const isUpdatedKeywords = updatedKeywords?.length && updatedKeywords.some(item => item?.length)
+	const isUpdatedKeywords = updatedKeywords && updatedKeywords.length && updatedKeywords.some(item => item && item.length)
 	const isUpdateOriginalDate = updateFields.some(item => item.originalDate)
 	
 	try {
@@ -243,8 +244,9 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 			return true
 		})
 		const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-			const filePathWithoutName = filedata[i].updatedFields?.filePath
-			const newFileName = filedata[i].updatedFields?.originalName
+			const { updatedFields } = filedata[i]
+			const filePathWithoutName = updatedFields && updatedFields.filePath
+			const newFileName = updatedFields && updatedFields.originalName
 			if (filePathWithoutName) {
 				const newNamePath = await moveFile(DBObject.filePath, filePathWithoutName, DBObject.originalName, dbFolder, newFileName)
 				filesNewNameArr.push(newNamePath)

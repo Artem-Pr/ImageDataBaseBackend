@@ -30,7 +30,7 @@ let dbClient
 
 const isDataBaseExist = fs.existsSync(databaseFolder)
 if (!isDataBaseExist) {
-	console.log('Can not find database')
+	console.log('Can not find main database folder')
 	return
 }
 

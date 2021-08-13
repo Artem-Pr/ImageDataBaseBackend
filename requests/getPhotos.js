@@ -5,13 +5,16 @@ const sharp = require("sharp")
 //Todo: add tests
 const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	let filedata = req.body
-	if (!filedata) res.send("Ошибка при загрузке файлов")
+	if (!filedata) {
+		res.send("Ошибка при загрузке файлов")
+		return
+	}
 	
-	const folderPath = filedata?.folderPath
-	const nPerPage = +filedata?.perPage || 0
-	let currentPage = +filedata?.page || 1
-	let searchTags = filedata?.searchTags || []
-	let excludeTags = filedata?.excludeTags || []
+	const folderPath = filedata.folderPath
+	const nPerPage = +filedata.perPage || 0
+	let currentPage = +filedata.page || 1
+	let searchTags = filedata.searchTags || []
+	let excludeTags = filedata.excludeTags || []
 	
 	if (searchTags && !Array.isArray(searchTags)) searchTags = [searchTags]
 	if (excludeTags && !Array.isArray(excludeTags)) excludeTags = [excludeTags]

@@ -171,12 +171,12 @@ describe('Common functions: ', () => {
 			const backup1 = filesBackup[0]
 			const backup2 = filesBackup[1]
 			
-			expect(backup1?.backupPath.startsWith('temp/backup')).toBeTruthy()
-			expect(backup1?.backupPath).toHaveLength(17)
-			expect(backup2?.backupPath.startsWith('temp/backup')).toBeTruthy()
-			expect(backup2?.backupPath).toHaveLength(17)
-			expect(backup1?.originalPath.startsWith('tests/')).toBeTruthy()
-			expect(backup2?.originalPath.startsWith('tests/')).toBeTruthy()
+			expect(backup1.backupPath.startsWith('temp/backup')).toBeTruthy()
+			expect(backup1.backupPath).toHaveLength(17)
+			expect(backup2.backupPath.startsWith('temp/backup')).toBeTruthy()
+			expect(backup2.backupPath).toHaveLength(17)
+			expect(backup1.originalPath.startsWith('tests/')).toBeTruthy()
+			expect(backup2.originalPath.startsWith('tests/')).toBeTruthy()
 		})
 		test('should create temp files', async () => {
 			const originalFileName1 = 'tests/test-images/image001-map.jpg'
@@ -186,10 +186,10 @@ describe('Common functions: ', () => {
 			const backup1 = filesBackup[0]
 			const backup2 = filesBackup[1]
 			
-			expect(fs.existsSync(backup1?.backupPath)).toBeTruthy()
-			expect(fs.existsSync(backup2?.backupPath)).toBeTruthy()
-			expect(fs.existsSync(backup1?.originalPath)).toBeTruthy()
-			expect(fs.existsSync(backup2?.originalPath)).toBeTruthy()
+			expect(fs.existsSync(backup1.backupPath)).toBeTruthy()
+			expect(fs.existsSync(backup2.backupPath)).toBeTruthy()
+			expect(fs.existsSync(backup1.originalPath)).toBeTruthy()
+			expect(fs.existsSync(backup2.originalPath)).toBeTruthy()
 		})
 		test('should return Error if originalPath is wrong', async () => {
 			const originalFileName1 = 'tests/test-images/wrong-address.jpg'

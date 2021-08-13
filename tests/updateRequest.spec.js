@@ -518,7 +518,7 @@ describe('updateRequest: ', () => {
 
 			const updatedExif1 = await getExifFormPhoto(updatedFileName1, exiftoolProcess)
 			const updatedExif2 = await getExifFormPhoto(updatedFileName2, exiftoolProcess)
-			expect(updatedExif1[0]?.Keywords).toBeUndefined()
+			expect(updatedExif1[0].Keywords).toBeUndefined()
 			expect(updatedExif2[0].Keywords).toBe('green')
 			expect(updatedExif1[0].DateTimeOriginal).toBe('2019:06:24 12:00:00')
 			expect(updatedExif2[0].DateTimeOriginal).toBe('2019:06:20 12:00:00')

@@ -143,10 +143,12 @@ const asyncCopyFile = async ( src, dest) => {
  */
 const updateNamePath = (DBObject, updatedFileDataItem) => {
 	const newDBObject = Object.assign(DBObject)
-	if (!updatedFileDataItem.updatedFields?.originalName) return newDBObject.filePath
+	const { updatedFields } = updatedFileDataItem
+	const isOriginalName = updatedFields && updatedFields.originalName
+	if (!isOriginalName) return newDBObject.filePath
 	return newDBObject.filePath.replace(
 		newDBObject.originalName,
-		updatedFileDataItem.updatedFields.originalName
+		updatedFields.originalName
 	)
 }
 
@@ -172,8 +174,9 @@ const replaceWithoutExt = (nameWithExt, oldNameWithExt, stringForReplacement) =>
  * @return {string} new preview path
  */
 const updatePreviewPath = (DBObject, updatedFileDataItem) => {
-	const filePathWithoutName = updatedFileDataItem.updatedFields?.filePath
-	const updatedName = updatedFileDataItem.updatedFields?.originalName
+	const { updatedFields } = updatedFileDataItem
+	const filePathWithoutName = updatedFields && updatedFields.filePath
+	const updatedName = updatedFields && updatedFields.originalName
 	const preview = filePathWithoutName && DBObject.preview
 		? `${filePathWithoutName}/${pickFileName(DBObject.preview)}`
 		: DBObject.preview
