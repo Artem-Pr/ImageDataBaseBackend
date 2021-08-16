@@ -27,7 +27,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	fs.emptyDirSync(tempFolder)
 	
 	const conditionArr = []
-	if (folderPath) conditionArr.push({$text:{$search:`\"${folderPath}\"`}})
+	if (folderPath) conditionArr.push({$expr: { $eq: [{ $indexOfCP: [ '$filePath', `/${folderPath}` ] }, 0]}})
 	if (searchTags.length) conditionArr.push({"keywords": {$in: searchTags || []}})
 	if (excludeTags.length) conditionArr.push({"keywords": {$nin: excludeTags || []}})
 	
@@ -37,7 +37,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	let resultsCount = 0
 	let totalPages = 0
 	
-	collection.createIndex({filePath: "text"})
+	await collection.createIndex({filePath: "text"})
 	const AllFoundedResults = collection.find(findObject)
 	AllFoundedResults.count().then(response => {
 		resultsCount = response
@@ -45,6 +45,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 		if (currentPage > totalPages) currentPage = 1
 	})
 	AllFoundedResults
+		.sort({ changeDate: -1, _id: 1 })
 		.skip(currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0)
 		.limit(nPerPage)
 		.toArray(async function (err, photos) {
@@ -68,7 +69,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 				} else {
 					const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
 					await sharp(fullPath)
-						// .withMetadata()
+						.withMetadata()
 						.clone()
 						.resize(200)
 						.jpeg({quality: 80})
