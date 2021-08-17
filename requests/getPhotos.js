@@ -37,7 +37,6 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
 	let resultsCount = 0
 	let totalPages = 0
 	
-	await collection.createIndex({filePath: "text"})
 	const AllFoundedResults = collection.find(findObject)
 	AllFoundedResults.count().then(response => {
 		resultsCount = response

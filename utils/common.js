@@ -34,6 +34,7 @@ const DBFilters = {
  * @param {string} message
  */
 const getError = (message) => {
+	console.log('ERROR: ' + message)
 	return {error: message}
 }
 
@@ -226,12 +227,12 @@ const cleanBackup = async (tempPathObjArr) => {
 }
 
 /**
- * @param {Array<string>} removingFilesArr
+ * @param {Array<string>} removingFilePathsArr
  * @return {Promise<boolean>}
  */
-const removeFilesArr = async (removingFilesArr) => {
+const removeFilesArr = async (removingFilePathsArr) => {
 	try {
-		const promiseArr = removingFilesArr.map(async filePath => {
+		const promiseArr = removingFilePathsArr.map(async filePath => {
 			return await fs.remove(filePath)
 		})
 		await Promise.all(promiseArr)
