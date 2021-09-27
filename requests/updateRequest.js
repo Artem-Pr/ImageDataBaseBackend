@@ -39,6 +39,7 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
 	const updatedFieldsWithFilePath = { ...updatedFields, filePath, preview }
 	const filter = {_id: ObjectId(id)}
 	const update = {$set: updatedFieldsWithFilePath}
+	// const options = {new: true} // doesn't work
 	const options = {returnOriginal: false}
 	
 	try {
@@ -277,8 +278,8 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
 		return response
 		
 	} catch (error) {
-		console.log('OOPS! need recovery', error.message)
-		const recoveryResponse = await filesRecovery(filesBackup, filesNewNameArr)
+		console.log('OOPS! need recovery: ', error.message)
+		const recoveryResponse = await filesRecovery(filesBackup, Array.from(new Set(filesNewNameArr)))
 		const recoveryError = recoveryResponse === true ? '' : recoveryResponse
 		const errorMessage = returnValuesIfError(error)
 			? getError(error.message + recoveryError)

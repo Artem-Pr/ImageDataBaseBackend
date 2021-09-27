@@ -29,13 +29,24 @@ const DBFilters = {
 }
 
 /**
- * create Error for sending
+ * create an Error for sending
  *
  * @param {string} message
  */
 const getError = (message) => {
 	console.log('ERROR: ' + message)
 	return {error: message}
+}
+
+/**
+ * create an Error for throwing
+ *
+ * @param {string} message - error message
+ * @return {Error}
+ */
+const throwError = (message) => {
+	console.log('ERROR: ' + message)
+	return new Error('ERROR: ' + message)
 }
 
 const getConfig = (configPath) => {
@@ -271,6 +282,7 @@ module.exports = {
 	getUniqStrings,
 	getConfig,
 	getError,
+	throwError,
 	moveFileAndCleanTemp,
 	pickFileName,
 	renameFile,

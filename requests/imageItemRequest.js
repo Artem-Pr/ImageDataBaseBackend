@@ -1,4 +1,4 @@
-const {getExifFormPhoto} = require("../utils/exifTool")
+const {getExifFromPhoto} = require("../utils/exifTool")
 
 /**
  * Get prepared path
@@ -17,7 +17,7 @@ const imageItemRequest = async (request, response, databaseFolder, exiftoolProce
 	if (!filedata) response.send("Ошибка при загрузке файла")
 	
 	const fullPaths = addFullPathToArr(filedata, databaseFolder)
-	const exifListObj = await getExifFormPhoto(fullPaths, filedata, exiftoolProcess)
+	const exifListObj = await getExifFromPhoto(fullPaths, filedata, exiftoolProcess)
 	
 	response.send(JSON.stringify(exifListObj))
 }

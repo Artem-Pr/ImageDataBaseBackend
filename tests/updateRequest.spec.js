@@ -3,7 +3,7 @@ const {MongoClient} = require('mongodb')
 const ObjectId = require('mongodb').ObjectID
 const exiftool = require('node-exiftool')
 const exiftoolBin = require('dist-exiftool')
-const {pushExif, getExifFormPhoto} = require("../utils/exifTool")
+const {pushExif, getExifFromPhoto} = require("../utils/exifTool")
 const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const {
 	originalFiledata,
@@ -14,6 +14,7 @@ const {
 	pushExifFiledata,
 	originalPathsList,
 	updateFileDataWithFilePath,
+	shortPathArr,
 } = require("./Data")
 const {deepCopy, renameFile, DBFilters} = require("../utils/common")
 const {
@@ -29,6 +30,11 @@ const {
 	addNewFilePath,
 } = require("../requests/updateRequest")
 
+const updatedFileNames = [
+	'tests/test-images/123.jpg',
+	'tests/test-images/bom-bom.jpg'
+]
+
 describe('updateRequest: ', () => {
 	let req = {
 		app: {locals: {collection: null}},
@@ -42,6 +48,7 @@ describe('updateRequest: ', () => {
 	let db
 	
 	beforeAll(async () => {
+		console.log('start beforeAll')
 		connection = await MongoClient.connect("mongodb://localhost:27017/", {
 			useUnifiedTopology: true,
 			useNewUrlParser: true
@@ -52,6 +59,7 @@ describe('updateRequest: ', () => {
 	})
 	
 	beforeEach(async () => {
+		console.log('start beforeEach')
 		req.body = deepCopy(updateFiledata)
 		
 		// Collection creating
@@ -65,12 +73,13 @@ describe('updateRequest: ', () => {
 	})
 	
 	afterEach(async () => {
+		console.log('start afterEach')
 		// Collection cleaning
-		const deleteObject = DBFilters.getFilterByIds(originalFiledata.map(item => item._id))
-		await req.app.locals.collection.deleteMany(deleteObject)
+		await req.app.locals.collection.deleteMany({})
 	})
 	
 	afterAll(async () => {
+		console.log('start afterAll')
 		fs.copySync('tests/tempPhotos/YDXJ1442.mp4', 'tests/tempVideos', { overwrite: true })
 		await connection.close()
 	})
@@ -83,7 +92,7 @@ describe('updateRequest: ', () => {
 			const filedata = Object.assign(originalFiledata[0])
 			const collection = req.app.locals.collection
 			const response = await updateFile(id, updatedFields, filedata, collection)
-			expect(JSON.stringify(response)).toBe(correctResponse)
+			await expect(JSON.stringify(response)).toBe(correctResponse)
 		})
 		test('should return correct response.value from database if send new filePath', async () => {
 			const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/testDirectory/проверка локализации/123.jpg\",\"preview\":\"\"}"
@@ -92,7 +101,7 @@ describe('updateRequest: ', () => {
 			const filedata = Object.assign(originalFiledata[0])
 			const collection = req.app.locals.collection
 			const response = await updateFile(id, updatedFields, filedata, collection)
-			expect(JSON.stringify(response)).toBe(correctResponse)
+			await expect(JSON.stringify(response)).toBe(correctResponse)
 		})
 		test('should return correct response.value from database if send ONLY filePath', async () => {
 			const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"image001-map.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"map\",\"forest\",\"estonia\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2010.10.10\",\"filePath\":\"tests/testDirectory/проверка локализации/image001-map.jpg\",\"preview\":\"\"}"
@@ -102,7 +111,7 @@ describe('updateRequest: ', () => {
 			const filedata = Object.assign(originalFiledata[0])
 			const collection = req.app.locals.collection
 			const response = await updateFile(id, currentUploadingFields, filedata, collection)
-			expect(JSON.stringify(response)).toBe(correctResponse)
+			await expect(JSON.stringify(response)).toBe(correctResponse)
 		})
 		test('should return correct preview from database if send new originalName', async () => {
 			await testCollections.insertMany(videoOriginalFileData, function (err) {
@@ -118,7 +127,7 @@ describe('updateRequest: ', () => {
 			const filedata = { ...videoOriginalFileData[0] }
 			
 			const response = await updateFile(id, updatedFields, filedata, testCollections)
-			expect(JSON.stringify(response)).toBe(correctResponse)
+			await expect(JSON.stringify(response)).toBe(correctResponse)
 			
 			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
 			await testCollections.deleteMany(deleteObject)
@@ -132,8 +141,8 @@ describe('updateRequest: ', () => {
 			const collection = req.app.locals.collection
 			const fileDataArr = deepCopy(originalFiledata)
 			const response = await updateDatabase(filedata, fileDataArr, collection)
-			expect(JSON.stringify(response[0])).toBe(firstResponse)
-			expect(JSON.stringify(response[1])).toBe(secondResponse)
+			await expect(JSON.stringify(response[0])).toBe(firstResponse)
+			await expect(JSON.stringify(response[1])).toBe(secondResponse)
 		})
 		test('should correctly update video file', async () => {
 			await testCollections.insertMany(videoOriginalFileData, function (err) {
@@ -148,7 +157,7 @@ describe('updateRequest: ', () => {
 			const videoFormatResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\"}"
 			const collection = req.app.locals.collection
 			const response = await updateDatabase(updatedFiles, videoOriginalFileData, collection)
-			expect(JSON.stringify(response[0])).toBe(videoFormatResponse)
+			await expect(JSON.stringify(response[0])).toBe(videoFormatResponse)
 			
 			const deleteObject = DBFilters.getFilterByIds(videoOriginalFileData.map(item => item._id))
 			await testCollections.deleteMany(deleteObject)
@@ -163,10 +172,9 @@ describe('updateRequest: ', () => {
 			const collection = req.app.locals.collection
 			const response = await findObjects(idsArr, collection)
 			
-			expect(JSON.stringify(response[0])).toBe(firstResponse)
-			expect(JSON.stringify(response[1])).toBe(secondResponse)
+			await expect(JSON.stringify(response[0])).toBe(firstResponse)
+			await expect(JSON.stringify(response[1])).toBe(secondResponse)
 		})
-		
 		test('should throw Error if cant find object in DB', async () => {
 			const id1 = ObjectId("5fef484b497f3af84699e77b")
 			const id2 = ObjectId("5fef484b497f3af84699e77c")
@@ -175,7 +183,7 @@ describe('updateRequest: ', () => {
 			try {
 				await findObjects(idsArr, collection)
 			} catch (error) {
-				expect(error.message).toBe('OOPS! ERROR: "findObjects" can\'t find DB object')
+				await expect(error.message).toBe('OOPS! ERROR: "findObjects" can\'t find DB object')
 			}
 		})
 	})
@@ -382,6 +390,7 @@ describe('updateRequest: ', () => {
 		let configCollection
 		
 		beforeEach(async() => {
+			console.log('addNewFilePath: start beforeEach')
 			configCollection = db.collection('testConfig')
 			req.app.locals.configCollection = configCollection
 			await configCollection.insertOne({name: "paths", pathsArr: originalPathsList})
@@ -394,10 +403,12 @@ describe('updateRequest: ', () => {
 		})
 		
 		afterEach(async () => {
+			console.log('addNewFilePath: start afterEach')
 			await configCollection.deleteMany({})
 		})
 		
 		afterAll(async () => {
+			console.log('addNewFilePath: start afterAll')
 			await configCollection.deleteMany({})
 		})
 		
@@ -432,6 +443,7 @@ describe('updateRequest: ', () => {
 		let pathsArr
 		
 		beforeEach(async () => {
+			console.log('updateRequest: start beforeEach')
 			req.body = deepCopy(updateFiledata)
 			updatedFileDateForReturning = deepCopy(updatedFileDateForReturningValues)
 			originalData = [...originalFiledata] //don't use deepCopy in this case!!!
@@ -444,6 +456,7 @@ describe('updateRequest: ', () => {
 		})
 		
 		afterEach(async () => {
+			console.log('updateRequest: start afterEach')
 			await pushExif(pathsArr, keywordsArrForReturning, exifFiledata, exiftoolProcess)
 			
 			// Collection cleaning
@@ -498,8 +511,6 @@ describe('updateRequest: ', () => {
 			await renameFile(updatedFileName2, originalData[1].filePath)
 		})
 		test('should rewrite exif', async () => {
-			const updatedFileName1 = 'tests/test-images/123.jpg'
-			const updatedFileName2 = 'tests/test-images/bom-bom.jpg'
 			const response = {send: null}
 			const request = {
 				app: {locals: {collection: null}},
@@ -508,64 +519,30 @@ describe('updateRequest: ', () => {
 			response.send = jest.fn(value => value)
 			request.body = deepCopy(updateFiledata)
 			request.app.locals.collection = testCollections
+			request.app.locals.configCollection = testConfigCollection
 
 
-			const originalExif = await getExifFormPhoto(originalData[1].filePath, exiftoolProcess)
-			expect(JSON.stringify(originalExif[0].Keywords)).toBe("[\"bike\",\"Olga\",\"estonia\"]")
-			expect(originalExif[0].DateTimeOriginal).toBe('2019:06:24 12:00:00')
+			const originalExif = await getExifFromPhoto(pathsArr, shortPathArr, exiftoolProcess)
+			expect(originalExif[shortPathArr[1]].Keywords).toEqual(["bike","Olga","estonia"])
+			expect(originalExif[shortPathArr[1]].DateTimeOriginal).toBe('2019:06:24 12:00:00')
 
 			await updateRequest(request, response, exiftoolProcess)
 
-			const updatedExif1 = await getExifFormPhoto(updatedFileName1, exiftoolProcess)
-			const updatedExif2 = await getExifFormPhoto(updatedFileName2, exiftoolProcess)
-			expect(updatedExif1[0].Keywords).toBeUndefined()
-			expect(updatedExif2[0].Keywords).toBe('green')
-			expect(updatedExif1[0].DateTimeOriginal).toBe('2019:06:24 12:00:00')
-			expect(updatedExif2[0].DateTimeOriginal).toBe('2019:06:20 12:00:00')
+			const updatedExifObj = await getExifFromPhoto(updatedFileNames, shortPathArr, exiftoolProcess)
+			expect(updatedExifObj[shortPathArr[0]].Keywords).toBeUndefined()
+			expect(updatedExifObj[shortPathArr[1]].Keywords).toBe('green')
+			expect(updatedExifObj[shortPathArr[0]].DateTimeOriginal).toBe('2019:06:24 12:00:00')
+			expect(updatedExifObj[shortPathArr[1]].DateTimeOriginal).toBe('2019:06:20 12:00:00')
 
-			await renameFile(updatedFileName1, originalData[0].filePath)
-			await renameFile(updatedFileName2, originalData[1].filePath)
+			await renameFile(updatedFileNames[0], originalData[0].filePath)
+			await renameFile(updatedFileNames[1], originalData[1].filePath)
 		})
 		test('should return correct response.value from updateRequest', async () => {
 			const updatedFileName1 = 'tests/test-images/123.jpg'
 			const updatedFileName2 = 'tests/test-images/bom-bom.jpg'
 			const updatedFileName3 = 'tests/testDirectory/проверка локализации/bom-bom.mp4'
 			const updatedFileName4 = 'tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png'
-			const correctResponse = "{\"files\":[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"},{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"preview\":\"tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png\"}],\"newFilePath\":[\"tests/testDirectory/проверка локализации\"]}"
-			// const correctResponse = [
-			// 	{_id: '5fef484b497f3af84699e88c',
-			// 		originalName:'123.jpg',
-			// 		mimetype:'image/jpeg',
-			// 		size:2000000,
-			// 		megapixels:8,
-			// 		imageSize:'3000x3000',
-			// 		keywords:[],
-			// 		changeDate:'11.11.2011',
-			// 		originalDate:'24.06.2019',
-			// 		filePath:'tests/test-images/123.jpg.jpg',
-			// 		preview:"",
-			// 	},{_id:'5fef4856497f3af84699e77e',
-			// 		originalName:'bom-bom.jpg',
-			// 		mimetype:'image/jpeg',
-			// 		size:1000000,
-			// 		megapixels:10,imageSize:'2000x2000',
-			// 		keywords:['green'],
-			// 		changeDate:'12.12.2011',
-			// 		originalDate:'20.06.2019',
-			// 		filePath:'tests/test-images/bom-bom.jpg.jpg',
-			// 		preview:""
-			// },{_id: '60fd9b60e52cbf5832df4bb7',
-			// 	  originalName: 'bom-bom.mp4',
-			// 		mimetype: 'video/mp4',
-			// 		size: 2000000,
-			// 		megapixels: 8,
-			// 		imageSize: '3000x3000',
-			// 		keywords: ['green', 'песня про озеро'],
-			// 		changeDate: '2011.11.11',
-			// 		originalDate: '2021.07.26',
-			// 		filePath: 'tests/testDirectory/проверка локализации/bom-bom.mp4',
-			// 		preview: 'tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png',
-			// }]
+			const correctResponse = "{\"files\":[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\",\"tempPath\":\"tests/test-images/123.jpg\",\"originalPath\":\"http://localhost:5000/tests/test-images/123.jpg\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\",\"tempPath\":\"tests/test-images/bom-bom.jpg\",\"originalPath\":\"http://localhost:5000/tests/test-images/bom-bom.jpg\"},{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"preview\":\"tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png\",\"tempPath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"originalPath\":\"http://localhost:5000/tests/testDirectory/проверка локализации/bom-bom.mp4\"}],\"newFilePath\":[\"tests/testDirectory/проверка локализации\"]}"
 			
 			res.send = jest.fn(value => JSON.stringify(value))
 			req.body = [ ...deepCopy(updateFiledata), ...deepCopy(videoUpdatedData) ]

@@ -1,7 +1,15 @@
 const fs = require('fs-extra')
 const moment = require("moment")
 const createError = require("http-errors")
+const {throwError} = require("./common")
 
+/**
+ * log to console exifTool response, return true if everything is ok,
+ * throw error if something went wrong
+ *
+ * @param exifToolResponseArr
+ * @return true
+ */
 const preparedResponse = exifToolResponseArr => {
 	return exifToolResponseArr.reduce((sum, item, i) => {
 		if (item.data) {
@@ -18,31 +26,30 @@ const preparedResponse = exifToolResponseArr => {
 }
 
 /**
- * TODO: add tests
  * @param {string[]} fullPathsArr
  * @param {string[]} shortPaths
  * @param exiftoolProcess
  * @return {Promise<Object>}
  */
-const getExifFormPhoto = async (fullPathsArr, shortPaths, exiftoolProcess) => {
+const getExifFromPhoto = async (fullPathsArr, shortPaths, exiftoolProcess) => {
 	try {
 		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
 		
 		const exifObjArr = {}
 		for (let i = 0; i < fullPathsArr.length; i++) {
-			console.log('getExifFormPhoto - filePath', fullPathsArr[i])
+			console.log('getExifFromPhoto - filePath', fullPathsArr[i])
 			const exifResponse = await exiftoolProcess.readMetadata(fullPathsArr[i], ['-File:all'])
+			if (!exifResponse.data) throw new Error(exifResponse.error)
 			exifObjArr[shortPaths[i]] = exifResponse.data[0]
 		}
 		
-		await exiftoolProcess.close()
-		console.log('Closed exiftool')
-		
 		return exifObjArr
 	} catch (e) {
-		console.error(e)
-		throw createError(500, `oops..`);
+		throw throwError('getExifFromPhoto - ' + e.message)
+	} finally {
+		console.log('Closed exiftool')
+		await exiftoolProcess.close()
 	}
 }
 
@@ -138,4 +145,4 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
 	return preparedResponse(resWithoutInvalidFormats)
 }
 
-module.exports = {getExifFormPhoto, getExifFromArr, pushExif, preparedResponse}
+module.exports = {getExifFromPhoto, getExifFromArr, pushExif, preparedResponse}

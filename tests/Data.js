@@ -154,6 +154,11 @@ const originalPathsList = [
 	"природа/корпоратив"
 ]
 
+const shortPathArr = [
+	'temp/12345',
+	'temp/65890'
+]
+
 module.exports = {
 	originalFiledata,
 	updateFiledata,
@@ -164,4 +169,5 @@ module.exports = {
 	pushExifFiledataVideo,
 	updatedFileDateForReturningValues,
 	originalPathsList,
+	shortPathArr,
 }
