@@ -20,7 +20,8 @@ const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express()
 
 const tempFolder = 'temp'
-const databaseFolder = '../../../../../../../Volumes/Transcend V/dataBase'
+// const databaseFolder = '../../../../../../../Volumes/Transcend V/dataBase'
+const databaseFolder = '../../../../../../../Volumes/Transcend V/TestDB'
 const port = 5000
 const mongoClient = new MongoClient("mongodb://localhost:27017/", {
 	useUnifiedTopology: true,
@@ -106,8 +107,10 @@ mongoClient.connect(function (err, client) {
 	// app.locals.configCollection = client.db("IDB").collection("config")
 	// app.locals.collection = client.db("IDBase").collection("photos")
 	// app.locals.configCollection = client.db("IDBase").collection("config")
-	app.locals.collection = client.db("dataBase").collection("photos")
-	app.locals.configCollection = client.db("dataBase").collection("config")
+	// app.locals.collection = client.db("dataBase").collection("photos")
+	// app.locals.configCollection = client.db("dataBase").collection("config")
+	app.locals.collection = client.db("TestDB").collection("photos")
+	app.locals.configCollection = client.db("TestDB").collection("config")
 	app.listen(port, function () {
 		console.log("Start listening on port " + port)
 	})
