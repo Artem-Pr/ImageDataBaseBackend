@@ -32,25 +32,26 @@ const preparedResponse = exifToolResponseArr => {
  * @return {Promise<Object>}
  */
 const getExifFromPhoto = async (fullPathsArr, shortPaths, exiftoolProcess) => {
+	const exifObjArr = {}
+	
 	try {
 		const pid = await exiftoolProcess.open('utf8')
 		console.log('Started exiftool process %s', pid)
 		
-		const exifObjArr = {}
 		for (let i = 0; i < fullPathsArr.length; i++) {
 			console.log('getExifFromPhoto - filePath', fullPathsArr[i])
 			const exifResponse = await exiftoolProcess.readMetadata(fullPathsArr[i], ['-File:all'])
 			if (!exifResponse.data) throw new Error(exifResponse.error)
 			exifObjArr[shortPaths[i]] = exifResponse.data[0]
 		}
-		
-		return exifObjArr
 	} catch (e) {
 		throw throwError('getExifFromPhoto - ' + e.message)
 	} finally {
 		console.log('Closed exiftool')
 		await exiftoolProcess.close()
 	}
+	
+	return exifObjArr
 }
 
 /**

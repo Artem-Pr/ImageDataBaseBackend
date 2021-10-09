@@ -247,6 +247,8 @@ const removeFilesArr = async (removingFilePathsArr) => {
 			return await fs.remove(filePath)
 		})
 		await Promise.all(promiseArr)
+		console.log('Removing filePaths arr: ', removingFilePathsArr)
+		console.log('removeFilesArr: Success')
 		return true
 	} catch (error) {
 		throw new Error(`removeFilesArr: ${error}`)

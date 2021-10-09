@@ -63,12 +63,12 @@ describe('updateRequest: ', () => {
 		req.body = deepCopy(updateFiledata)
 		
 		// Collection creating
-		await testCollections.insertMany(originalFiledata, function (err) {
-			if (err) {
-				console.log("testCollections insert error", err)
-			}
+		try {
+			await testCollections.insertMany(originalFiledata)
 			console.log("testCollections is created")
-		})
+		} catch (err) {
+			console.log("testCollections insert error", err)
+		}
 		req.app.locals.collection = testCollections
 	})
 	
@@ -114,12 +114,12 @@ describe('updateRequest: ', () => {
 			await expect(JSON.stringify(response)).toBe(correctResponse)
 		})
 		test('should return correct preview from database if send new originalName', async () => {
-			await testCollections.insertMany(videoOriginalFileData, function (err) {
-				if (err) {
-					console.log("videoFileData insert error", err)
-				}
-				console.log("videoFileData is created")
-			})
+			try {
+				await testCollections.insertMany(videoOriginalFileData)
+				console.log("testCollections is created")
+			} catch (err) {
+				console.log("testCollections insert error", err)
+			}
 			
 			const correctResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\"}"
 			const id = "60fd9b60e52cbf5832df4bb7"
@@ -145,12 +145,12 @@ describe('updateRequest: ', () => {
 			await expect(JSON.stringify(response[1])).toBe(secondResponse)
 		})
 		test('should correctly update video file', async () => {
-			await testCollections.insertMany(videoOriginalFileData, function (err) {
-				if (err) {
-					console.log("videoFileData insert error", err)
-				}
-				console.log("videoFileData is created")
-			})
+			try {
+				await testCollections.insertMany(videoOriginalFileData)
+				console.log("testCollections is created")
+			} catch (err) {
+				console.log("testCollections insert error", err)
+			}
 			req.app.locals.collection = testCollections
 			
 			const updatedFiles = deepCopy(videoUpdatedData)
@@ -548,12 +548,12 @@ describe('updateRequest: ', () => {
 			req.body = [ ...deepCopy(updateFiledata), ...deepCopy(videoUpdatedData) ]
 			req.body[2].updatedFields.filePath = 'tests/testDirectory/проверка локализации'
 			
-			await testCollections.insertMany(videoOriginalFileData, function (err) {
-				if (err) {
-					console.log("videoFileData insert error", err)
-				}
-				console.log("videoFileData is created")
-			})
+			try {
+				await testCollections.insertMany(videoOriginalFileData)
+				console.log("testCollections is created")
+			} catch (err) {
+				console.log("testCollections insert error", err)
+			}
 			
 			await updateRequest(req, res, exiftoolProcess)
 			expect(res.send).toBeCalled()
@@ -607,12 +607,12 @@ describe('updateRequest: ', () => {
 			const originalPreviewPath = 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png'
 			const newPreviewPath = 'tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png'
 			
-			await testCollections.insertMany(videoOriginalFileData, function (err) {
-				if (err) {
-					console.log("videoFileData insert error", err)
-				}
-				console.log("videoFileData is created")
-			})
+			try {
+				await testCollections.insertMany(videoOriginalFileData)
+				console.log("testCollections is created")
+			} catch (err) {
+				console.log("testCollections insert error", err)
+			}
 			
 			fs.copySync(originalPreviewPath, newPreviewPath)
 			await updateRequest(req, res, exiftoolProcess)
@@ -634,12 +634,12 @@ describe('updateRequest: ', () => {
 			const originalPreviewPath = 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png'
 			const newPreviewPath = `${newFilePath}/YDXJ1442-thumbnail-1000x562-0001.png`
 			
-			await testCollections.insertMany(videoOriginalFileData, function (err) {
-				if (err) {
-					console.log("videoFileData insert error", err)
-				}
-				console.log("videoFileData is created")
-			})
+			try {
+				await testCollections.insertMany(videoOriginalFileData)
+				console.log("testCollections is created")
+			} catch (err) {
+				console.log("testCollections insert error", err)
+			}
 			
 			fs.copySync(originalPreviewPath, newPreviewPath)
 			await updateRequest(req, res, exiftoolProcess)
@@ -661,12 +661,12 @@ describe('updateRequest: ', () => {
 			const newPreviewPath = `${newFilePath}/YDXJ1442-thumbnail-1000x562-0001.png`
 			const correctResponse = '{\"error\":\"movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png\"}'
 			
-			await testCollections.insertMany(videoOriginalFileData, function (err) {
-				if (err) {
-					console.log("videoFileData insert error", err)
-				}
-				console.log("videoFileData is created")
-			})
+			try {
+				await testCollections.insertMany(videoOriginalFileData)
+				console.log("testCollections is created")
+			} catch (err) {
+				console.log("testCollections insert error", err)
+			}
 			
 			fs.copySync(originalPreviewPath, newPreviewPath)
 			await updateRequest(req, res, exiftoolProcess)

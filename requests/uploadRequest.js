@@ -140,15 +140,15 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
 	
 	//записываем медиа файлы в базу
 	const collection = req.app.locals.collection;
-	collection.insertMany(filedata, function (err, result) {
-		if (err) {
-			console.log("collection insert error", err)
-			throw createError(400, `collection insert error`)
-		}
+	try {
+		const response = await collection.insertMany(filedata)
 		console.log('UploadRequest - SUCCESS')
-		console.log('insertedIds:', result.insertedIds)
+		console.log('insertedIds:', response.insertedIds)
 		res.send("Файлы загружены")
-	})
+	} catch (err) {
+		console.log("collection insert error", err)
+		throw createError(400, `collection insert error`)
+	}
 }
 
 module.exports = {uploadRequest}

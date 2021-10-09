@@ -7,6 +7,7 @@ const {uploadRequest} = require("./requests/uploadRequest")
 const {updateRequest} = require("./requests/updateRequest")
 const {getFilesFromDB} = require("./requests/getPhotos")
 const {pathRequest} = require("./requests/pathsRequest")
+const {removeFilesItem} = require("./requests/removeFilesItem")
 const {MongoClient} = require("mongodb")
 const express = require('express')
 const cors = require('cors')
@@ -89,6 +90,8 @@ app.use("/filtered-photos",
 app.post("/filtered-photos",
 	(req, res) => getFilesFromDB(req, res, tempFolder, databaseFolder)
 )
+
+app.delete("/photo/:id",(req, res) => removeFilesItem(req, res, databaseFolder))
 
 app.use((req, res, next) => {
 	res.status(res.status || 500)
