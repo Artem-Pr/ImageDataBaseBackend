@@ -1,5 +1,6 @@
 const fs = require('fs-extra')
 const {getMulterSettings} = require("./utils/multerSettings")
+const {logger} = require("./utils/logger")
 const {keywordsRequest} = require("./requests/keywordsRequest")
 const {uploadItemRequest} = require("./requests/uploadItemRequest")
 const {imageItemRequest} = require("./requests/imageItemRequest")
@@ -32,8 +33,8 @@ let dbClient
 
 const isDataBaseExist = fs.existsSync(databaseFolder)
 if (!isDataBaseExist) {
-	console.log('Can not find main database folder')
-	return
+    logger.error('Can not find main database folder')
+    return
 }
 
 
@@ -42,10 +43,13 @@ const upload = getMulterSettings(tempFolder)
 app.use(cors())
 app.use('/images', express.static(__dirname + '/temp'))
 app.use('/database', express.static(databaseFolder))
-console.log('static database', databaseFolder + '/database')
+logger.info('static database', {message: databaseFolder + '/database'})
 
 app.get("/keywords",
-	(req, res) => keywordsRequest(req, res, tempFolder)
+    (req, res) => {
+        logger.info('Hello again distributed logs')
+        keywordsRequest(req, res, tempFolder)
+    }
 )
 
 app.get("/paths",

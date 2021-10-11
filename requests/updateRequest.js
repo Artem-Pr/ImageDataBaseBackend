@@ -39,6 +39,8 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
 	const updatedFieldsWithFilePath = { ...updatedFields, filePath, preview }
 	const filter = {_id: ObjectId(id)}
 	const update = {$set: updatedFieldsWithFilePath}
+	// [MONGODB DRIVER] DeprecationWarning: collection.findOneAndUpdate option [returnOriginal] is deprecated and will be removed in a later version.
+	// (Use `node --trace-deprecation ...` to show where the warning was created)
 	// const options = {new: true} // doesn't work
 	const options = {returnOriginal: false}
 	
