@@ -26,8 +26,8 @@ const tempFolder = 'temp'
 const databaseFolder = '../../../../../../../Volumes/Transcend V/TestDB'
 const port = 5000
 const mongoClient = new MongoClient("mongodb://localhost:27017/", {
-	useUnifiedTopology: true,
-	useNewUrlParser: true
+    useUnifiedTopology: true,
+    useNewUrlParser: true
 })
 let dbClient
 
@@ -53,81 +53,81 @@ app.get("/keywords",
 )
 
 app.get("/paths",
-	(req, res) => pathRequest(req, res)
+    (req, res) => pathRequest(req, res)
 )
 
 app.post("/uploadItem",
-	upload.single("filedata"),
-	(req, res) => uploadItemRequest(req, res)
+    upload.single("filedata"),
+    (req, res) => uploadItemRequest(req, res)
 )
 
 app.use("/image-exif",
-	express.json({extended: true})
+    express.json({extended: true})
 )
 
 app.post("/image-exif",
-	(req, res) => imageItemRequest(req, res, databaseFolder, exiftoolProcess)
+    (req, res) => imageItemRequest(req, res, databaseFolder, exiftoolProcess)
 )
 
 app.use("/upload",
-	express.json({extended: true})
+    express.json({extended: true})
 )
 
 app.post("/upload",
-	(req, res) =>
-		uploadRequest(req, res, exiftoolProcess, databaseFolder)
+    (req, res) =>
+        uploadRequest(req, res, exiftoolProcess, databaseFolder)
 )
 
 app.use("/update",
-	express.json({extended: true})
+    express.json({extended: true})
 )
 
 app.put("/update",
-	(req, res) =>
-		updateRequest(req, res, exiftoolProcess, databaseFolder)
+    (req, res) =>
+        updateRequest(req, res, exiftoolProcess, databaseFolder)
 )
 
 app.use("/filtered-photos",
-	express.json({extended: true})
+    express.json({extended: true})
 )
 
 app.post("/filtered-photos",
-	(req, res) => getFilesFromDB(req, res, tempFolder, databaseFolder)
+    (req, res) => getFilesFromDB(req, res, tempFolder, databaseFolder)
 )
 
-app.delete("/photo/:id",(req, res) => removeFilesItem(req, res, databaseFolder))
+app.delete("/photo/:id", (req, res) => removeFilesItem(req, res, databaseFolder))
 
 app.use((req, res, next) => {
-	res.status(res.status || 500)
-	res.json({
-		status: res.status,
-		message: res.message,
-		stack: res.stack
-	})
-	next()
+    res.status(res.status || 500)
+    res.json({
+        status: res.status,
+        message: res.message,
+        stack: res.stack
+    })
+    next()
 })
 
 mongoClient.connect(function (err, client) {
-	if (err) return console.log('mongoClient.connect - oops!', err)
-	dbClient = client
-	// app.locals.collection = client.db("IDB").collection("photos")
-	// app.locals.configCollection = client.db("IDB").collection("config")
-	// app.locals.collection = client.db("IDBase").collection("photos")
-	// app.locals.configCollection = client.db("IDBase").collection("config")
-	// app.locals.collection = client.db("dataBase").collection("photos")
-	// app.locals.configCollection = client.db("dataBase").collection("config")
-	app.locals.collection = client.db("TestDB").collection("photos")
-	app.locals.configCollection = client.db("TestDB").collection("config")
-	app.listen(port, function () {
-		console.log("Start listening on port " + port)
-	})
+    if (err) return console.log('mongoClient.connect - oops!', err)
+    dbClient = client
+    // app.locals.collection = client.db("IDB").collection("photos")
+    // app.locals.configCollection = client.db("IDB").collection("config")
+    // app.locals.collection = client.db("IDBase").collection("photos")
+    // app.locals.configCollection = client.db("IDBase").collection("config")
+    // app.locals.collection = client.db("dataBase").collection("photos")
+    // app.locals.configCollection = client.db("dataBase").collection("config")
+    app.locals.collection = client.db("TestDB").collection("photos")
+    app.locals.configCollection = client.db("TestDB").collection("config")
+    app.listen(port, function () {
+        console.log("Start listening on port " + port)
+    })
 })
 
 // прослушиваем прерывание работы программы (ctrl-c)
 process.on("SIGINT", () => {
-	dbClient.close()
-	process.exit()
-	console.log('MongoDb connection closed.')
+    dbClient.close()
+    process.exit()
+    console.log('MongoDb connection closed.')
 })
 
 module.exports = {app}

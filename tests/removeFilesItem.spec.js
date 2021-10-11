@@ -83,7 +83,7 @@ describe('removeFilesItem: ', () => {
             console.log("testCollections insert error", err)
         }
         req.app.locals.collection = testCollections
-    
+        
         fs.copySync(originalDirectory + file1, directory + file1)
         fs.copySync(originalDirectory + file2, directory + file2)
         fs.copySync(originalVideoDirectory + video, directory + video)
@@ -94,7 +94,7 @@ describe('removeFilesItem: ', () => {
         console.log('start afterEach Global')
         // Collection cleaning
         await req.app.locals.collection.deleteMany({})
-    
+        
         fs.removeSync(directory + file1)
         fs.removeSync(directory + file2)
         fs.removeSync(directory + video)

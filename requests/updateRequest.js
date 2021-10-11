@@ -4,21 +4,21 @@ const {getKeywordsFromUpdateFields, addKeywordsToBase} = require("../utils/addKe
 const {addPathToBase} = require("../utils/addPathToBase")
 const {pushExif} = require("../utils/exifTool")
 const {
-	removeExtraSlash,
-	removeExtraFirstSlash,
-	getUniqStrings,
-	asyncMoveFile,
-	asyncCopyFile,
-	pickFileName,
-	renameFile,
-	getError,
-	updateNamePath,
-	replaceWithoutExt,
-	updatePreviewPath,
-	backupFiles,
-	cleanBackup,
-	filesRecovery,
-	DBFilters,
+    removeExtraSlash,
+    removeExtraFirstSlash,
+    getUniqStrings,
+    asyncMoveFile,
+    asyncCopyFile,
+    pickFileName,
+    renameFile,
+    getError,
+    updateNamePath,
+    replaceWithoutExt,
+    updatePreviewPath,
+    backupFiles,
+    cleanBackup,
+    filesRecovery,
+    DBFilters,
 } = require("../utils/common")
 const ObjectId = require('mongodb').ObjectID
 
@@ -32,49 +32,49 @@ const ObjectId = require('mongodb').ObjectID
  * @return {Promise<*>}
  */
 const updateFile = async (id, updatedFields, DBObject, collection) => {
-	const filePath = updatedFields.filePath
-		? updatedFields.filePath + '/' + (updatedFields.originalName || DBObject.originalName)
-		: updateNamePath(DBObject, { id, updatedFields })
-	const preview = updatePreviewPath(DBObject, { id, updatedFields })
-	const updatedFieldsWithFilePath = { ...updatedFields, filePath, preview }
-	const filter = {_id: ObjectId(id)}
-	const update = {$set: updatedFieldsWithFilePath}
-	// [MONGODB DRIVER] DeprecationWarning: collection.findOneAndUpdate option [returnOriginal] is deprecated and will be removed in a later version.
-	// (Use `node --trace-deprecation ...` to show where the warning was created)
-	// const options = {new: true} // doesn't work
-	const options = {returnOriginal: false}
-	
-	try {
-		const updatedResponse = await collection.findOneAndUpdate(filter, update, options)
-		console.log('findOneAndUpdate - update SUCCESS')
-		return updatedResponse.value
-	} catch (error) {
-		console.log("findOneAndUpdate - ERROR", error.message)
-		throw createError(500, `file update error`)
-	}
+    const filePath = updatedFields.filePath
+        ? updatedFields.filePath + '/' + (updatedFields.originalName || DBObject.originalName)
+        : updateNamePath(DBObject, {id, updatedFields})
+    const preview = updatePreviewPath(DBObject, {id, updatedFields})
+    const updatedFieldsWithFilePath = {...updatedFields, filePath, preview}
+    const filter = {_id: ObjectId(id)}
+    const update = {$set: updatedFieldsWithFilePath}
+    // [MONGODB DRIVER] DeprecationWarning: collection.findOneAndUpdate option [returnOriginal] is deprecated and will be removed in a later version.
+    // (Use `node --trace-deprecation ...` to show where the warning was created)
+    // const options = {new: true} // doesn't work
+    const options = {returnOriginal: false}
+    
+    try {
+        const updatedResponse = await collection.findOneAndUpdate(filter, update, options)
+        console.log('findOneAndUpdate - update SUCCESS')
+        return updatedResponse.value
+    } catch (error) {
+        console.log("findOneAndUpdate - ERROR", error.message)
+        throw createError(500, `file update error`)
+    }
 }
 
 const updateDatabase = async (filedata, DBObjectArr, collection) => {
-	const dataResponseArr = filedata.map(({id, updatedFields}, i) => {
-		return updateFile(id, updatedFields, DBObjectArr[i], collection)
-	})
-	return await Promise.all(dataResponseArr)
+    const dataResponseArr = filedata.map(({id, updatedFields}, i) => {
+        return updateFile(id, updatedFields, DBObjectArr[i], collection)
+    })
+    return await Promise.all(dataResponseArr)
 }
 
 const findObjects = async (idsArr, collection) => {
-	const filter = DBFilters.getFilterByIds(idsArr)
-	const response = await collection.find(filter).toArray()
-	if (!response) throw new Error('OOPS! ERROR - something wrong with collection.find')
-	if (!response.length) throw new Error('OOPS! ERROR: "findObjects" can\'t find DB object')
-	return response
+    const filter = DBFilters.getFilterByIds(idsArr)
+    const response = await collection.find(filter).toArray()
+    if (!response) throw new Error('OOPS! ERROR - something wrong with collection.find')
+    if (!response.length) throw new Error('OOPS! ERROR: "findObjects" can\'t find DB object')
+    return response
 }
 
 const isDifferentNames = (DBObject, uploadedFileDataItem) => {
-	if (uploadedFileDataItem.updatedFields.originalName === DBObject.originalName) {
-		console.log('OOPS! isDifferentNames ERROR: duplicated originalNames - ', DBObject.originalName)
-		throw new Error('ERROR - isDifferentNames: duplicated originalName')
-	}
-	return true
+    if (uploadedFileDataItem.updatedFields.originalName === DBObject.originalName) {
+        console.log('OOPS! isDifferentNames ERROR: duplicated originalNames - ', DBObject.originalName)
+        throw new Error('ERROR - isDifferentNames: duplicated originalName')
+    }
+    return true
 }
 
 /**
@@ -85,30 +85,30 @@ const isDifferentNames = (DBObject, uploadedFileDataItem) => {
  * @param {Array<string>} filesNewNameArr - mutating array for clearing files if something went wrong
  * @return {Promise<Object | boolean>} new full filePath {newNamePath, newPreviewPath}
  */
-const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder= '', filesNewNameArr = []) => {
-	const { updatedFields } = updatedFiledataItem
-	const isNeedMoveToNewDest = !!(updatedFields && updatedFields.filePath) // if true - use fs.copy, not fs.rename
-	const isNeedUpdateName = !!(updatedFields && updatedFields.originalName)
-	
-	if (
-		!isNeedMoveToNewDest &&
-		isNeedUpdateName &&
-		isDifferentNames(DBObject, updatedFiledataItem)
-	) {
-		const newNamePath = updateNamePath(DBObject, updatedFiledataItem)
-		filesNewNameArr.push(dbFolder + newNamePath)
-		await renameFile(dbFolder + DBObject.filePath, dbFolder + newNamePath)
-		
-		let newPreviewPath = ''
-		if (DBObject.preview) {
-			newPreviewPath = replaceWithoutExt(newNamePath, DBObject.filePath, DBObject.preview)
-			filesNewNameArr.push(dbFolder + newPreviewPath)
-			await renameFile(dbFolder + DBObject.preview, dbFolder + newPreviewPath)
-		}
-		return {newNamePath, newPreviewPath}
-	} else {
-		return false
-	}
+const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder = '', filesNewNameArr = []) => {
+    const {updatedFields} = updatedFiledataItem
+    const isNeedMoveToNewDest = !!(updatedFields && updatedFields.filePath) // if true - use fs.copy, not fs.rename
+    const isNeedUpdateName = !!(updatedFields && updatedFields.originalName)
+    
+    if (
+        !isNeedMoveToNewDest &&
+        isNeedUpdateName &&
+        isDifferentNames(DBObject, updatedFiledataItem)
+    ) {
+        const newNamePath = updateNamePath(DBObject, updatedFiledataItem)
+        filesNewNameArr.push(dbFolder + newNamePath)
+        await renameFile(dbFolder + DBObject.filePath, dbFolder + newNamePath)
+        
+        let newPreviewPath = ''
+        if (DBObject.preview) {
+            newPreviewPath = replaceWithoutExt(newNamePath, DBObject.filePath, DBObject.preview)
+            filesNewNameArr.push(dbFolder + newPreviewPath)
+            await renameFile(dbFolder + DBObject.preview, dbFolder + newPreviewPath)
+        }
+        return {newNamePath, newPreviewPath}
+    } else {
+        return false
+    }
 }
 
 /**
@@ -119,9 +119,9 @@ const renameFileIfNeeded = async (DBObject, updatedFiledataItem, dbFolder= '', f
  * @return {Array<string>}
  */
 const getPreviewArray = (DBObjectArr, dbFolder = '') => {
-	return DBObjectArr
-		.filter(({ preview }) => preview)
-		.map(({ preview }) => dbFolder + preview)
+    return DBObjectArr
+        .filter(({preview}) => preview)
+        .map(({preview}) => dbFolder + preview)
 }
 
 /**
@@ -134,28 +134,28 @@ const getPreviewArray = (DBObjectArr, dbFolder = '') => {
  * @return {Promise<string>} - new preview path
  */
 const movePreviewFile = async (DBObject, filePathWithoutName, newFileName, dbFolder = '') => {
-	try {
-		const originalPreviewName = pickFileName(DBObject.preview)
-		const newPreviewName = newFileName ? replaceWithoutExt(newFileName, DBObject.originalName, originalPreviewName) : undefined
-		return await moveFile(DBObject.preview, filePathWithoutName, originalPreviewName, dbFolder, newPreviewName)
-	} catch (error) {
-		console.log('movePreviewFile - ERROR', error.message)
-		throw new Error('movePreviewFile: ' + error.message)
-	}
+    try {
+        const originalPreviewName = pickFileName(DBObject.preview)
+        const newPreviewName = newFileName ? replaceWithoutExt(newFileName, DBObject.originalName, originalPreviewName) : undefined
+        return await moveFile(DBObject.preview, filePathWithoutName, originalPreviewName, dbFolder, newPreviewName)
+    } catch (error) {
+        console.log('movePreviewFile - ERROR', error.message)
+        throw new Error('movePreviewFile: ' + error.message)
+    }
 }
 
 const returnValuesIfError = (error) => {
-	const has = message => error.message.includes(message)
-	return (
-		has('fs.rename ERROR:') ||
-		has('exifTool-') ||
-		has('fs.move Error:') ||
-		has('fs.copy Error:') ||
-		has('BACKUP_FILES:') ||
-		has('CLEAN_BACKUP:') ||
-		has('movePreviewFile:') ||
-		has('addPathToBase ERROR:')
-	)
+    const has = message => error.message.includes(message)
+    return (
+        has('fs.rename ERROR:') ||
+        has('exifTool-') ||
+        has('fs.move Error:') ||
+        has('fs.copy Error:') ||
+        has('BACKUP_FILES:') ||
+        has('CLEAN_BACKUP:') ||
+        has('movePreviewFile:') ||
+        has('addPathToBase ERROR:')
+    )
 }
 
 /**
@@ -169,14 +169,14 @@ const returnValuesIfError = (error) => {
  * @return {Promise<string>} updated full file path
  */
 const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileName = undefined) => {
-	if (newFileName) {
-		await asyncCopyFile(dbFolder + src, dbFolder + destWithoutName + '/' + newFileName)
-		await fs.remove(dbFolder + src)
-		return destWithoutName + '/' + newFileName
-	} else {
-		await asyncMoveFile(dbFolder + src, dbFolder + destWithoutName + '/' + originalName)
-		return destWithoutName + '/' + originalName
-	}
+    if (newFileName) {
+        await asyncCopyFile(dbFolder + src, dbFolder + destWithoutName + '/' + newFileName)
+        await fs.remove(dbFolder + src)
+        return destWithoutName + '/' + newFileName
+    } else {
+        await asyncMoveFile(dbFolder + src, dbFolder + destWithoutName + '/' + originalName)
+        return destWithoutName + '/' + originalName
+    }
 }
 
 /**
@@ -192,16 +192,16 @@ const moveFile = async (src, destWithoutName, originalName, dbFolder, newFileNam
  * @return {Promise<string[]>}
  */
 const addNewFilePath = async (req, updateFields) => {
-	const cleanPath = path => removeExtraFirstSlash(removeExtraSlash(path))
-	
-	const paths = updateFields.map(item => item.filePath).filter(filePath => filePath)
-	if (paths.length) {
-		const uniqPaths = getUniqStrings(paths)
-		const resPromiseArr = uniqPaths.map(path => addPathToBase(req, cleanPath(path)))
-		const response = await Promise.all(resPromiseArr)
-		return response.filter(item => item)
-	}
-	return []
+    const cleanPath = path => removeExtraFirstSlash(removeExtraSlash(path))
+    
+    const paths = updateFields.map(item => item.filePath).filter(filePath => filePath)
+    if (paths.length) {
+        const uniqPaths = getUniqStrings(paths)
+        const resPromiseArr = uniqPaths.map(path => addPathToBase(req, cleanPath(path)))
+        const response = await Promise.all(resPromiseArr)
+        return response.filter(item => item)
+    }
+    return []
 }
 
 /**
@@ -217,89 +217,89 @@ const addNewFilePath = async (req, updateFields) => {
  * @returns {Object} { files: filesResponse, newFilePath: filePathResponse } filesResponse - array of DB objects
  */
 const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
-	let filedata = req.body
-	if (!filedata) {
-		res.send("update request - File loading error")
-		return null
-	}
-	let filesBackup = []
-	let filesNewNameArr = [] // saving full filePaths for filesRecovery
-	const idsArr = filedata.map(item => item.id)
-	const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
-	const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
-	const isUpdatedKeywords = updatedKeywords && updatedKeywords.length && updatedKeywords.some(item => item && item.length)
-	const isUpdateOriginalDate = updateFields.some(item => item.originalDate)
-	
-	try {
-		const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
-		const pathsArr = savedOriginalDBObjectsArr.map(DBObject => dbFolder + DBObject.filePath)
-		const previewArr = getPreviewArray(savedOriginalDBObjectsArr, dbFolder)
-		filesBackup = await backupFiles([ ...pathsArr, ...previewArr ])
-		
-		if (isUpdatedKeywords || isUpdateOriginalDate) {
-			await pushExif(pathsArr, updatedKeywords, updateFields, exiftoolProcess)
-		}
-		
-		const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-			const newPaths = await renameFileIfNeeded(DBObject, filedata[i], dbFolder, filesNewNameArr)
-			newPaths.newNamePath && filesNewNameArr.push(newPaths.newNamePath)
-			newPaths.newPreviewPath && filesNewNameArr.push(newPaths.newPreviewPath)
-			return true
-		})
-		const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-			const { updatedFields } = filedata[i]
-			const filePathWithoutName = updatedFields && updatedFields.filePath
-			const newFileName = updatedFields && updatedFields.originalName
-			if (filePathWithoutName) {
-				const newNamePath = await moveFile(DBObject.filePath, filePathWithoutName, DBObject.originalName, dbFolder, newFileName)
-				filesNewNameArr.push(newNamePath)
-			}
-			if (filePathWithoutName && DBObject.preview) {
-				const newPreviewPath = await movePreviewFile(DBObject, filePathWithoutName, newFileName, dbFolder)
-				filesNewNameArr.push(newPreviewPath)
-			}
-			return true
-		})
-		await Promise.all(renameFilePromiseArr)
-		await Promise.all(updateFilePathPromiseArr)
-		
-		const newKeywordsList = getKeywordsFromUpdateFields(updateFields)
-		if (newKeywordsList.length) await addKeywordsToBase(req, newKeywordsList)
-		const filePathResponse = await addNewFilePath(req, updateFields)
-		const	filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
-		const preparedFilesRes = filesResponse.map(file => ({
-			...file,
-			tempPath: `${dbFolder}${file.filePath}`,
-			originalPath: `http://localhost:5000/${dbFolder}${file.filePath}`
-		}))
-		const response = { files: preparedFilesRes, newFilePath: filePathResponse }
-		
-		cleanBackup(filesBackup)
-		
-		res.send(response)
-		return response
-		
-	} catch (error) {
-		console.log('OOPS! need recovery: ', error.message)
-		const recoveryResponse = await filesRecovery(filesBackup, Array.from(new Set(filesNewNameArr)))
-		const recoveryError = recoveryResponse === true ? '' : recoveryResponse
-		const errorMessage = returnValuesIfError(error)
-			? getError(error.message + recoveryError)
-			: getError('OOPS! Something went wrong...' + recoveryError)
-		
-		res.send(errorMessage)
-	}
+    let filedata = req.body
+    if (!filedata) {
+        res.send("update request - File loading error")
+        return null
+    }
+    let filesBackup = []
+    let filesNewNameArr = [] // saving full filePaths for filesRecovery
+    const idsArr = filedata.map(item => item.id)
+    const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
+    const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
+    const isUpdatedKeywords = updatedKeywords && updatedKeywords.length && updatedKeywords.some(item => item && item.length)
+    const isUpdateOriginalDate = updateFields.some(item => item.originalDate)
+    
+    try {
+        const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
+        const pathsArr = savedOriginalDBObjectsArr.map(DBObject => dbFolder + DBObject.filePath)
+        const previewArr = getPreviewArray(savedOriginalDBObjectsArr, dbFolder)
+        filesBackup = await backupFiles([...pathsArr, ...previewArr])
+        
+        if (isUpdatedKeywords || isUpdateOriginalDate) {
+            await pushExif(pathsArr, updatedKeywords, updateFields, exiftoolProcess)
+        }
+        
+        const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
+            const newPaths = await renameFileIfNeeded(DBObject, filedata[i], dbFolder, filesNewNameArr)
+            newPaths.newNamePath && filesNewNameArr.push(newPaths.newNamePath)
+            newPaths.newPreviewPath && filesNewNameArr.push(newPaths.newPreviewPath)
+            return true
+        })
+        const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
+            const {updatedFields} = filedata[i]
+            const filePathWithoutName = updatedFields && updatedFields.filePath
+            const newFileName = updatedFields && updatedFields.originalName
+            if (filePathWithoutName) {
+                const newNamePath = await moveFile(DBObject.filePath, filePathWithoutName, DBObject.originalName, dbFolder, newFileName)
+                filesNewNameArr.push(newNamePath)
+            }
+            if (filePathWithoutName && DBObject.preview) {
+                const newPreviewPath = await movePreviewFile(DBObject, filePathWithoutName, newFileName, dbFolder)
+                filesNewNameArr.push(newPreviewPath)
+            }
+            return true
+        })
+        await Promise.all(renameFilePromiseArr)
+        await Promise.all(updateFilePathPromiseArr)
+        
+        const newKeywordsList = getKeywordsFromUpdateFields(updateFields)
+        if (newKeywordsList.length) await addKeywordsToBase(req, newKeywordsList)
+        const filePathResponse = await addNewFilePath(req, updateFields)
+        const filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
+        const preparedFilesRes = filesResponse.map(file => ({
+            ...file,
+            tempPath: `${dbFolder}${file.filePath}`,
+            originalPath: `http://localhost:5000/${dbFolder}${file.filePath}`
+        }))
+        const response = {files: preparedFilesRes, newFilePath: filePathResponse}
+        
+        cleanBackup(filesBackup)
+        
+        res.send(response)
+        return response
+        
+    } catch (error) {
+        console.log('OOPS! need recovery: ', error.message)
+        const recoveryResponse = await filesRecovery(filesBackup, Array.from(new Set(filesNewNameArr)))
+        const recoveryError = recoveryResponse === true ? '' : recoveryResponse
+        const errorMessage = returnValuesIfError(error)
+            ? getError(error.message + recoveryError)
+            : getError('OOPS! Something went wrong...' + recoveryError)
+        
+        res.send(errorMessage)
+    }
 }
 
 module.exports = {
-	updateRequest,
-	updateDatabase,
-	updateFile,
-	findObjects,
-	isDifferentNames,
-	moveFile,
-	renameFileIfNeeded,
-	movePreviewFile,
-	getPreviewArray,
-	addNewFilePath,
+    updateRequest,
+    updateDatabase,
+    updateFile,
+    findObjects,
+    isDifferentNames,
+    moveFile,
+    renameFileIfNeeded,
+    movePreviewFile,
+    getPreviewArray,
+    addNewFilePath,
 }

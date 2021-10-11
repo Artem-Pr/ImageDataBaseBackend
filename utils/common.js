@@ -17,15 +17,15 @@ const getUniqStrings = (strings) => Array.from(new Set(strings))
  * @return {string}
  */
 const getRandomCode = (codeLength) => {
-	return Math.floor(Math.random() * Math.pow(10, codeLength)).toString().padStart(codeLength, "0")
+    return Math.floor(Math.random() * Math.pow(10, codeLength)).toString().padStart(codeLength, "0")
 }
 
 const DBFilters = {
-	getFilterByIds: idsArr => ({
-		_id: {
-			$in: idsArr.map(id => ObjectId(id))
-		}
-	})
+    getFilterByIds: idsArr => ({
+        _id: {
+            $in: idsArr.map(id => ObjectId(id))
+        }
+    })
 }
 
 /**
@@ -34,8 +34,8 @@ const DBFilters = {
  * @param {string} message
  */
 const getError = (message) => {
-	console.log('ERROR: ' + message)
-	return {error: message}
+    console.log('ERROR: ' + message)
+    return {error: message}
 }
 
 /**
@@ -45,22 +45,22 @@ const getError = (message) => {
  * @return {Error}
  */
 const throwError = (message) => {
-	console.log('ERROR: ' + message)
-	return new Error('ERROR: ' + message)
+    console.log('ERROR: ' + message)
+    return new Error('ERROR: ' + message)
 }
 
 const getConfig = (configPath) => {
-	try {
-		return fs.readFileSync(configPath, "utf8")
-	} catch (err) {
-		console.error('Config.json не найден: ', err)
-		throw createError(500, `oops..`);
-	}
+    try {
+        return fs.readFileSync(configPath, "utf8")
+    } catch (err) {
+        console.error('Config.json не найден: ', err)
+        throw createError(500, `oops..`);
+    }
 }
 
 const moveFileAndCleanTemp = async (tempPath, targetPath) => {
-	await fs.moveSync(tempPath, targetPath)
-	await fs.remove(tempPath + '-preview.jpg')
+    await fs.moveSync(tempPath, targetPath)
+    await fs.remove(tempPath + '-preview.jpg')
 }
 
 /**
@@ -70,7 +70,7 @@ const moveFileAndCleanTemp = async (tempPath, targetPath) => {
  * @return {string} fileName
  */
 const pickFileName = (filePath) => {
-	return filePath.split('/').slice(-1)[0]
+    return filePath.split('/').slice(-1)[0]
 }
 
 /**
@@ -80,22 +80,22 @@ const pickFileName = (filePath) => {
  * @return {Promise<string | Error>}
  */
 const renameFile = async (originalName, newName) => {
-	return await new Promise((resolve, reject) => {
-		const isNewFileExists = fs.existsSync(newName)
-		if (isNewFileExists) {
-			console.log('fs.rename ERROR: this file already exists - ' + newName)
-			return reject(new Error('fs.rename ERROR: this file already exists - ' + newName))
-		}
-		return fs.rename(originalName, newName, function (err) {
-			if (err) {
-				console.log('fs.rename ' + err)
-				reject(new Error('fs.rename ERROR: ' + newName))
-			} else {
-				console.log('fs.rename SUCCESS: ' + newName)
-				resolve(newName)
-			}
-		})
-	})
+    return await new Promise((resolve, reject) => {
+        const isNewFileExists = fs.existsSync(newName)
+        if (isNewFileExists) {
+            console.log('fs.rename ERROR: this file already exists - ' + newName)
+            return reject(new Error('fs.rename ERROR: this file already exists - ' + newName))
+        }
+        return fs.rename(originalName, newName, function (err) {
+            if (err) {
+                console.log('fs.rename ' + err)
+                reject(new Error('fs.rename ERROR: ' + newName))
+            } else {
+                console.log('fs.rename SUCCESS: ' + newName)
+                resolve(newName)
+            }
+        })
+    })
 }
 
 /**
@@ -106,20 +106,20 @@ const renameFile = async (originalName, newName) => {
  * @param {boolean} isOverwrite
  * @returns {Promise} true or Error
  */
-const asyncMoveFile = async ( src, dest, isOverwrite = false) => {
-	const options = { overwrite: !!isOverwrite }
-	return await new Promise(((resolve, reject) => {
-		return fs.move(src, dest, options, err => {
-			if (err) {
-				const errorMessage = `fs.move ${err} - ${dest}`
-				console.log(errorMessage)
-				reject(new Error(errorMessage))
-			} else {
-				console.log('fs.move SUCCESS: ' + dest)
-				resolve(dest)
-			}
-		})
-	}))
+const asyncMoveFile = async (src, dest, isOverwrite = false) => {
+    const options = {overwrite: !!isOverwrite}
+    return await new Promise(((resolve, reject) => {
+        return fs.move(src, dest, options, err => {
+            if (err) {
+                const errorMessage = `fs.move ${err} - ${dest}`
+                console.log(errorMessage)
+                reject(new Error(errorMessage))
+            } else {
+                console.log('fs.move SUCCESS: ' + dest)
+                resolve(dest)
+            }
+        })
+    }))
 }
 
 /**
@@ -127,23 +127,23 @@ const asyncMoveFile = async ( src, dest, isOverwrite = false) => {
  * @param {string} dest - new full filePath
  * @return {Promise<string>} dest
  */
-const asyncCopyFile = async ( src, dest) => {
-	const config = {
-		overwrite: false,
-		errorOnExist: true
-	}
-	return await new Promise(((resolve, reject) => {
-		return fs.copy(src, dest, config, err => {
-			if (err) {
-				const errorMessage = `fs.copy ${err}`
-				console.log(errorMessage)
-				reject(new Error(errorMessage))
-			} else {
-				console.log('fs.copy SUCCESS: ' + dest)
-				resolve(dest)
-			}
-		})
-	}))
+const asyncCopyFile = async (src, dest) => {
+    const config = {
+        overwrite: false,
+        errorOnExist: true
+    }
+    return await new Promise(((resolve, reject) => {
+        return fs.copy(src, dest, config, err => {
+            if (err) {
+                const errorMessage = `fs.copy ${err}`
+                console.log(errorMessage)
+                reject(new Error(errorMessage))
+            } else {
+                console.log('fs.copy SUCCESS: ' + dest)
+                resolve(dest)
+            }
+        })
+    }))
 }
 
 /**
@@ -154,14 +154,14 @@ const asyncCopyFile = async ( src, dest) => {
  * @return {string} new filePath
  */
 const updateNamePath = (DBObject, updatedFileDataItem) => {
-	const newDBObject = Object.assign(DBObject)
-	const { updatedFields } = updatedFileDataItem
-	const isOriginalName = updatedFields && updatedFields.originalName
-	if (!isOriginalName) return newDBObject.filePath
-	return newDBObject.filePath.replace(
-		newDBObject.originalName,
-		updatedFields.originalName
-	)
+    const newDBObject = Object.assign(DBObject)
+    const {updatedFields} = updatedFileDataItem
+    const isOriginalName = updatedFields && updatedFields.originalName
+    if (!isOriginalName) return newDBObject.filePath
+    return newDBObject.filePath.replace(
+        newDBObject.originalName,
+        updatedFields.originalName
+    )
 }
 
 /**
@@ -174,8 +174,8 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
  * @return {string} replacement string
  */
 const replaceWithoutExt = (nameWithExt, oldNameWithExt, stringForReplacement) => {
-	const getNameWithoutExt = name => name.split('.').slice(0, -1).join('.')
-	return stringForReplacement.replace(getNameWithoutExt(oldNameWithExt), getNameWithoutExt(nameWithExt))
+    const getNameWithoutExt = name => name.split('.').slice(0, -1).join('.')
+    return stringForReplacement.replace(getNameWithoutExt(oldNameWithExt), getNameWithoutExt(nameWithExt))
 }
 
 /**
@@ -186,18 +186,18 @@ const replaceWithoutExt = (nameWithExt, oldNameWithExt, stringForReplacement) =>
  * @return {string} new preview path
  */
 const updatePreviewPath = (DBObject, updatedFileDataItem) => {
-	const { updatedFields } = updatedFileDataItem
-	const filePathWithoutName = updatedFields && updatedFields.filePath
-	const updatedName = updatedFields && updatedFields.originalName
-	const preview = filePathWithoutName && DBObject.preview
-		? `${filePathWithoutName}/${pickFileName(DBObject.preview)}`
-		: DBObject.preview
-	
-	if (updatedName && preview) {
-		return replaceWithoutExt(updatedName, DBObject.originalName, preview)
-	} else {
-		return preview
-	}
+    const {updatedFields} = updatedFileDataItem
+    const filePathWithoutName = updatedFields && updatedFields.filePath
+    const updatedName = updatedFields && updatedFields.originalName
+    const preview = filePathWithoutName && DBObject.preview
+        ? `${filePathWithoutName}/${pickFileName(DBObject.preview)}`
+        : DBObject.preview
+    
+    if (updatedName && preview) {
+        return replaceWithoutExt(updatedName, DBObject.originalName, preview)
+    } else {
+        return preview
+    }
 }
 
 /**
@@ -205,19 +205,19 @@ const updatePreviewPath = (DBObject, updatedFileDataItem) => {
  * @return {Array<Promise<Object>>} [{backupPath: string, originalPath: string}]
  */
 const backupFiles = async (pathArr) => {
-	const getBackupPath = () => 'temp/backup' + getRandomCode(6)
-	try {
-		const promiseArr = pathArr.map(async (originalPath) => {
-			const dest = getBackupPath()
-			const backupPath = await asyncCopyFile(originalPath, dest)
-			return {backupPath, originalPath}
-		})
-		const backupArr = await Promise.all(promiseArr)
-		console.log('BACKUP_FILES: Success!')
-		return backupArr
-	} catch (error) {
-		throw new Error('BACKUP_FILES: ' + error.message)
-	}
+    const getBackupPath = () => 'temp/backup' + getRandomCode(6)
+    try {
+        const promiseArr = pathArr.map(async (originalPath) => {
+            const dest = getBackupPath()
+            const backupPath = await asyncCopyFile(originalPath, dest)
+            return {backupPath, originalPath}
+        })
+        const backupArr = await Promise.all(promiseArr)
+        console.log('BACKUP_FILES: Success!')
+        return backupArr
+    } catch (error) {
+        throw new Error('BACKUP_FILES: ' + error.message)
+    }
 }
 
 /**
@@ -225,16 +225,16 @@ const backupFiles = async (pathArr) => {
  * @return {Promise<any>}
  */
 const cleanBackup = async (tempPathObjArr) => {
-		try {
-			const promiseArr = tempPathObjArr.map(async ({ backupPath }) => {
-				return await fs.remove(backupPath)
-			})
-			await Promise.all(promiseArr)
-			console.log('CLEAN_BACKUP: Success!:')
-			return true
-		} catch (error) {
-			throw new Error(`CLEAN_BACKUP: ${error}`)
-		}
+    try {
+        const promiseArr = tempPathObjArr.map(async ({backupPath}) => {
+            return await fs.remove(backupPath)
+        })
+        await Promise.all(promiseArr)
+        console.log('CLEAN_BACKUP: Success!:')
+        return true
+    } catch (error) {
+        throw new Error(`CLEAN_BACKUP: ${error}`)
+    }
 }
 
 /**
@@ -242,17 +242,17 @@ const cleanBackup = async (tempPathObjArr) => {
  * @return {Promise<boolean>}
  */
 const removeFilesArr = async (removingFilePathsArr) => {
-	try {
-		const promiseArr = removingFilePathsArr.map(async filePath => {
-			return await fs.remove(filePath)
-		})
-		await Promise.all(promiseArr)
-		console.log('Removing filePaths arr: ', removingFilePathsArr)
-		console.log('removeFilesArr: Success')
-		return true
-	} catch (error) {
-		throw new Error(`removeFilesArr: ${error}`)
-	}
+    try {
+        const promiseArr = removingFilePathsArr.map(async filePath => {
+            return await fs.remove(filePath)
+        })
+        await Promise.all(promiseArr)
+        console.log('Removing filePaths arr: ', removingFilePathsArr)
+        console.log('removeFilesArr: Success')
+        return true
+    } catch (error) {
+        throw new Error(`removeFilesArr: ${error}`)
+    }
 }
 
 /**
@@ -263,39 +263,39 @@ const removeFilesArr = async (removingFilePathsArr) => {
  * @return {Array<Promise<any>>}
  */
 const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
-	console.log('FILES_RECOVERY - removingFilesArr: ', removingFilesArr)
-	try {
-		const promiseArr = tempPathObjArr.map(async ({ backupPath, originalPath }) => {
-			return await asyncMoveFile(backupPath, originalPath, true)
-		})
-		await Promise.all(promiseArr)
-		await removeFilesArr(removingFilesArr)
-		console.log('FILES_RECOVERY: Success!')
-		return true
-	} catch (error) {
-		throw new Error('RECOVERY_ERROR: ' + error.message)
-	}
+    console.log('FILES_RECOVERY - removingFilesArr: ', removingFilesArr)
+    try {
+        const promiseArr = tempPathObjArr.map(async ({backupPath, originalPath}) => {
+            return await asyncMoveFile(backupPath, originalPath, true)
+        })
+        await Promise.all(promiseArr)
+        await removeFilesArr(removingFilesArr)
+        console.log('FILES_RECOVERY: Success!')
+        return true
+    } catch (error) {
+        throw new Error('RECOVERY_ERROR: ' + error.message)
+    }
 }
 
 module.exports = {
-	deepCopy,
-	removeExtraSlash,
-	removeExtraFirstSlash,
-	getUniqStrings,
-	getConfig,
-	getError,
-	throwError,
-	moveFileAndCleanTemp,
-	pickFileName,
-	renameFile,
-	asyncMoveFile,
-	asyncCopyFile,
-	updateNamePath,
-	replaceWithoutExt,
-	updatePreviewPath,
-	backupFiles,
-	cleanBackup,
-	filesRecovery,
-	removeFilesArr,
-	DBFilters
+    deepCopy,
+    removeExtraSlash,
+    removeExtraFirstSlash,
+    getUniqStrings,
+    getConfig,
+    getError,
+    throwError,
+    moveFileAndCleanTemp,
+    pickFileName,
+    renameFile,
+    asyncMoveFile,
+    asyncCopyFile,
+    updateNamePath,
+    replaceWithoutExt,
+    updatePreviewPath,
+    backupFiles,
+    cleanBackup,
+    filesRecovery,
+    removeFilesArr,
+    DBFilters
 }
