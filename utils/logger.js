@@ -1,36 +1,46 @@
-const {createLogger, format, transports} = require('winston')
+const {addColors, config, createLogger, format, transports} = require('winston')
+const { combine, timestamp, printf } = format;
 
-const {combine, timestamp} = format
+const myFormat = printf(({ level, message, data, module, timestamp }) => {
+    return `${timestamp} ${level}: ${message} ${data ? JSON.stringify(data) : ''} ${module ? JSON.stringify(module) : ''}`;
+});
 
 const loggerFormat = combine(
     timestamp(),
-    format.json(),
+    myFormat
 )
 const simpleLoggerFormat = combine(
     format.colorize(),
-    format.simple(),
+    myFormat,
+    format.simple()
 )
-const config = {
+const transportsConfig = {
     maxsize: 10000000,
     maxFiles: 5,
     format: loggerFormat,
 }
+const colorsConfig = {
+    ...config.npm.colors,
+    http: 'cyan', // Magenta
+}
+
 const logger = createLogger({
     transports: [
-        new transports.File({...config, filename: 'logger/error.log', level: 'error'}),
-        new transports.File({...config, filename: 'logger/requests.log', level: 'verbose'}),
-        new transports.File({...config, filename: 'logger/combined.log'}),
+        new transports.File({...transportsConfig, filename: 'logger/error.log', level: 'error'}),
+        new transports.File({...transportsConfig, filename: 'logger/combined.log', level: 'silly'}),
     ],
     exceptionHandlers: [
-        new transports.File({...config, filename: 'logger/exceptions.log'})
+        new transports.File({...transportsConfig, filename: 'logger/exceptions.log'})
     ],
     rejectionHandlers: [
-        new transports.File({...config, filename: 'logger/rejections.log'})
+        new transports.File({...transportsConfig, filename: 'logger/rejections.log'})
     ]
 });
 
+addColors(colorsConfig)
+
 if (process.env.NODE_ENV !== 'production') {
-    const console = new transports.Console({format: simpleLoggerFormat})
+    const console = new transports.Console({format: simpleLoggerFormat, level: 'silly'})
     // const http = new transports.Http({format: simpleLoggerFormat, host: 'localhost', port: 8080})
     
     logger

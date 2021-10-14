@@ -1,0 +1,10 @@
+2021-10-13T10:03:04.951Z error: Update request: there are no filedata  
+2021-10-13T10:03:05.771Z error: OOPS! need recovery: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  "updateRequest"
+2021-10-13T10:03:06.563Z error: OOPS! need recovery: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  "updateRequest"
+2021-10-13T10:03:10.379Z error: OOPS! need recovery: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  "updateRequest"
+2021-10-13T10:03:11.149Z error: OOPS! need recovery: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  "updateRequest"
+2021-10-13T10:03:12.011Z error: OOPS! need recovery: exifTool-2: OOPS!Error: Temporary file already exists: tests/tempVideos/YDXJ1442.mp4_exiftool_tmp
+    0 image files updated
+    1 files weren't updated due to errors  "updateRequest"
+2021-10-13T10:03:12.932Z error: OOPS! need recovery: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-10-13T10:03:13.785Z error: OOPS! need recovery: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"

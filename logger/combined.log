@@ -1,0 +1,291 @@
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+2021-10-12T20:00:38.314Z info: static database ../../../../../../../Volumes/Transcend V/TestDB/database undefined
+2021-10-12T20:00:38.366Z info: Start listening on port 5000 undefined
+2021-10-12T20:00:38.919Z http: GET /paths undefined
+2021-10-12T20:00:38.964Z http: GET /keywords undefined
+2021-10-12T20:00:39.045Z http: POST-query /filtered-photos {"page":1,"perPage":10}
+2021-10-12T20:00:39.046Z debug: folderPath undefined
+2021-10-12T20:00:39.046Z debug: searchTags []
+2021-10-12T20:00:39.046Z debug: excludeTags []
+2021-10-12T20:00:39.066Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:00:39.066Z info: Sharp start. Number of photos: 10 undefined
+2021-10-12T20:00:41.709Z info: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg undefined
+2021-10-12T20:00:41.759Z info: Sharp SUCCESS: IMG_1534.JPG undefined
+2021-10-12T20:00:41.843Z info: Sharp SUCCESS: Дима - YDXJ1288.jpg undefined
+2021-10-12T20:00:41.878Z info: Sharp SUCCESS: YDXJ1353.jpg undefined
+2021-10-12T20:00:42.171Z info: Sharp SUCCESS: YDXJ1298.jpg undefined
+2021-10-12T20:00:42.202Z info: Sharp SUCCESS: YDXJ1296.jpg undefined
+2021-10-12T20:00:42.287Z info: Sharp SUCCESS: YDXJ1295.jpg undefined
+2021-10-12T20:00:42.307Z info: Sharp SUCCESS: YDXJ1290.jpg undefined
+2021-10-12T20:00:42.475Z info: Sharp SUCCESS: YDXJ1289.jpg undefined
+2021-10-12T20:00:42.511Z info: Sharp SUCCESS: YDXJ1280.jpg undefined
+2021-10-12T20:00:42.511Z http: POST-response /filtered-photos {"filesLength":10,"searchPagination":{"currentPage":1,"totalPages":6,"nPerPage":10,"resultsCount":55}}
+2021-10-12T20:06:06.990Z http: POST-query /image-exif ["/allPhotos/Испания/IMG_1534.JPG"]
+2021-10-12T20:08:52.656Z [32minfo[39m: static database ../../../../../../../Volumes/Transcend V/TestDB/database undefined
+2021-10-12T20:08:52.687Z [32minfo[39m: Start listening on port 5000 undefined
+2021-10-12T20:08:54.225Z [36mhttp[39m: GET /paths undefined
+2021-10-12T20:08:54.266Z [36mhttp[39m: GET /keywords undefined
+2021-10-12T20:08:54.315Z [36mhttp[39m: POST-query /filtered-photos {"page":1,"perPage":10}
+2021-10-12T20:08:54.315Z [34mdebug[39m: folderPath undefined
+2021-10-12T20:08:54.316Z [34mdebug[39m: searchTags []
+2021-10-12T20:08:54.316Z [34mdebug[39m: excludeTags []
+2021-10-12T20:08:54.353Z [34mdebug[39m: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:08:54.353Z [32minfo[39m: Sharp start. Number of photos: 10 undefined
+2021-10-12T20:08:56.908Z [32minfo[39m: Sharp SUCCESS: IMG_1534.JPG undefined
+2021-10-12T20:08:57.022Z [32minfo[39m: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg undefined
+2021-10-12T20:08:57.190Z [32minfo[39m: Sharp SUCCESS: YDXJ1353.jpg undefined
+2021-10-12T20:08:57.190Z [32minfo[39m: Sharp SUCCESS: Дима - YDXJ1288.jpg undefined
+2021-10-12T20:08:57.371Z [32minfo[39m: Sharp SUCCESS: YDXJ1298.jpg undefined
+2021-10-12T20:08:57.419Z [32minfo[39m: Sharp SUCCESS: YDXJ1296.jpg undefined
+2021-10-12T20:08:57.556Z [32minfo[39m: Sharp SUCCESS: YDXJ1295.jpg undefined
+2021-10-12T20:08:57.592Z [32minfo[39m: Sharp SUCCESS: YDXJ1290.jpg undefined
+2021-10-12T20:08:57.720Z [32minfo[39m: Sharp SUCCESS: YDXJ1289.jpg undefined
+2021-10-12T20:08:57.757Z [32minfo[39m: Sharp SUCCESS: YDXJ1280.jpg undefined
+2021-10-12T20:08:57.757Z [36mhttp[39m: POST-response /filtered-photos {"filesLength":10,"searchPagination":{"currentPage":1,"totalPages":6,"nPerPage":10,"resultsCount":55}}
+2021-10-12T20:09:00.242Z [36mhttp[39m: POST-query /image-exif ["/allPhotos/Испания/IMG_1534.JPG"]
+2021-10-12T20:09:00.494Z [36mhttp[39m: POST-response /image-exif [{"/allPhotos/Испания/IMG_1534.JPG":{}}]
+2021-10-12T20:09:24.397Z [36mhttp[39m: POST-query /uploadItem {"fieldname":"filedata","originalname":"IMG_1097.JPG","encoding":"7bit","mimetype":"image/jpeg","destination":"temp","filename":"3872dac79bdc0ed7ccf780b884aaf96e","path":"temp/3872dac79bdc0ed7ccf780b884aaf96e","size":2332618}
+2021-10-12T20:09:24.399Z [36mhttp[39m: POST-query /uploadItem {"fieldname":"filedata","originalname":"IMG_1117.JPG","encoding":"7bit","mimetype":"image/jpeg","destination":"temp","filename":"99a88ece350b78d4db4ff1a8ee4e942a","path":"temp/99a88ece350b78d4db4ff1a8ee4e942a","size":2417332}
+2021-10-12T20:09:24.404Z [36mhttp[39m: POST-query /uploadItem {"fieldname":"filedata","originalname":"IMG_0795.JPG","encoding":"7bit","mimetype":"image/jpeg","destination":"temp","filename":"e226529a2fa49e2d46a5cb8b90d048a8","path":"temp/e226529a2fa49e2d46a5cb8b90d048a8","size":3564076}
+2021-10-12T20:09:26.725Z [36mhttp[39m: POST-query /image-exif ["temp/3872dac79bdc0ed7ccf780b884aaf96e","temp/99a88ece350b78d4db4ff1a8ee4e942a","temp/e226529a2fa49e2d46a5cb8b90d048a8"]
+2021-10-12T20:09:26.998Z [36mhttp[39m: POST-response /image-exif [{"temp/3872dac79bdc0ed7ccf780b884aaf96e":{}},{"temp/99a88ece350b78d4db4ff1a8ee4e942a":{}},{"temp/e226529a2fa49e2d46a5cb8b90d048a8":{}}]
+2021-10-12T20:18:35.129Z info: static database ../../../../../../../Volumes/Transcend V/TestDB/database undefined
+2021-10-12T20:18:35.160Z info: Start listening on port 5000 undefined
+2021-10-12T20:18:38.340Z http: GET /paths undefined
+2021-10-12T20:18:38.381Z http: GET-query /keywords undefined
+2021-10-12T20:18:38.381Z debug: tempFolder temp undefined
+2021-10-12T20:18:38.394Z http: GET-response /keywords ["Банско","Дима","Оля","Эстония","велосипед","снег"]
+2021-10-12T20:22:27.073Z info: static database ../../../../../../../Volumes/Transcend V/TestDB/database undefined
+2021-10-12T20:22:27.104Z info: Start listening on port 5000 undefined
+2021-10-12T20:22:29.656Z http: POST-query /filtered-photos {"page":1,"perPage":10}
+2021-10-12T20:22:29.657Z debug: folderPath undefined
+2021-10-12T20:22:29.657Z debug: searchTags []
+2021-10-12T20:22:29.657Z debug: excludeTags []
+2021-10-12T20:22:29.672Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:22:29.672Z info: Sharp start. Number of photos: 10 undefined
+2021-10-12T20:22:32.182Z info: Sharp SUCCESS: YDXJ1353.jpg undefined
+2021-10-12T20:22:32.436Z info: Sharp SUCCESS: IMG_1534.JPG undefined
+2021-10-12T20:22:32.440Z info: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg undefined
+2021-10-12T20:22:32.502Z info: Sharp SUCCESS: Дима - YDXJ1288.jpg undefined
+2021-10-12T20:22:32.742Z info: Sharp SUCCESS: YDXJ1298.jpg undefined
+2021-10-12T20:22:32.773Z info: Sharp SUCCESS: YDXJ1295.jpg undefined
+2021-10-12T20:22:32.803Z info: Sharp SUCCESS: YDXJ1296.jpg undefined
+2021-10-12T20:22:32.834Z info: Sharp SUCCESS: YDXJ1290.jpg undefined
+2021-10-12T20:22:32.980Z info: Sharp SUCCESS: YDXJ1289.jpg undefined
+2021-10-12T20:22:33.018Z info: Sharp SUCCESS: YDXJ1280.jpg undefined
+2021-10-12T20:22:33.018Z http: POST-response /filtered-photos {"filesLength":10,"searchPagination":{"currentPage":1,"totalPages":6,"nPerPage":10,"resultsCount":55}}
+2021-10-12T20:22:44.800Z http: GET-query /paths undefined
+2021-10-12T20:22:44.810Z http: GET-response /paths ["allPhotos","allPhotos/Банско","allPhotos/Испания","allPhotos/видео","allPhotos/эстония"]
+2021-10-12T20:22:44.877Z http: GET-query /keywords undefined
+2021-10-12T20:22:44.877Z debug: tempFolder temp undefined
+2021-10-12T20:22:44.881Z http: POST-query /filtered-photos {"page":1,"perPage":10}
+2021-10-12T20:22:44.881Z debug: folderPath undefined
+2021-10-12T20:22:44.881Z debug: searchTags []
+2021-10-12T20:22:44.882Z debug: excludeTags []
+2021-10-12T20:22:44.884Z http: GET-response /keywords ["Банско","Дима","Оля","Эстония","велосипед","снег"]
+2021-10-12T20:22:44.899Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:22:44.899Z info: Sharp start. Number of photos: 10 undefined
+2021-10-12T20:22:45.353Z info: Sharp SUCCESS: YDXJ1353.jpg undefined
+2021-10-12T20:22:45.440Z info: Sharp SUCCESS: Дима - YDXJ1288.jpg undefined
+2021-10-12T20:22:45.451Z info: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg undefined
+2021-10-12T20:22:45.512Z info: Sharp SUCCESS: IMG_1534.JPG undefined
+2021-10-12T20:22:45.822Z info: Sharp SUCCESS: YDXJ1298.jpg undefined
+2021-10-12T20:22:45.854Z info: Sharp SUCCESS: YDXJ1296.jpg undefined
+2021-10-12T20:22:45.885Z info: Sharp SUCCESS: YDXJ1290.jpg undefined
+2021-10-12T20:22:45.922Z info: Sharp SUCCESS: YDXJ1295.jpg undefined
+2021-10-12T20:22:46.057Z info: Sharp SUCCESS: YDXJ1289.jpg undefined
+2021-10-12T20:22:46.094Z info: Sharp SUCCESS: YDXJ1280.jpg undefined
+2021-10-12T20:22:46.095Z http: POST-response /filtered-photos {"filesLength":10,"searchPagination":{"currentPage":1,"totalPages":6,"nPerPage":10,"resultsCount":55}}
+2021-10-12T20:28:00.751Z info: static database ../../../../../../../Volumes/Transcend V/TestDB/database undefined
+2021-10-12T20:28:00.787Z info: Start listening on port 5000 undefined
+2021-10-12T20:28:02.791Z http: GET-query /paths undefined
+2021-10-12T20:28:02.801Z http: GET-response /paths ["allPhotos","allPhotos/Банско","allPhotos/Испания","allPhotos/видео","allPhotos/эстония"]
+2021-10-12T20:28:02.830Z http: GET-query /keywords undefined
+2021-10-12T20:28:02.831Z debug: tempFolder temp undefined
+2021-10-12T20:28:02.839Z http: GET-response /keywords ["Банско","Дима","Оля","Эстония","велосипед","снег"]
+2021-10-12T20:28:02.879Z http: POST-query /filtered-photos {"page":1,"perPage":10}
+2021-10-12T20:28:02.880Z debug: folderPath undefined
+2021-10-12T20:28:02.880Z debug: searchTags []
+2021-10-12T20:28:02.880Z debug: excludeTags []
+2021-10-12T20:28:02.902Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:28:02.903Z info: Sharp start. Number of photos: 10 undefined
+2021-10-12T20:28:05.632Z info: Sharp SUCCESS: IMG_1534.JPG undefined
+2021-10-12T20:28:05.635Z info: Sharp SUCCESS: YDXJ1353.jpg undefined
+2021-10-12T20:28:05.657Z info: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg undefined
+2021-10-12T20:28:05.720Z info: Sharp SUCCESS: Дима - YDXJ1288.jpg undefined
+2021-10-12T20:28:05.971Z info: Sharp SUCCESS: YDXJ1298.jpg undefined
+2021-10-12T20:28:06.015Z info: Sharp SUCCESS: YDXJ1296.jpg undefined
+2021-10-12T20:28:06.055Z info: Sharp SUCCESS: YDXJ1295.jpg undefined
+2021-10-12T20:28:06.108Z info: Sharp SUCCESS: YDXJ1290.jpg undefined
+2021-10-12T20:28:06.275Z info: Sharp SUCCESS: YDXJ1289.jpg undefined
+2021-10-12T20:28:06.315Z info: Sharp SUCCESS: YDXJ1280.jpg undefined
+2021-10-12T20:28:06.315Z http: POST-response /filtered-photos {"filesLength":10,"searchPagination":{"currentPage":1,"totalPages":6,"nPerPage":10,"resultsCount":55}}
+2021-10-12T20:28:14.119Z http: POST-query /image-exif ["/allPhotos/Испания/IMG_1534.JPG"]
+2021-10-12T20:28:14.432Z http: POST-response /image-exif [{"/allPhotos/Испания/IMG_1534.JPG":{}}]
+2021-10-12T20:28:41.555Z http: DELETE-query /photo/:id "61649e5c545902a4e918f059"
+2021-10-12T20:28:41.559Z debug: folder - ../../../../../../../Volumes/Transcend V/TestDB/allPhotos/Испания/IMG_1534.JPG undefined
+2021-10-12T20:28:41.564Z debug: Removed Files Number: 1 undefined
+2021-10-12T20:28:41.564Z http: DELETE-response /photo/:id 1
+2021-10-12T20:28:41.674Z http: POST-query /filtered-photos {"page":1,"perPage":10}
+2021-10-12T20:28:41.675Z debug: folderPath undefined
+2021-10-12T20:28:41.675Z debug: searchTags []
+2021-10-12T20:28:41.675Z debug: excludeTags []
+2021-10-12T20:28:41.706Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:28:41.706Z info: Sharp start. Number of photos: 10 undefined
+2021-10-12T20:28:43.849Z info: Sharp SUCCESS: YDXJ1298.jpg undefined
+2021-10-12T20:28:43.916Z info: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg undefined
+2021-10-12T20:28:43.946Z info: Sharp SUCCESS: Дима - YDXJ1288.jpg undefined
+2021-10-12T20:28:43.947Z info: Sharp SUCCESS: YDXJ1353.jpg undefined
+2021-10-12T20:28:43.958Z info: Sharp SUCCESS: YDXJ1296.jpg undefined
+2021-10-12T20:28:43.961Z info: Sharp SUCCESS: YDXJ1289.jpg undefined
+2021-10-12T20:28:43.973Z info: Sharp SUCCESS: YDXJ1280.jpg undefined
+2021-10-12T20:28:44.010Z info: Sharp SUCCESS: YDXJ1295.jpg undefined
+2021-10-12T20:28:44.042Z info: Sharp SUCCESS: YDXJ1290.jpg undefined
+2021-10-12T20:28:44.086Z info: Sharp SUCCESS: YDXJ1279.jpg undefined
+2021-10-12T20:28:44.086Z http: POST-response /filtered-photos {"filesLength":10,"searchPagination":{"currentPage":1,"totalPages":6,"nPerPage":10,"resultsCount":54}}
+2021-10-12T20:34:18.551Z info: static database ../../../../../../../Volumes/Transcend V/TestDB/database undefined
+2021-10-12T20:34:18.584Z info: Start listening on port 5000 undefined
+2021-10-12T20:34:24.722Z http: GET-query /paths undefined
+2021-10-12T20:34:24.739Z http: GET-response /paths undefined
+2021-10-12T20:34:24.797Z http: GET-query /keywords undefined
+2021-10-12T20:34:24.797Z debug: tempFolder temp undefined
+2021-10-12T20:34:24.802Z http: GET-response /keywords undefined
+2021-10-12T20:34:24.831Z http: POST-query /filtered-photos undefined
+2021-10-12T20:34:24.832Z debug: folderPath undefined
+2021-10-12T20:34:24.832Z debug: searchTags undefined
+2021-10-12T20:34:24.832Z debug: excludeTags undefined
+2021-10-12T20:34:24.841Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:34:24.842Z info: Sharp start. Number of photos: 10 undefined
+2021-10-12T20:34:27.376Z info: Sharp SUCCESS: YDXJ1298.jpg undefined
+2021-10-12T20:34:27.484Z info: Sharp SUCCESS: YDXJ1353.jpg undefined
+2021-10-12T20:34:27.548Z info: Sharp SUCCESS: Дима - YDXJ1288.jpg undefined
+2021-10-12T20:34:27.562Z info: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg undefined
+2021-10-12T20:34:27.829Z info: Sharp SUCCESS: YDXJ1296.jpg undefined
+2021-10-12T20:34:27.883Z info: Sharp SUCCESS: YDXJ1295.jpg undefined
+2021-10-12T20:34:27.930Z info: Sharp SUCCESS: YDXJ1290.jpg undefined
+2021-10-12T20:34:27.968Z info: Sharp SUCCESS: YDXJ1289.jpg undefined
+2021-10-12T20:34:28.117Z info: Sharp SUCCESS: YDXJ1280.jpg undefined
+2021-10-12T20:34:28.141Z info: Sharp SUCCESS: YDXJ1279.jpg undefined
+2021-10-12T20:34:28.142Z http: POST-response /filtered-photos undefined
+2021-10-12T20:34:43.875Z http: POST-query /filtered-photos undefined
+2021-10-12T20:34:43.875Z debug: folderPath undefined
+2021-10-12T20:34:43.876Z debug: searchTags undefined
+2021-10-12T20:34:43.876Z debug: excludeTags undefined
+2021-10-12T20:34:43.887Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:34:43.887Z info: Sharp start. Number of photos: 4 undefined
+2021-10-12T20:34:44.475Z info: Sharp SUCCESS: YDXJ1390.jpg undefined
+2021-10-12T20:34:44.490Z info: Sharp SUCCESS: YDXJ1388.jpg undefined
+2021-10-12T20:34:44.518Z info: Sharp SUCCESS: YDXJ1389.jpg undefined
+2021-10-12T20:34:44.536Z info: Sharp SUCCESS: YDXJ1387.jpg undefined
+2021-10-12T20:34:44.536Z http: POST-response /filtered-photos undefined
+2021-10-12T20:34:49.123Z http: POST-query /image-exif undefined
+2021-10-12T20:34:49.294Z http: POST-response /image-exif undefined
+2021-10-12T20:34:52.090Z http: DELETE-query /photo/:id undefined
+2021-10-12T20:34:52.093Z debug: folder - ../../../../../../../Volumes/Transcend V/TestDB/allPhotos/YDXJ1389.jpg undefined
+2021-10-12T20:34:52.098Z debug: Removed Files Number: 1 undefined
+2021-10-12T20:34:52.099Z http: DELETE-response /photo/:id undefined
+2021-10-12T20:34:52.192Z http: POST-query /filtered-photos undefined
+2021-10-12T20:34:52.193Z debug: folderPath undefined
+2021-10-12T20:34:52.193Z debug: searchTags undefined
+2021-10-12T20:34:52.193Z debug: excludeTags undefined
+2021-10-12T20:34:52.231Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB undefined
+2021-10-12T20:34:52.231Z info: Sharp start. Number of photos: 3 undefined
+2021-10-12T20:34:52.257Z info: Sharp SUCCESS: YDXJ1387.jpg undefined
+2021-10-12T20:34:52.257Z info: Sharp SUCCESS: YDXJ1388.jpg undefined
+2021-10-12T20:34:52.263Z info: Sharp SUCCESS: YDXJ1390.jpg undefined
+2021-10-12T20:34:52.263Z http: POST-response /filtered-photos undefined
+2021-10-12T20:37:47.103Z info: static database ../../../../../../../Volumes/Transcend V/TestDB/database  
+2021-10-12T20:37:47.135Z info: Start listening on port 5000  
+2021-10-12T20:37:48.787Z http: GET-query /paths  
+2021-10-12T20:37:48.796Z http: GET-response /paths ["allPhotos","allPhotos/Банско","allPhotos/Испания","allPhotos/видео","allPhotos/эстония"] 
+2021-10-12T20:37:48.834Z http: GET-query /keywords  
+2021-10-12T20:37:48.834Z debug: tempFolder temp  
+2021-10-12T20:37:48.898Z http: POST-query /filtered-photos {"page":1,"perPage":10} 
+2021-10-12T20:37:48.899Z debug: folderPath  
+2021-10-12T20:37:48.899Z debug: searchTags [] 
+2021-10-12T20:37:48.899Z debug: excludeTags [] 
+2021-10-12T20:37:48.922Z http: GET-response /keywords ["Банско","Дима","Оля","Эстония","велосипед","снег"] 
+2021-10-12T20:37:48.978Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB  
+2021-10-12T20:37:48.979Z info: Sharp start. Number of photos: 10  
+2021-10-12T20:37:51.260Z info: Sharp SUCCESS: Оля и велосипед - IMG_20190624_112106.jpg  
+2021-10-12T20:37:51.302Z info: Sharp SUCCESS: YDXJ1298.jpg  
+2021-10-12T20:37:51.315Z info: Sharp SUCCESS: YDXJ1353.jpg  
+2021-10-12T20:37:51.324Z info: Sharp SUCCESS: Дима - YDXJ1288.jpg  
+2021-10-12T20:37:51.353Z info: Sharp SUCCESS: YDXJ1296.jpg  
+2021-10-12T20:37:51.404Z info: Sharp SUCCESS: YDXJ1295.jpg  
+2021-10-12T20:37:51.423Z info: Sharp SUCCESS: YDXJ1290.jpg  
+2021-10-12T20:37:51.428Z info: Sharp SUCCESS: YDXJ1289.jpg  
+2021-10-12T20:37:51.450Z info: Sharp SUCCESS: YDXJ1280.jpg  
+2021-10-12T20:37:51.497Z info: Sharp SUCCESS: YDXJ1279.jpg  
+2021-10-12T20:37:51.497Z http: POST-response /filtered-photos {"filesLength":10,"searchPagination":{"currentPage":1,"totalPages":6,"nPerPage":10,"resultsCount":53}} 
+2021-10-12T20:38:17.073Z http: POST-query /filtered-photos {"page":6,"perPage":10} 
+2021-10-12T20:38:17.073Z debug: folderPath  
+2021-10-12T20:38:17.073Z debug: searchTags [] 
+2021-10-12T20:38:17.074Z debug: excludeTags [] 
+2021-10-12T20:38:17.085Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB  
+2021-10-12T20:38:17.085Z info: Sharp start. Number of photos: 3  
+2021-10-12T20:38:17.203Z info: Sharp SUCCESS: YDXJ1387.jpg  
+2021-10-12T20:38:17.204Z info: Sharp SUCCESS: YDXJ1388.jpg  
+2021-10-12T20:38:17.204Z info: Sharp SUCCESS: YDXJ1390.jpg  
+2021-10-12T20:38:17.204Z http: POST-response /filtered-photos {"filesLength":3,"searchPagination":{"currentPage":6,"totalPages":6,"nPerPage":10,"resultsCount":53}} 
+2021-10-12T20:38:20.853Z http: POST-query /image-exif ["/allPhotos/YDXJ1390.jpg"] 
+2021-10-12T20:38:21.042Z http: POST-response /image-exif [{"/allPhotos/YDXJ1390.jpg":{}}] 
+2021-10-12T20:38:23.227Z http: DELETE-query /photo/:id "6151f3aa86c6ca71bc443ab4" 
+2021-10-12T20:38:23.232Z debug: folder - ../../../../../../../Volumes/Transcend V/TestDB/allPhotos/YDXJ1390.jpg  "removeFilesItem"
+2021-10-12T20:38:23.242Z debug: Removed Files Number: 1  
+2021-10-12T20:38:23.243Z http: DELETE-response /photo/:id {"success":"File deleted successfully"} 
+2021-10-12T20:38:23.340Z http: POST-query /filtered-photos {"page":6,"perPage":10} 
+2021-10-12T20:38:23.340Z debug: folderPath  
+2021-10-12T20:38:23.340Z debug: searchTags [] 
+2021-10-12T20:38:23.340Z debug: excludeTags [] 
+2021-10-12T20:38:23.363Z debug: rootLibPath ../../../../../../../Volumes/Transcend V/TestDB  
+2021-10-12T20:38:23.363Z info: Sharp start. Number of photos: 2  
+2021-10-12T20:38:23.377Z info: Sharp SUCCESS: YDXJ1388.jpg  
+2021-10-12T20:38:23.384Z info: Sharp SUCCESS: YDXJ1387.jpg  
+2021-10-12T20:38:23.384Z http: POST-response /filtered-photos {"filesLength":2,"searchPagination":{"currentPage":6,"totalPages":6,"nPerPage":10,"resultsCount":52}} 
+2021-10-13T10:03:04.495Z debug: Full removing filePath - tests/testDirectory/проверка локализации/image001-map.jpg  "removeFilesItem"
+2021-10-13T10:03:04.503Z debug: Removed Files Number: 1  "removeFilesItem"
+2021-10-13T10:03:04.504Z http: DELETE-response /photo/:id {"success":"File deleted successfully"} 
+2021-10-13T10:03:04.952Z error: Update request: there are no filedata  
+2021-10-13T10:03:05.143Z debug: Full removing filePath - tests/testDirectory/проверка локализации/YDXJ1442.mp4  "removeFilesItem"
+2021-10-13T10:03:05.147Z debug: Removed Files Number: 1  "removeFilesItem"
+2021-10-13T10:03:05.148Z http: DELETE-response /photo/:id {"success":"File deleted successfully"} 
+2021-10-13T10:03:05.772Z error: OOPS! need recovery: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  "updateRequest"
+2021-10-13T10:03:05.777Z http: POST-response /update {"error":"fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists"} 
+2021-10-13T10:03:06.563Z error: OOPS! need recovery: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  "updateRequest"
+2021-10-13T10:03:06.567Z http: POST-response /update {"error":"fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg"} 
+2021-10-13T10:03:07.309Z http: POST-response /update {"filesLength":2,"newFilePath":[]} 
+2021-10-13T10:03:08.356Z http: POST-response /update {"filesLength":2,"newFilePath":[]} 
+2021-10-13T10:03:09.580Z http: POST-response /update {"filesLength":3,"newFilePath":["tests/testDirectory/проверка локализации"]} 
+2021-10-13T10:03:10.380Z error: OOPS! need recovery: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  "updateRequest"
+2021-10-13T10:03:10.384Z http: POST-response /update {"error":"fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists"} 
+2021-10-13T10:03:11.149Z error: OOPS! need recovery: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  "updateRequest"
+2021-10-13T10:03:11.153Z http: POST-response /update {"error":"fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg"} 
+2021-10-13T10:03:12.011Z error: OOPS! need recovery: exifTool-2: OOPS!Error: Temporary file already exists: tests/tempVideos/YDXJ1442.mp4_exiftool_tmp
+    0 image files updated
+    1 files weren't updated due to errors  "updateRequest"
+2021-10-13T10:03:12.024Z http: POST-response /update {"error":"exifTool-2: OOPS!Error: Temporary file already exists: tests/tempVideos/YDXJ1442.mp4_exiftool_tmp\n    0 image files updated\n    1 files weren't updated due to errors"} 
+2021-10-13T10:03:12.932Z error: OOPS! need recovery: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-10-13T10:03:12.943Z http: POST-response /update {"error":"movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png"} 
+2021-10-13T10:03:13.785Z error: OOPS! need recovery: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-10-13T10:03:13.791Z http: POST-response /update {"error":"movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png"} 

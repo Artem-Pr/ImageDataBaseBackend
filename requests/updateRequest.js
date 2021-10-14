@@ -1,5 +1,6 @@
 const fs = require('fs-extra')
 const createError = require('http-errors')
+const {logger} = require("../utils/logger")
 const {getKeywordsFromUpdateFields, addKeywordsToBase} = require("../utils/addKeywordsToBase")
 const {addPathToBase} = require("../utils/addPathToBase")
 const {pushExif} = require("../utils/exifTool")
@@ -46,10 +47,11 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
     
     try {
         const updatedResponse = await collection.findOneAndUpdate(filter, update, options)
-        console.log('findOneAndUpdate - update SUCCESS')
+        //Todo: добавить в логгер модуль и все родительские модули
+        logger.debug('updateFile - findOneAndUpdate: update SUCCESS', {module: 'updateRequest'})
         return updatedResponse.value
     } catch (error) {
-        console.log("findOneAndUpdate - ERROR", error.message)
+        logger.error('updateFile - findOneAndUpdate: update ERROR', {message: error.message, module: 'updateRequest'})
         throw createError(500, `file update error`)
     }
 }
@@ -71,7 +73,10 @@ const findObjects = async (idsArr, collection) => {
 
 const isDifferentNames = (DBObject, uploadedFileDataItem) => {
     if (uploadedFileDataItem.updatedFields.originalName === DBObject.originalName) {
-        console.log('OOPS! isDifferentNames ERROR: duplicated originalNames - ', DBObject.originalName)
+        logger.error('OOPS! isDifferentNames ERROR: duplicated originalNames -', {
+            message: DBObject.originalName,
+            module: 'updateRequest'
+        })
         throw new Error('ERROR - isDifferentNames: duplicated originalName')
     }
     return true
@@ -139,7 +144,7 @@ const movePreviewFile = async (DBObject, filePathWithoutName, newFileName, dbFol
         const newPreviewName = newFileName ? replaceWithoutExt(newFileName, DBObject.originalName, originalPreviewName) : undefined
         return await moveFile(DBObject.preview, filePathWithoutName, originalPreviewName, dbFolder, newPreviewName)
     } catch (error) {
-        console.log('movePreviewFile - ERROR', error.message)
+        logger.error('movePreviewFile - ERROR:', {message: error.message, module: 'updateRequest'})
         throw new Error('movePreviewFile: ' + error.message)
     }
 }
@@ -219,6 +224,7 @@ const addNewFilePath = async (req, updateFields) => {
 const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
     let filedata = req.body
     if (!filedata) {
+        logger.error('Update request: there are no filedata')
         res.send("update request - File loading error")
         return null
     }
@@ -276,17 +282,21 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
         
         cleanBackup(filesBackup)
         
+        logger.http('POST-response', {
+            message: '/update',
+            data: {filesLength: preparedFilesRes.length, newFilePath: filePathResponse}
+        })
         res.send(response)
         return response
         
     } catch (error) {
-        console.log('OOPS! need recovery: ', error.message)
+        logger.error('OOPS! need recovery:', {message: error.message, module: 'updateRequest'})
         const recoveryResponse = await filesRecovery(filesBackup, Array.from(new Set(filesNewNameArr)))
         const recoveryError = recoveryResponse === true ? '' : recoveryResponse
         const errorMessage = returnValuesIfError(error)
             ? getError(error.message + recoveryError)
             : getError('OOPS! Something went wrong...' + recoveryError)
-        
+        logger.http('POST-response', {message: '/update', data: errorMessage})
         res.send(errorMessage)
     }
 }

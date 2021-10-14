@@ -1,17 +1,18 @@
 const createError = require("http-errors")
+const {logger} = require("../utils/logger")
 
 const pathRequest = (req, response) => {
     const configCollection = req.app.locals.configCollection;
     configCollection.findOne({name: "paths"}, function (err, res) {
         if (err) {
-            console.log('configCollection.findOne (path) - oops!', err)
+            logger.error('configCollection.findOne (path)', {data: err})
             throw createError(400, `configCollection find path error`)
         }
-        if (res) {
-            response.send(res.pathsArr)
-        } else {
-            response.send([])
-        }
+        
+        const pathsArrResponse = res ? res.pathsArr : []
+    
+        logger.http('GET-response', {message: '/paths', data: pathsArrResponse})
+        response.send(pathsArrResponse)
     })
 }
 

@@ -1,12 +1,14 @@
 const fs = require("fs-extra")
 const createError = require("http-errors")
 const sharp = require("sharp")
+const {logger} = require("../utils/logger")
 
 //Todo: add tests
 const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     let filedata = req.body
     if (!filedata) {
-        res.send("Ошибка при загрузке файлов")
+        logger.error("Request doesn't contain filedata")
+        res.send('Downloading files error')
         return
     }
     
@@ -19,9 +21,10 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     if (searchTags && !Array.isArray(searchTags)) searchTags = [searchTags]
     if (excludeTags && !Array.isArray(excludeTags)) excludeTags = [excludeTags]
     
-    console.log('folderPath', folderPath)
-    console.log('searchTags', searchTags)
-    console.log('excludeTags', excludeTags)
+    
+    logger.debug('folderPath', {data: folderPath})
+    logger.debug('searchTags', {data: searchTags})
+    logger.debug('excludeTags', {data: excludeTags})
     
     // очищаем temp
     fs.emptyDirSync(tempFolder)
@@ -49,12 +52,12 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
         .limit(nPerPage)
         .toArray(async function (err, photos) {
             if (err) {
-                console.log("collection load error", err)
+                logger.error("collection load error", {data: err})
                 throw createError(400, `collection load error`)
             }
             
-            console.log('rootLibPath -', `"${databaseFolder}"`)
-            console.log('Sharp start. Number of photos:', photos.length)
+            logger.debug('rootLibPath', {message: databaseFolder})
+            logger.info('Sharp start. Number of photos:', {message: photos.length})
             const filesWithTempPathPromise = photos.map(async item => {
                 const fullPath = databaseFolder + item.filePath
                 const staticPath = 'database' + item.filePath
@@ -77,9 +80,9 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
                             item.originalPath = 'http://localhost:5000/' + staticPath
                             item.preview = 'http://localhost:5000/images/' + randomName + '-preview.jpg'
                             item.tempPath = item.filePath
-                            console.log('Sharp SUCCESS:', item.originalName)
+                            logger.info('Sharp SUCCESS:', {message: item.originalName})
                         })
-                        .catch(err => console.log('OOPS!, Sharp ERROR: ', err))
+                        .catch(err => logger.error('OOPS!, Sharp ERROR:', {data: err}))
                 }
                 return item
             })
@@ -88,6 +91,12 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
                 files: filesWithTempPath,
                 searchPagination: {currentPage, totalPages, nPerPage, resultsCount}
             }
+            logger.http('POST-response', {
+                message: '/filtered-photos',
+                data: {
+                    filesLength: responseObject.files.length,
+                    searchPagination: responseObject.searchPagination
+                }})
             res.send(responseObject)
         });
 }

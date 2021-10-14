@@ -1,4 +1,5 @@
 const fs = require('fs-extra')
+const {logger} = require("../utils/logger")
 const {getError, removeFilesArr} = require("../utils/common")
 const ObjectId = require('mongodb').ObjectID
 
@@ -50,17 +51,20 @@ const removeFilesItem = async (req, res, dbFolder = '') => {
         const result = await collection.findOne(filter)
         
         if (isFileNotExist(result)) return null
-        console.log('folder - ', dbFolder + result.filePath)
+        logger.debug('Full removing filePath -', {message: dbFolder + result.filePath, module: 'removeFilesItem'})
         
         await removeFilesArr(prepareRemovingPaths(result))
         const removedFilesResponse = await collection.deleteMany(filter)
         const removedFilesNumber = removedFilesResponse.deletedCount
-        console.log('Removed Files Number: ', removedFilesNumber)
+    
+        logger.debug('Removed Files Number:', {message: removedFilesNumber, module: 'removeFilesItem'})
+        logger.http('DELETE-response', {message: '/photo/:id', data: {success: 'File deleted successfully'}})
         res.send({success: 'File deleted successfully'})
     } catch (error) {
         const errorMessage = returnValuesIfError(error)
             ? getError(error.message)
             : getError('OOPS! Something went wrong...' + error)
+        logger.http('DELETE-response', {message: '/photo/:id', data: errorMessage})
         res.send(errorMessage)
     }
 }

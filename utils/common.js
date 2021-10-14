@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const createError = require('http-errors')
 const ObjectId = require('mongodb').ObjectID
+const {logger} = require("./logger")
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : value)
@@ -34,7 +35,7 @@ const DBFilters = {
  * @param {string} message
  */
 const getError = (message) => {
-    console.log('ERROR: ' + message)
+    logger.error('ERROR:', {message})
     return {error: message}
 }
 
@@ -45,7 +46,7 @@ const getError = (message) => {
  * @return {Error}
  */
 const throwError = (message) => {
-    console.log('ERROR: ' + message)
+    logger.error('ERROR:', {message})
     return new Error('ERROR: ' + message)
 }
 
@@ -53,7 +54,7 @@ const getConfig = (configPath) => {
     try {
         return fs.readFileSync(configPath, "utf8")
     } catch (err) {
-        console.error('Config.json не найден: ', err)
+        logger.error('Config.json не найден', {data: err})
         throw createError(500, `oops..`);
     }
 }
@@ -83,15 +84,15 @@ const renameFile = async (originalName, newName) => {
     return await new Promise((resolve, reject) => {
         const isNewFileExists = fs.existsSync(newName)
         if (isNewFileExists) {
-            console.log('fs.rename ERROR: this file already exists - ' + newName)
+            logger.error('fs.rename ERROR: this file already exists -', {message: newName})
             return reject(new Error('fs.rename ERROR: this file already exists - ' + newName))
         }
         return fs.rename(originalName, newName, function (err) {
             if (err) {
-                console.log('fs.rename ' + err)
+                logger.error('fs.rename:', {message: newName})
                 reject(new Error('fs.rename ERROR: ' + newName))
             } else {
-                console.log('fs.rename SUCCESS: ' + newName)
+                logger.info('fs.rename SUCCESS:', {message: newName})
                 resolve(newName)
             }
         })
@@ -112,10 +113,10 @@ const asyncMoveFile = async (src, dest, isOverwrite = false) => {
         return fs.move(src, dest, options, err => {
             if (err) {
                 const errorMessage = `fs.move ${err} - ${dest}`
-                console.log(errorMessage)
+                logger.error(errorMessage)
                 reject(new Error(errorMessage))
             } else {
-                console.log('fs.move SUCCESS: ' + dest)
+                logger.info('fs.move SUCCESS:', {message: dest})
                 resolve(dest)
             }
         })
@@ -136,10 +137,10 @@ const asyncCopyFile = async (src, dest) => {
         return fs.copy(src, dest, config, err => {
             if (err) {
                 const errorMessage = `fs.copy ${err}`
-                console.log(errorMessage)
+                logger.error(errorMessage)
                 reject(new Error(errorMessage))
             } else {
-                console.log('fs.copy SUCCESS: ' + dest)
+                logger.info('fs.copy SUCCESS:', {message: dest})
                 resolve(dest)
             }
         })
@@ -213,7 +214,7 @@ const backupFiles = async (pathArr) => {
             return {backupPath, originalPath}
         })
         const backupArr = await Promise.all(promiseArr)
-        console.log('BACKUP_FILES: Success!')
+        logger.info('BACKUP_FILES: Success!')
         return backupArr
     } catch (error) {
         throw new Error('BACKUP_FILES: ' + error.message)
@@ -230,7 +231,7 @@ const cleanBackup = async (tempPathObjArr) => {
             return await fs.remove(backupPath)
         })
         await Promise.all(promiseArr)
-        console.log('CLEAN_BACKUP: Success!:')
+        logger.info('CLEAN_BACKUP: Success!')
         return true
     } catch (error) {
         throw new Error(`CLEAN_BACKUP: ${error}`)
@@ -247,8 +248,8 @@ const removeFilesArr = async (removingFilePathsArr) => {
             return await fs.remove(filePath)
         })
         await Promise.all(promiseArr)
-        console.log('Removing filePaths arr: ', removingFilePathsArr)
-        console.log('removeFilesArr: Success')
+        logger.debug('Removing filePaths arr:', {data: removingFilePathsArr})
+        logger.info('removeFilesArr: Success!')
         return true
     } catch (error) {
         throw new Error(`removeFilesArr: ${error}`)
@@ -263,14 +264,14 @@ const removeFilesArr = async (removingFilePathsArr) => {
  * @return {Array<Promise<any>>}
  */
 const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
-    console.log('FILES_RECOVERY - removingFilesArr: ', removingFilesArr)
+    logger.debug('FILES_RECOVERY - removingFilesArr:', {message: removingFilesArr})
     try {
         const promiseArr = tempPathObjArr.map(async ({backupPath, originalPath}) => {
             return await asyncMoveFile(backupPath, originalPath, true)
         })
         await Promise.all(promiseArr)
         await removeFilesArr(removingFilesArr)
-        console.log('FILES_RECOVERY: Success!')
+        logger.info('FILES_RECOVERY: Success!')
         return true
     } catch (error) {
         throw new Error('RECOVERY_ERROR: ' + error.message)

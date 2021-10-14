@@ -1,3 +1,6 @@
+const createError = require("http-errors")
+const {logger} = require("./logger")
+
 /**
  * Todo: add test if there is no keywords field
  * @param {Array<Object>} updateFields {
@@ -28,13 +31,13 @@ const addKeywordsToBase = (req, keywordsRawList) => {
     const configCollection = req.app.locals.configCollection;
     configCollection.findOne({name: "keywords"}, function (err, res) {
         if (err) {
-            console.log('configCollection.findOne (keywords) - oops!', err)
+            logger.error('configCollection.findOne (keywords):', {data: err, module: 'addKeywordsToBase'})
             throw createError(400, `configCollection find keywords error`)
         }
         if (!res) {
             configCollection.insertOne({name: "keywords", keywordsArr: newKeywords.sort()}, function (err) {
                 if (err) {
-                    console.log("Oops!- configCollection insert keywords error", err)
+                    logger.error('configCollection insert keywords ERROR:', {data: err, module: 'addKeywordsToBase'})
                     throw createError(400, `configCollection insert keywords error`)
                 }
             })
@@ -44,10 +47,13 @@ const addKeywordsToBase = (req, keywordsRawList) => {
             const newKeywordsArr = Array.from(keywordsSet).sort()
             configCollection.updateOne({name: "keywords"}, {$set: {keywordsArr: newKeywordsArr}}, function (err) {
                 if (err) {
-                    console.log("Oops!- configCollection updateOne keywordsArr Error - ", err)
+                    logger.error('configCollection updateOne keywordsArr ERROR:', {
+                        data: err,
+                        module: 'addKeywordsToBase'
+                    })
                     throw createError(400, `configCollection updateOne keywordsArr error`)
                 }
-                console.log('addKeywordsToBase - SUCCESS')
+                logger.info('addKeywordsToBase - SUCCESS')
             })
         }
     })

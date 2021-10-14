@@ -1,3 +1,5 @@
+const {logger} = require("./logger")
+
 /**
  * @param req
  * @param {string} basePathWithoutRootDirectory
@@ -10,7 +12,7 @@ const addPathToBase = async (req, basePathWithoutRootDirectory) => {
         
         if (!response) {
             await configCollection.insertOne({name: "paths", pathsArr: [basePathWithoutRootDirectory]})
-            console.log(`ADD path "${basePathWithoutRootDirectory}" to config`)
+            logger.info('Add path to config:', {message: basePathWithoutRootDirectory, module: 'addPathToBase'})
             return basePathWithoutRootDirectory
         }
         
@@ -22,10 +24,14 @@ const addPathToBase = async (req, basePathWithoutRootDirectory) => {
         const newPathsArr = Array.from(pathsSet).sort()
         
         await configCollection.updateOne({name: "paths"}, {$set: {pathsArr: newPathsArr}})
-        console.log(`ADD PATH "${basePathWithoutRootDirectory}" to config`)
+        logger.info('Add path to config:', {message: basePathWithoutRootDirectory, module: 'addPathToBase'})
         return basePathWithoutRootDirectory
     } catch (error) {
-        console.log(`addPathToBase ERROR: insert path - ${basePathWithoutRootDirectory}`, error)
+        logger.error('addPathToBase ERROR: insert path -', {
+            message: basePathWithoutRootDirectory,
+            data: error,
+            module: 'addPathToBase'
+        })
         throw new Error(`addPathToBase ERROR: insert path - ${basePathWithoutRootDirectory}, ${error}`)
     }
 }

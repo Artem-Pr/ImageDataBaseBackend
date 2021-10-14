@@ -2,6 +2,7 @@ const {getExifFromArr, pushExif} = require("../utils/exifTool")
 const moment = require("moment")
 const {moveFileAndCleanTemp} = require("../utils/common")
 const createError = require("http-errors")
+const {logger} = require("../utils/logger")
 const {addKeywordsToBase} = require("../utils/addKeywordsToBase")
 const {addPathToBase} = require("../utils/addPathToBase")
 
@@ -58,16 +59,20 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
     const url = new URL('http://localhost:5000' + req.url)
     const basePathWithoutRootDirectory = url.searchParams.get('path')
     const targetFolder = databaseFolder + '/' + basePathWithoutRootDirectory
-    console.log('uploadRequest - targetFolder', targetFolder)
+    logger.debug('uploadRequest - targetFolder:', {message: targetFolder, module: 'uploadRequest'})
     let filedata = req.body
-    if (!filedata) res.send("Ошибка при загрузке файлов")
+    if (!filedata) {
+        logger.error("Request doesn't contain filedata", {module: 'uploadRequest'})
+        logger.http('POST-request', {message: '/upload', data: 'Uploading files error'})
+        res.send('Uploading files error')
+    }
     
     let pathsArr = filedata.map(dataItem => {
-        console.log('fileDataItem', dataItem.name)
+        logger.debug('fileDataItem:', {message: dataItem.name, module: 'uploadRequest'})
         return dataItem.tempPath
     })
     
-    console.log('pathsArr', pathsArr)
+    logger.debug('pathsArr:', {data: pathsArr, module: 'uploadRequest'})
     const exifResponse = await getExifFromArr(pathsArr, exiftoolProcess)
     
     // Сравниваем keywords из картинок и пришедшие (возможно измененные) внутри getKeywordsArr,
@@ -75,7 +80,7 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
     // также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
     let keywordsRawList = []
     const changedKeywordsArr = getKeywordsArr(req, keywordsRawList, exifResponse, filedata)
-    console.log('changedKeywordsArr', changedKeywordsArr)
+    logger.debug('changedKeywordsArr:', {data: changedKeywordsArr, module: 'uploadRequest'})
     
     // Записываем измененные ключевые слова в файлы в папке темп
     // Todo: cover all functions with try catch and return "throw createError(500, `oops..`)"
@@ -84,7 +89,7 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
     // Переносим картинки в папку библиотеки и добавляем в filedata относительные пути к картинкам
     filedata = filedata.map(item => {
         const targetPath = targetFolder + '/' + item.name
-        console.log('targetPath', targetPath)
+        logger.debug('targetPath:', {data: targetPath, module: 'uploadRequest'})
         
         //  Переносим видео превью туда же, куда и видео файлы
         let previewTargetPath = ''
@@ -96,7 +101,7 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
             try {
                 moveFileAndCleanTemp('temp/' + previewTempName, previewTargetPath)
             } catch (e) {
-                console.error(e)
+                logger.error('moveFileAndCleanTemp ERROR:', {data: e, module: 'uploadRequest'})
                 throw createError(500, `moveFileAndCleanTemp error`)
             }
         }
@@ -104,7 +109,7 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
         try {
             moveFileAndCleanTemp(item.tempPath, targetPath)
         } catch (e) {
-            console.error(e)
+            logger.error('moveFileAndCleanTemp ERROR:', {data: e, module: 'uploadRequest'})
             throw createError(500, `moveFileAndCleanTemp error`)
         }
         
@@ -112,7 +117,7 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
             item.filePath = targetPath.slice(databaseFolder.length)
             item.filePathPreview = previewTargetPath.slice(databaseFolder.length)
         } else {
-            console.error('Lib Path Error! Oy-Oy!')
+            logger.error(`Lib Path ERROR: "targetPath" doesn't start with "databaseFolder"`, {module: 'uploadRequest'})
             throw createError(500, 'Lib Path Error! Oy-Oy!')
         }
         
@@ -142,11 +147,13 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
     const collection = req.app.locals.collection;
     try {
         const response = await collection.insertMany(filedata)
-        console.log('UploadRequest - SUCCESS')
-        console.log('insertedIds:', response.insertedIds)
-        res.send("Файлы загружены")
+        logger.info('UploadRequest - SUCCESS', {module: 'uploadRequest'})
+        logger.debug('insertedIds:', {data: response.insertedIds, module: 'uploadRequest'})
+        
+        logger.http('POST-request', {message: '/upload', data: 'Files uploaded successfully'})
+        res.send("Files uploaded successfully")
     } catch (err) {
-        console.log("collection insert error", err)
+        logger.error('collection insert ERROR', {data: err, module: 'uploadRequest'})
         throw createError(400, `collection insert error`)
     }
 }

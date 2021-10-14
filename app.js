@@ -47,18 +47,24 @@ logger.info('static database', {message: databaseFolder + '/database'})
 
 app.get("/keywords",
     (req, res) => {
-        logger.info('Hello again distributed logs')
+        logger.http('GET-query', {message: '/keywords'})
         keywordsRequest(req, res, tempFolder)
     }
 )
 
 app.get("/paths",
-    (req, res) => pathRequest(req, res)
+    (req, res) => {
+        logger.http('GET-query', {message: '/paths'})
+        pathRequest(req, res)
+    }
 )
 
 app.post("/uploadItem",
     upload.single("filedata"),
-    (req, res) => uploadItemRequest(req, res)
+    (req, res) => {
+        logger.http('POST-query', {message: '/uploadItem', data: req.file})
+        uploadItemRequest(req, res)
+    }
 )
 
 app.use("/image-exif",
@@ -66,7 +72,10 @@ app.use("/image-exif",
 )
 
 app.post("/image-exif",
-    (req, res) => imageItemRequest(req, res, databaseFolder, exiftoolProcess)
+    (req, res) => {
+        logger.http('POST-query', {message: '/image-exif', data: req.body})
+        imageItemRequest(req, res, databaseFolder, exiftoolProcess)
+    }
 )
 
 app.use("/upload",
@@ -74,8 +83,10 @@ app.use("/upload",
 )
 
 app.post("/upload",
-    (req, res) =>
+    (req, res) => {
+        logger.http('POST-query', {message: '/upload', data: req.body})
         uploadRequest(req, res, exiftoolProcess, databaseFolder)
+    }
 )
 
 app.use("/update",
@@ -83,8 +94,10 @@ app.use("/update",
 )
 
 app.put("/update",
-    (req, res) =>
+    (req, res) => {
+        logger.http('POST-query', {message: '/update', data: req.body})
         updateRequest(req, res, exiftoolProcess, databaseFolder)
+    }
 )
 
 app.use("/filtered-photos",
@@ -92,10 +105,16 @@ app.use("/filtered-photos",
 )
 
 app.post("/filtered-photos",
-    (req, res) => getFilesFromDB(req, res, tempFolder, databaseFolder)
+    (req, res) => {
+        logger.http('POST-query', {message: '/filtered-photos', data: req.body})
+        getFilesFromDB(req, res, tempFolder, databaseFolder)
+    }
 )
 
-app.delete("/photo/:id", (req, res) => removeFilesItem(req, res, databaseFolder))
+app.delete("/photo/:id", (req, res) => {
+    logger.http('DELETE-query', {message: '/photo/:id', data: req.params.id})
+    removeFilesItem(req, res, databaseFolder)
+})
 
 app.use((req, res, next) => {
     res.status(res.status || 500)
@@ -108,7 +127,7 @@ app.use((req, res, next) => {
 })
 
 mongoClient.connect(function (err, client) {
-    if (err) return console.log('mongoClient.connect - oops!', err)
+    if (err) return logger.error('mongoClient.connect - oops!', {data: err})
     dbClient = client
     // app.locals.collection = client.db("IDB").collection("photos")
     // app.locals.configCollection = client.db("IDB").collection("config")
@@ -119,7 +138,7 @@ mongoClient.connect(function (err, client) {
     app.locals.collection = client.db("TestDB").collection("photos")
     app.locals.configCollection = client.db("TestDB").collection("config")
     app.listen(port, function () {
-        console.log("Start listening on port " + port)
+        logger.info('Start listening on port', {message: port})
     })
 })
 
@@ -127,7 +146,7 @@ mongoClient.connect(function (err, client) {
 process.on("SIGINT", () => {
     dbClient.close()
     process.exit()
-    console.log('MongoDb connection closed.')
+    logger.info('MongoDb connection closed.')
 })
 
 module.exports = {app}

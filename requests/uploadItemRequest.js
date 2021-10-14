@@ -1,9 +1,14 @@
 const sharp = require("sharp")
 const ThumbnailGenerator = require('video-thumbnail-generator').default
+const {logger} = require("../utils/logger")
 
 const uploadItemRequest = (req, res) => {
     let filedata = req.file
-    if (!filedata) res.send("Ошибка при загрузке файла")
+    if (!filedata) {
+        logger.error("Request doesn't contain filedata")
+        logger.http('POST-response', {message: '/uploadItem', data: "Uploading file error"})
+        res.send("Uploading file error")
+    }
     
     if (filedata.mimetype.startsWith('video')) {
         const tg = new ThumbnailGenerator({
@@ -17,14 +22,15 @@ const uploadItemRequest = (req, res) => {
             size: '1000x?'
         })
             .then((preview) => {
-                console.log('video-preview', preview)
+                logger.debug('video-preview SUCCESS', {data: preview, module: 'uploadItemRequest'})
                 const photoProps = {
                     preview: 'http://localhost:5000/images/' + preview[0],
                     tempPath: filedata.path,
                 }
+                logger.http('POST-response', {message: '/uploadItem', data: photoProps})
                 res.send(photoProps)
             })
-            .catch(err => console.log('err', err));
+            .catch(err => logger.error('video-preview ERROR', {data: err, module: 'uploadItemRequest'}));
         
     } else {
         sharp(filedata.path)
@@ -38,10 +44,11 @@ const uploadItemRequest = (req, res) => {
                     preview: 'http://localhost:5000/images/' + filedata.filename + '-preview.jpg',
                     tempPath: filedata.path,
                 }
-                console.log('sharp SUCCESS', filedata.originalname)
+                logger.debug('sharp SUCCESS', {data: filedata.originalname, module: 'uploadItemRequest'})
+                logger.http('POST-response', {message: '/uploadItem', data: photoProps})
                 res.send(photoProps)
             })
-            .catch(err => console.log('err', err));
+            .catch(err => logger.error('sharp ERROR', {data: err, module: 'uploadItemRequest'}));
     }
 }
 
