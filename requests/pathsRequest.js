@@ -2,7 +2,7 @@ const createError = require("http-errors")
 const {logger} = require("../utils/logger")
 
 const pathRequest = (req, response) => {
-    const configCollection = req.app.locals.configCollection;
+    const configCollection = req.app.locals.configCollection
     configCollection.findOne({name: "paths"}, function (err, res) {
         if (err) {
             logger.error('configCollection.findOne (path)', {data: err})

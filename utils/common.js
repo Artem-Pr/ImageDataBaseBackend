@@ -1,5 +1,4 @@
 const fs = require('fs-extra')
-const createError = require('http-errors')
 const ObjectId = require('mongodb').ObjectID
 const {logger} = require("./logger")
 
@@ -8,10 +7,29 @@ const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : 
 const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
 
 /**
- * @param {string[]} strings
+ * Create uniq paths: recursively get all folders and subfolders from fullPaths list
+ *
+ * @param {string[]} paths array of fullPaths
  * @return {string[]}
  */
-const getUniqStrings = (strings) => Array.from(new Set(strings))
+const getUniqPaths = (paths) => {
+    /**
+     * @param {string} fullPath
+     * @return {string[]}
+     */
+    const getArrayOfSubfolders = (fullPath) => {
+        const fullPathParts = fullPath.split('/')
+        const fullPathWithoutLastFolder = fullPathParts.slice(0, -1).join('/')
+        return fullPathParts.length === 1
+            ? fullPathParts
+            : [...getArrayOfSubfolders(fullPathWithoutLastFolder), fullPath]
+    }
+    
+    const pathsWithSubfolders = paths
+        .reduce((accum, currentPath) => ([...accum, ...getArrayOfSubfolders(currentPath)]), [])
+        .filter(Boolean)
+    return Array.from(new Set(pathsWithSubfolders)).sort()
+}
 
 /**
  * @param {number} codeLength
@@ -33,30 +51,39 @@ const DBFilters = {
  * create an Error for sending
  *
  * @param {string} message
+ * @param {string} moduleName
  */
-const getError = (message) => {
-    logger.error('ERROR:', {message})
+const getError = (message, moduleName) => {
+    logger.error('ERROR:', {message, data: moduleName})
     return {error: message}
+}
+
+/**
+ * Create, log and send Error message
+ *
+ * @param {object} res - response object. Minimal: {send: null}
+ * @param {'GET' | 'POST' | 'DELETE' | 'PUT' | 'PATCH'} queryType
+ * @param {string} queryUrl
+ * @param {string} errorMessage
+ * @param {string} moduleName
+ */
+const getAndSendError = (res, queryType, queryUrl, errorMessage, moduleName) => {
+    const error = getError(errorMessage, moduleName)
+    logger.http(`${queryType}-response`, {message: queryUrl, data: error})
+    res ? res.send(error) : throwError(errorMessage, true)
 }
 
 /**
  * create an Error for throwing
  *
- * @param {string} message - error message
+ * @param {string} errorMessage - error message
+ * @param {boolean} useThrow - use Throw syntax
  * @return {Error}
  */
-const throwError = (message) => {
-    logger.error('ERROR:', {message})
-    return new Error('ERROR: ' + message)
-}
-
-const getConfig = (configPath) => {
-    try {
-        return fs.readFileSync(configPath, "utf8")
-    } catch (err) {
-        logger.error('Config.json не найден', {data: err})
-        throw createError(500, `oops..`);
-    }
+const throwError = (errorMessage, useThrow) => {
+    logger.error('throw: ', {message: errorMessage})
+    if (useThrow) throw new Error(errorMessage)
+    return new Error(errorMessage)
 }
 
 const moveFileAndCleanTemp = async (tempPath, targetPath) => {
@@ -145,6 +172,35 @@ const asyncCopyFile = async (src, dest) => {
             }
         })
     }))
+}
+
+/**
+ * Remove file or directory recursively
+ *
+ * @param {string} path
+ * @return {Promise<void>}
+ */
+const asyncRemove = async (path) => {
+    try {
+        await fs.remove(path)
+        logger.info('fs.remove SUCCESS:', {massage: path})
+    } catch (error) {
+        throwError(error.message, true)
+    }
+}
+
+/**
+ * Check folder existing
+ *
+ * @param {string} path
+ * @return {Promise<boolean>}
+ */
+const asyncCheckFolder = async (path) => {
+    try {
+        return await fs.pathExists(path)
+    } catch (error) {
+        throwError(error.message, true)
+    }
 }
 
 /**
@@ -278,19 +334,79 @@ const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
     }
 }
 
+/**
+ * @param {string} directory
+ * @param {string[]} pathsArr
+ *
+ * @return {subDirectories: string[], numberOfSubdirectories: number}
+ */
+const getSubdirectories = (directory, pathsArr) => {
+    const trimmedDirectory = removeExtraFirstSlash(directory)
+    const subDirectories = pathsArr
+        .map(path => removeExtraFirstSlash(path))
+        .filter(path => path.startsWith(trimmedDirectory) && path !== trimmedDirectory)
+    return {
+        subDirectories,
+        numberOfSubdirectories: subDirectories.length
+    }
+}
+
+/**
+ * get param value from request
+ *
+ * @param {object} req - request object. Minimal: {url: string}
+ * @param {string} paramName
+ * @return {string|null}
+ */
+const getParam = (req, paramName) => {
+    if (!req.url) {
+        throwError('There is no req.url', true)
+        return null
+    }
+    const url = new URL('http://localhost:5000' + req.url)
+    const param = url.searchParams.get(paramName)
+    if (!param) {
+        throwError('Request does not contain a required parameter', true)
+        return null
+    }
+    return param
+}
+
+/**
+ * Get list of all directories from configCollection
+ *
+ * @param {object} req - request object. Minimal: {
+ *   app: {locals: {collection: null}},
+ *   body: null
+ * }
+ * @return {Promise<string[]>}
+ */
+const getDirectoriesList = async (req) => {
+    try {
+        const configCollection = req.app.locals.configCollection
+        const directoriesListObj = await configCollection.findOne({name: "paths"})
+        return directoriesListObj.pathsArr
+    } catch (error) {
+        logger.error('getDirectoriesList: ', {data: error})
+        throwError('getDirectoriesList: ')
+    }
+}
+
 module.exports = {
     deepCopy,
     removeExtraSlash,
     removeExtraFirstSlash,
-    getUniqStrings,
-    getConfig,
+    getUniqPaths,
     getError,
+    getAndSendError,
     throwError,
     moveFileAndCleanTemp,
     pickFileName,
     renameFile,
     asyncMoveFile,
     asyncCopyFile,
+    asyncRemove,
+    asyncCheckFolder,
     updateNamePath,
     replaceWithoutExt,
     updatePreviewPath,
@@ -298,5 +414,8 @@ module.exports = {
     cleanBackup,
     filesRecovery,
     removeFilesArr,
+    getSubdirectories,
+    getParam,
+    getDirectoriesList,
     DBFilters
 }

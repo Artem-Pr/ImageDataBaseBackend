@@ -1,6 +1,6 @@
 const ObjectId = require('mongodb').ObjectID
 
-const originalFiledata = [{
+const originalData = [{
     _id: ObjectId("5fef484b497f3af84699e88c"),
     originalName: 'image001-map.jpg',
     mimetype: 'image/jpeg',
@@ -146,12 +146,25 @@ const originalPathsList = [
     "bom/озеро",
     "nature",
     "nature/вода",
+    "tests/test-images",
+    "tests/test-images/photo",
     "природа",
     "природа/активный отдых",
+    "природа/активный отдых/video",
     "природа/активный отдых/эстония",
     "природа/видео",
     "природа/видео/уточки",
-    "природа/корпоратив"
+    "природа/корпоратив",
+    "пустая папка",
+]
+
+const originalPathsList2 = [
+    'tests',
+    'tests/testDirectory',
+    'tests/testDirectory/проверка локализации',
+    'tests/testDirectory/проверка локализации/test-folder',
+    'tests/testDirectory/проверка локализации/test-folder/test-subfolder',
+    'tests/testDirectory/проверка локализации/тестовая папка',
 ]
 
 const shortPathArr = [
@@ -160,7 +173,7 @@ const shortPathArr = [
 ]
 
 module.exports = {
-    originalFiledata,
+    originalData,
     updateFiledata,
     videoOriginalFileData,
     videoUpdatedData,
@@ -169,5 +182,6 @@ module.exports = {
     pushExifFiledataVideo,
     updatedFileDateForReturningValues,
     originalPathsList,
+    originalPathsList2,
     shortPathArr,
 }

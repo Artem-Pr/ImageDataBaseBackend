@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const {getMulterSettings} = require("./utils/multerSettings")
 const {logger} = require("./utils/logger")
+const {getParam} = require("./utils/common")
 const {keywordsRequest} = require("./requests/keywordsRequest")
 const {uploadItemRequest} = require("./requests/uploadItemRequest")
 const {imageItemRequest} = require("./requests/imageItemRequest")
@@ -9,6 +10,8 @@ const {updateRequest} = require("./requests/updateRequest")
 const {getFilesFromDB} = require("./requests/getPhotos")
 const {pathRequest} = require("./requests/pathsRequest")
 const {removeFilesItem} = require("./requests/removeFilesItem")
+const {checkDirectory} = require("./requests/checkDirectory")
+const {removeDirController} = require("./requests/removeDirectory")
 const {MongoClient} = require("mongodb")
 const express = require('express')
 const cors = require('cors')
@@ -45,19 +48,20 @@ app.use('/images', express.static(__dirname + '/temp'))
 app.use('/database', express.static(databaseFolder))
 logger.info('static database', {message: databaseFolder + '/database'})
 
-app.get("/keywords",
-    (req, res) => {
-        logger.http('GET-query', {message: '/keywords'})
-        keywordsRequest(req, res, tempFolder)
-    }
-)
+app.get("/keywords", (req, res) => {
+    logger.http('GET-query', {message: '/keywords'})
+    keywordsRequest(req, res, tempFolder)
+})
 
-app.get("/paths",
-    (req, res) => {
-        logger.http('GET-query', {message: '/paths'})
-        pathRequest(req, res)
-    }
-)
+app.get("/paths", (req, res) => {
+    logger.http('GET-query', {message: '/paths'})
+    pathRequest(req, res)
+})
+
+app.get("/check-directory", (req, res) => {
+    logger.http('GET-query', {message: '/check-directory', data: getParam(req, 'directory')})
+    checkDirectory(req, res)
+})
 
 app.post("/uploadItem",
     upload.single("filedata"),
@@ -114,6 +118,12 @@ app.post("/filtered-photos",
 app.delete("/photo/:id", (req, res) => {
     logger.http('DELETE-query', {message: '/photo/:id', data: req.params.id})
     removeFilesItem(req, res, databaseFolder)
+})
+
+app.delete("/directory", (req, res) => {
+    logger.http('DELETE-query', {message: '/directory', data: getParam(req, 'name')})
+    const removingController = new removeDirController(res, req, databaseFolder)
+    removingController.startRemovingPipeline()
 })
 
 app.use((req, res, next) => {

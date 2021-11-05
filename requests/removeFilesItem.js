@@ -23,6 +23,7 @@ const returnValuesIfError = (error) => {
 const removeFilesItem = async (req, res, dbFolder = '') => {
     const isExistingError = (value, errorMessage) => {
         if (value) return false
+        logger.http('DELETE-response', {message: '/photo/:id', data: errorMessage})
         res.send(getError(errorMessage))
         return true
     }

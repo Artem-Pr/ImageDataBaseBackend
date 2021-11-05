@@ -1,38 +1,47 @@
 const {logger} = require("./logger")
+const {removeDirController} = require("../requests/removeDirectory")
+const {getUniqPaths, throwError} = require("./common")
 
 /**
  * @param req
- * @param {string} basePathWithoutRootDirectory
- * @return {Promise<string>} basePathWithoutRootDirectory or '' if this directory is exists
+ * @param {string | string[]} basePathWithoutRootDirectory
+ * @return {Promise<string>} newPathsArr - array of all new paths
  */
 const addPathToBase = async (req, basePathWithoutRootDirectory) => {
-    const configCollection = req.app.locals.configCollection;
     try {
-        const response = await configCollection.findOne({name: "paths"})
+        //Todo: create another controller for this goal and move paths logic from "removeDirController" to new controller
+        const pathsController = new removeDirController(null, req, undefined, basePathWithoutRootDirectory)
+        await pathsController.fetchPathsConfig('init')
+        const basePaths = Array.isArray(basePathWithoutRootDirectory)
+            ? basePathWithoutRootDirectory
+            : [basePathWithoutRootDirectory]
+        const newPathsArr = getUniqPaths(basePaths)
         
-        if (!response) {
-            await configCollection.insertOne({name: "paths", pathsArr: [basePathWithoutRootDirectory]})
-            logger.info('Add path to config:', {message: basePathWithoutRootDirectory, module: 'addPathToBase'})
-            return basePathWithoutRootDirectory
+        if (!pathsController.pathsConfigArr) {
+            await pathsController.foldersController.insertOne({pathsArr: newPathsArr}, 'configCollection')
+            logger.info('Add paths to config:', {data: newPathsArr, module: 'addPathToBase'})
+            return newPathsArr
+        }
+        logger.debug('pathsArr', {data: newPathsArr, module: 'addPathToBase'})
+        
+        const pathsSet = new Set([...newPathsArr, ...pathsController.pathsConfigArr])
+        pathsSet.delete('')
+        const newPathsList = Array.from(pathsSet).sort()
+        
+        await pathsController.updatePathsConfig(newPathsList)
+        return newPathsList
+    } catch (error) {
+        if (error.message === `Paths array wasn't update`) {
+            logger.info(`Paths array wasn't update`, {module: 'addPathToBase'})
+            return ''
         }
         
-        const pathsSet = new Set(response.pathsArr)
-        if (pathsSet.has(basePathWithoutRootDirectory)) return ''
-        
-        pathsSet.add(basePathWithoutRootDirectory)
-        pathsSet.delete('')
-        const newPathsArr = Array.from(pathsSet).sort()
-        
-        await configCollection.updateOne({name: "paths"}, {$set: {pathsArr: newPathsArr}})
-        logger.info('Add path to config:', {message: basePathWithoutRootDirectory, module: 'addPathToBase'})
-        return basePathWithoutRootDirectory
-    } catch (error) {
         logger.error('addPathToBase ERROR: insert path -', {
             message: basePathWithoutRootDirectory,
-            data: error,
+            data: error.message,
             module: 'addPathToBase'
         })
-        throw new Error(`addPathToBase ERROR: insert path - ${basePathWithoutRootDirectory}, ${error}`)
+        throwError(error.message, true)
     }
 }
 

@@ -1,10 +1,17 @@
 const fs = require('fs-extra')
-const {updateFiledata, originalFiledata, videoOriginalFileData, videoUpdatedData} = require("./Data")
+const {
+    updateFiledata,
+    originalData,
+    videoOriginalFileData,
+    videoUpdatedData,
+    originalPathsList,
+} = require("./Data")
 const {
     deepCopy,
     renameFile,
     pickFileName,
     asyncMoveFile,
+    asyncRemove,
     updateNamePath,
     replaceWithoutExt,
     updatePreviewPath,
@@ -12,6 +19,8 @@ const {
     cleanBackup,
     removeFilesArr,
     filesRecovery,
+    getUniqPaths,
+    getSubdirectories,
 } = require("../utils/common")
 
 describe('Common functions: ', () => {
@@ -26,6 +35,21 @@ describe('Common functions: ', () => {
         fs.emptyDirSync('temp')
     })
     
+    describe('getUniqPaths: ', () => {
+        const paths = [
+            'tests',
+            '',
+            'пустая папка',
+            'tests/test-images/проверка локализации1/video',
+            'tests/test-images/проверка локализации2',
+        ]
+        
+        test('should return an array of unique paths including subfolders', () => {
+            expect(getUniqPaths(paths)).toHaveLength(6)
+            expect(getUniqPaths([])).toHaveLength(0)
+            expect(getUniqPaths(['', ''])).toHaveLength(0)
+        })
+    })
     describe('Rename File func: ', () => {
         const originalFileName = 'tests/test-images/image001-map.jpg'
         const newFileName = 'tests/test-images/image001-map__renamed.jpg'
@@ -113,9 +137,32 @@ describe('Common functions: ', () => {
             await asyncMoveFile(newFilePath, originalFilePath, true)
         })
     })
+    describe('asyncRemove: ', () => {
+        const originalFilePath = 'tests/test-images/image001-map.jpg'
+        const newFilePath = 'tests/testDirectory/проверка локализации/test-dir/test-subdir/image001-map.jpg'
+        
+        beforeEach(() => {
+            fs.mkdirpSync('tests/testDirectory/проверка локализации/test-dir/test-subdir')
+            fs.mkdirpSync('tests/testDirectory/проверка локализации/test-dir/тестовая папка')
+            fs.copySync(originalFilePath, newFilePath)
+        })
+        afterEach(() => {
+            fs.removeSync('tests/testDirectory/проверка локализации/test-dir')
+        })
+        test('should correctly remove folder with all subfolders and files', async () => {
+            const isDirExist0 = fs.pathExistsSync('tests/testDirectory/проверка локализации/test-dir')
+            const isDirExist1 = fs.pathExistsSync('tests/testDirectory/проверка локализации/test-dir/test-subdir')
+            const isDirExist2 = fs.pathExistsSync('tests/testDirectory/проверка локализации/test-dir/тестовая папка')
+            const isDirExist3 = fs.pathExistsSync('tests/testDirectory/проверка локализации/test-dir/test-subdir/image001-map.jpg')
+            expect(isDirExist0 && isDirExist1 && isDirExist2 && isDirExist3).toBeTruthy()
+            await asyncRemove('tests/testDirectory/проверка локализации/test-dir')
+            const isDirExist = fs.pathExistsSync('tests/testDirectory/проверка локализации/test-dir')
+            expect(isDirExist).toBeFalsy()
+        })
+    })
     describe('updateNamePath: ', () => {
         test('should return new namePath', async () => {
-            const newNamePath = updateNamePath(originalFiledata[0], updateFiledata[0])
+            const newNamePath = updateNamePath(originalData[0], updateFiledata[0])
             expect(newNamePath).toBe('tests/test-images/123.jpg')
         })
     })
@@ -316,6 +363,30 @@ describe('Common functions: ', () => {
             } catch (error) {
                 expect(error.message).toBe(`RECOVERY_ERROR: fs.move Error: ENOENT: no such file or directory, stat 'temp/backup123456' - tests/test-images/image001-map.jpg`)
             }
+        })
+    })
+    describe('getSubdirectories: ', () => {
+        const dir1 = 'tests/test-images'
+        const dir2 = 'природа'
+        const dir3 = 'bom'
+        const dir4 = 'природа/активный отдых'
+        const dir5 = 'пустая папка'
+        const dir6 = 'there is no such folder'
+        
+        test('should return actual number of subdirectories', () => {
+            const {numberOfSubdirectories: numberOfSubDir1} = getSubdirectories(dir1, originalPathsList)
+            const {numberOfSubdirectories: numberOfSubDir2} = getSubdirectories(dir2, originalPathsList)
+            const {numberOfSubdirectories: numberOfSubDir3} = getSubdirectories(dir3, originalPathsList)
+            const {numberOfSubdirectories: numberOfSubDir4, subDirectories} = getSubdirectories(dir4, originalPathsList)
+            const {numberOfSubdirectories: numberOfSubDir5} = getSubdirectories(dir5, originalPathsList)
+            const {numberOfSubdirectories: numberOfSubDir6} = getSubdirectories(dir6, originalPathsList)
+            expect(numberOfSubDir1).toBe(1)
+            expect(numberOfSubDir2).toBe(6)
+            expect(numberOfSubDir3).toBe(3)
+            expect(numberOfSubDir4).toBe(2)
+            expect(numberOfSubDir5).toBe(0)
+            expect(numberOfSubDir6).toBe(0)
+            expect(subDirectories).toEqual(["природа/активный отдых/video", "природа/активный отдых/эстония"])
         })
     })
 })

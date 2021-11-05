@@ -9,8 +9,6 @@ describe('addPathToBase: ', () => {
         app: {locals: {configCollection: null}},
         body: null
     }
-    let emptyConfigCollection
-    let configCollection
     let connection
     let db
     
@@ -23,36 +21,28 @@ describe('addPathToBase: ', () => {
     })
     
     beforeEach(async () => {
-        configCollection = db.collection('testConfig')
-        req.app.locals.configCollection = configCollection
-        await configCollection.insertOne({name: "paths", pathsArr: originalPathsList})
+        req.app.locals.configCollection = db.collection('testConfig')
+        await req.app.locals.configCollection.insertOne({name: "paths", pathsArr: originalPathsList})
     })
     
     afterEach(async () => {
-        await configCollection.deleteMany({})
-    })
-    
-    afterAll(async () => {
-        // await emptyConfigCollection.deleteMany({})
+        req.app.locals.configCollection && await req.app.locals.configCollection.deleteMany({})
     })
     
     test('should create new config in DB if collection is not exists', async () => {
-        emptyConfigCollection = db.collection('testEmptyConfig')
-        req.app.locals.configCollection = emptyConfigCollection
+        req.app.locals.configCollection = db.collection('testEmptyConfig')
         
         await addPathToBase(req, testFilePath)
-        const config = await emptyConfigCollection.findOne({name: "paths"})
-        expect(config.pathsArr).toHaveLength(1)
-        expect(config.pathsArr[0]).toBe(testFilePath)
-        
-        await req.app.locals.configCollection.drop()
+        const config = await req.app.locals.configCollection.findOne({name: "paths"})
+        expect(config.pathsArr).toHaveLength(2)
+        expect(config.pathsArr).toEqual(["природа", "природа/nature"])
     })
     test('should return an Error if collection is broken', async () => {
         req.app.locals.configCollection = null
         try {
             await addPathToBase(req, testFilePath)
         } catch (error) {
-            expect(error.message).toBe(`addPathToBase ERROR: insert path - ${testFilePath}, TypeError: Cannot read property 'findOne' of null`)
+            expect(error.message).toBe(`DBController - findOne: Cannot read property 'findOne' of null`)
         }
     })
     test('should return an empty string if new path exists in pathsArr', async () => {
@@ -61,12 +51,12 @@ describe('addPathToBase: ', () => {
     })
     test('should add new path to pathsArr', async () => {
         await addPathToBase(req, testFilePath)
-        const {pathsArr} = await configCollection.findOne({name: "paths"})
-        expect(pathsArr).toHaveLength(13)
+        const {pathsArr} = await req.app.locals.configCollection.findOne({name: "paths"})
+        expect(pathsArr).toHaveLength(17)
         expect(pathsArr.includes(testFilePath)).toBeTruthy()
     })
-    test('should return new filePath after adding it to pathsArr', async () => {
+    test('should return updated pathsArr after adding path to pathsArr', async () => {
         const response = await addPathToBase(req, testFilePath)
-        expect(response).toBe(testFilePath)
+        expect(response).toEqual([...originalPathsList, testFilePath].sort())
     })
 })

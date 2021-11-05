@@ -1,6 +1,6 @@
 const {getExifFromArr, pushExif} = require("../utils/exifTool")
 const moment = require("moment")
-const {moveFileAndCleanTemp} = require("../utils/common")
+const {moveFileAndCleanTemp, getParam} = require("../utils/common")
 const createError = require("http-errors")
 const {logger} = require("../utils/logger")
 const {addKeywordsToBase} = require("../utils/addKeywordsToBase")
@@ -56,8 +56,7 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
 
 
 const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
-    const url = new URL('http://localhost:5000' + req.url)
-    const basePathWithoutRootDirectory = url.searchParams.get('path')
+    const basePathWithoutRootDirectory = getParam(req, 'path')
     const targetFolder = databaseFolder + '/' + basePathWithoutRootDirectory
     logger.debug('uploadRequest - targetFolder:', {message: targetFolder, module: 'uploadRequest'})
     let filedata = req.body

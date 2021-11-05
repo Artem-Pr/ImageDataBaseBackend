@@ -75,7 +75,7 @@ describe('ExifTool: ', () => {
             try {
                 await getExifFromPhoto(wrongFullPathsArr, shortPathArr, exiftoolProcess)
             } catch (error) {
-                expect(error.message).toBe('ERROR: getExifFromPhoto - File not found: tests/test-images/image003-map.jpg')
+                expect(error.message).toBe('getExifFromPhoto - File not found: tests/test-images/image003-map.jpg')
             }
         })
     })
