@@ -2,6 +2,9 @@ const {logger} = require("./logger")
 const {throwError} = require("./common")
 
 class DBRequests {
+    static directoriesList = {name: "paths"}
+    static allFiles = {}
+    
     /**
      * @param {string} fieldName
      * @param {string} subString - searching string
@@ -18,8 +21,6 @@ class DBRequests {
     static updateDirectoriesList(directoriesList) {
         return {$set: {pathsArr: directoriesList}}
     }
-    
-    static directoriesList = {name: "paths"}
 }
 
 class DBController {

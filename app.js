@@ -12,6 +12,7 @@ const {pathRequest} = require("./requests/pathsRequest")
 const {removeFilesItem} = require("./requests/removeFilesItem")
 const {checkDirectory} = require("./requests/checkDirectory")
 const {removeDirController} = require("./requests/removeDirectory")
+const {matchingNumberOfFilesTest} = require("./requests/testRequests/matchingNumberOfFilesTest")
 const {MongoClient} = require("mongodb")
 const express = require('express')
 const cors = require('cors')
@@ -44,6 +45,7 @@ if (!isDataBaseExist) {
 const upload = getMulterSettings(tempFolder)
 
 app.use(cors())
+// Todo: move all paths to constants
 app.use('/images', express.static(__dirname + '/temp'))
 app.use('/database', express.static(databaseFolder))
 logger.info('static database', {message: databaseFolder + '/database'})
@@ -124,6 +126,15 @@ app.delete("/directory", (req, res) => {
     logger.http('DELETE-query', {message: '/directory', data: getParam(req, 'name')})
     const removingController = new removeDirController(res, req, databaseFolder)
     removingController.startRemovingPipeline()
+})
+
+app.use("/test/matching-files",
+    express.json({extended: true})
+)
+
+app.post("/test/matching-files", (req, res) => {
+    logger.http('POST-query', {message: '/test/matching-files', data: req.body})
+    matchingNumberOfFilesTest(req, res, databaseFolder)
 })
 
 app.use((req, res, next) => {

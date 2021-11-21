@@ -3,13 +3,17 @@ const ObjectId = require('mongodb').ObjectID
 const {logger} = require("./logger")
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
+const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, length))
+            .toString()
+            .padStart(length, '0'))
 const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : value)
 const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
+const getFilePathWithoutName = (fullPath) => (fullPath.split('/').slice(0, -1).join('/'))
 
 /**
  * Create uniq paths: recursively get all folders and subfolders from fullPaths list
  *
- * @param {string[]} paths array of fullPaths
+ * @param {string[]} paths array of fullPaths without file name
  * @return {string[]}
  */
 const getUniqPaths = (paths) => {
@@ -39,6 +43,8 @@ const getRandomCode = (codeLength) => {
     return Math.floor(Math.random() * Math.pow(10, codeLength)).toString().padStart(codeLength, "0")
 }
 
+
+// Todo: move to DBController
 const DBFilters = {
     getFilterByIds: idsArr => ({
         _id: {
@@ -335,6 +341,8 @@ const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
 }
 
 /**
+ * Return pathsArr that are subdirectories
+ *
  * @param {string} directory
  * @param {string[]} pathsArr
  *
@@ -372,30 +380,12 @@ const getParam = (req, paramName) => {
     return param
 }
 
-/**
- * Get list of all directories from configCollection
- *
- * @param {object} req - request object. Minimal: {
- *   app: {locals: {collection: null}},
- *   body: null
- * }
- * @return {Promise<string[]>}
- */
-const getDirectoriesList = async (req) => {
-    try {
-        const configCollection = req.app.locals.configCollection
-        const directoriesListObj = await configCollection.findOne({name: "paths"})
-        return directoriesListObj.pathsArr
-    } catch (error) {
-        logger.error('getDirectoriesList: ', {data: error})
-        throwError('getDirectoriesList: ')
-    }
-}
-
 module.exports = {
     deepCopy,
+    createPid,
     removeExtraSlash,
     removeExtraFirstSlash,
+    getFilePathWithoutName,
     getUniqPaths,
     getError,
     getAndSendError,
@@ -416,6 +406,5 @@ module.exports = {
     removeFilesArr,
     getSubdirectories,
     getParam,
-    getDirectoriesList,
     DBFilters
 }

@@ -2,7 +2,6 @@
 .idea
 # dependencies
 /node_modules
-/database
 /.pnp
 .pnp.js
 
@@ -13,6 +12,8 @@
 /build
 /uploads
 /temp
+/database
+/logger
 
 # misc
 .DS_Store

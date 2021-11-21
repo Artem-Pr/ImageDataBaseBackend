@@ -5,7 +5,8 @@ const {
     getAndSendError,
     asyncCheckFolder,
     throwError,
-    asyncRemove, removeExtraSlash
+    asyncRemove,
+    removeExtraSlash
 } = require("../utils/common")
 const {DBController, DBRequests} = require("../utils/DBController")
 const {difference} = require("ramda")
