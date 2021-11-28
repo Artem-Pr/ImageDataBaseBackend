@@ -1878,3 +1878,90 @@
 2021-11-21T09:54:36.414Z error: movePreviewFile - ERROR: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
 2021-11-21T09:54:36.415Z error: OOPS! need recovery: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
 2021-11-21T09:54:36.418Z error: ERROR: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  
+2021-11-27T18:42:20.060Z error: Can not find main database folder  
+2021-11-27T18:42:57.004Z error: Can not find main database folder  
+2021-11-27T22:16:46.879Z error: throw:  getVideoFilesListFromRootDirectory  
+2021-11-27T22:17:26.049Z error: throw:  getVideoFilesListFromRootDirectory  
+2021-11-28T08:35:12.010Z error: throw:  getVideoFilesListFromRootDirectory  
+2021-11-28T08:37:37.476Z error: throw:  Cannot read property 'length' of null  
+2021-11-28T08:45:12.748Z error: throw:  Cannot read property 'length' of null  
+2021-11-28T08:46:16.330Z error: throw:  Cannot read property 'length' of null  
+2021-11-28T08:48:21.029Z error: throw:  Cannot read property 'length' of null  
+2021-11-28T08:49:48.278Z error: throw:  Cannot read property 'length' of null  
+2021-11-28T08:57:30.231Z error: throw:  Cannot read property 'length' of null  
+2021-11-28T08:57:59.929Z error: throw:  Cannot read property 'length' of null  
+2021-11-28T11:49:27.564Z error: throw:  Paths array wasn't update  
+2021-11-28T16:59:09.209Z error: ERROR: filePath.split is not a function "MatchingVideoThumbnailsTestController" 
+2021-11-28T17:01:20.578Z error: ERROR: filePath.split is not a function "MatchingVideoThumbnailsTestController" 
+2021-11-28T17:10:54.769Z error: DBController - findOne:  "Cannot read property 'findOne' of null" 
+2021-11-28T17:10:54.770Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:10:54.770Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:10:54.771Z error: addPathToBase ERROR: insert path - природа/nature "DBController - findOne: Cannot read property 'findOne' of null" "addPathToBase"
+2021-11-28T17:10:54.772Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:10:54.783Z error: throw:  Paths array wasn't update  
+2021-11-28T17:11:00.226Z error: ERROR: Request does not contain a required parameter  
+2021-11-28T17:11:00.250Z error: ERROR: There are no matching directories  
+2021-11-28T17:11:05.987Z error: fs.rename: tests/test-videos/image001-map.jpg  
+2021-11-28T17:11:06.013Z error: fs.rename ERROR: this file already exists - tests/test-images/image001-map__renamed.jpg  
+2021-11-28T17:11:06.091Z error: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  
+2021-11-28T17:11:06.264Z error: fs.copy Error: ENOENT: no such file or directory, stat 'tests/test-images/wrong-address.jpg'  
+2021-11-28T17:11:06.381Z error: fs.copy Error: ENOENT: no such file or directory, chmod 'temp/backup644737'  
+2021-11-28T17:11:06.451Z error: fs.move Error: ENOENT: no such file or directory, stat 'temp/backup123456' - tests/test-images/image001-map.jpg  
+2021-11-28T17:11:06.465Z error: fs.move Error: ENOENT: no such file or directory, stat 'temp/backup654321' - tests/test-images/image002-map.jpg  
+2021-11-28T17:11:13.312Z error: exifTool-1: "Error: There are an ERROR here" 
+2021-11-28T17:11:14.331Z error: throw:  getExifFromPhoto - File not found: tests/test-images/image003-map.jpg  
+2021-11-28T17:11:15.742Z error: exifTool-0: "Error: File not found - tests/tempPhotos/bom-bom1\n    0 image files updated\n    1 files weren't updated due to errors" 
+2021-11-28T17:11:28.897Z error: throw:  getFilesListFromRootDirectory  
+2021-11-28T17:12:21.007Z error: ERROR: Cannot read property 'url' of undefined "removeDirectory" 
+2021-11-28T17:12:21.007Z error: throw:  Cannot read property 'url' of undefined  
+2021-11-28T17:12:21.019Z error: DBController - findOne:  "Cannot read property 'findOne' of null" 
+2021-11-28T17:12:21.019Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:12:21.020Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:12:21.041Z error: throw:  Cannot find property 'pathsArr' in pathConfig  
+2021-11-28T17:12:21.041Z error: throw:  Cannot find property 'pathsArr' in pathConfig  
+2021-11-28T17:12:21.063Z error: throw:  required "pathsConfig" param  
+2021-11-28T17:12:21.080Z error: throw:  Paths array wasn't update  
+2021-11-28T17:12:21.131Z error: throw:  Config doesn't contain target directory  
+2021-11-28T17:12:21.131Z error: throw:  Config doesn't contain target directory  
+2021-11-28T17:12:21.393Z error: throw:  can't find target directory  
+2021-11-28T17:12:21.393Z error: ERROR: can't find target directory "removeDirectory" 
+2021-11-28T17:12:27.111Z error: ERROR: Remove files item - missing id  
+2021-11-28T17:12:27.198Z error: ERROR: Remove files item - file not found in DB  
+2021-11-28T17:12:27.257Z error: ERROR: Remove files item - file not found in Directory  
+2021-11-28T17:12:27.490Z error: ERROR: Remove files item - file not found in Directory  
+2021-11-28T17:12:35.302Z error: OOPS! isDifferentNames ERROR: duplicated originalNames - image001-map.jpg  "updateRequest"
+2021-11-28T17:12:35.996Z error: OOPS! isDifferentNames ERROR: duplicated originalNames - image001-map.jpg  "updateRequest"
+2021-11-28T17:12:37.086Z error: fs.move Error: ENOENT: no such file or directory, stat 'tests/wrong directory/YDXJ1442-thumbnail-1000x562-0001.png' - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  
+2021-11-28T17:12:37.086Z error: movePreviewFile - ERROR: fs.move Error: ENOENT: no such file or directory, stat 'tests/wrong directory/YDXJ1442-thumbnail-1000x562-0001.png' - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-11-28T17:12:37.298Z error: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  
+2021-11-28T17:12:37.428Z error: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  
+2021-11-28T17:12:37.779Z error: DBController - findOne:  "Cannot read property 'findOne' of null" 
+2021-11-28T17:12:37.779Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:12:37.779Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:12:37.780Z error: addPathToBase ERROR: insert path - tests/testDirectory/проверка локализации0,tests/testDirectory/проверка локализации1 "DBController - findOne: Cannot read property 'findOne' of null" "addPathToBase"
+2021-11-28T17:12:37.780Z error: throw:  DBController - findOne: Cannot read property 'findOne' of null  
+2021-11-28T17:12:38.040Z error: throw:  Paths array wasn't update  
+2021-11-28T17:12:38.276Z error: Update request: there are no filedata  
+2021-11-28T17:12:38.813Z error: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  
+2021-11-28T17:12:38.814Z error: OOPS! need recovery: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  "updateRequest"
+2021-11-28T17:12:38.817Z error: ERROR: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  
+2021-11-28T17:12:39.369Z error: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  
+2021-11-28T17:12:39.369Z error: OOPS! need recovery: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  "updateRequest"
+2021-11-28T17:12:39.374Z error: ERROR: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  
+2021-11-28T17:12:42.142Z error: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  
+2021-11-28T17:12:42.142Z error: OOPS! need recovery: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  "updateRequest"
+2021-11-28T17:12:42.145Z error: ERROR: fs.copy Error: 'tests/testDirectory/проверка локализации/123.jpg' already exists  
+2021-11-28T17:12:42.632Z error: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  
+2021-11-28T17:12:42.632Z error: OOPS! need recovery: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  "updateRequest"
+2021-11-28T17:12:42.635Z error: ERROR: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/image001-map.jpg  
+2021-11-28T17:12:43.210Z error: fs.rename ERROR: this file already exists - tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png  
+2021-11-28T17:12:43.210Z error: OOPS! need recovery: fs.rename ERROR: this file already exists - tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png  "updateRequest"
+2021-11-28T17:12:43.216Z error: ERROR: fs.rename ERROR: this file already exists - tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png  
+2021-11-28T17:12:43.747Z error: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  
+2021-11-28T17:12:43.747Z error: movePreviewFile - ERROR: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-11-28T17:12:43.747Z error: OOPS! need recovery: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-11-28T17:12:43.754Z error: ERROR: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  
+2021-11-28T17:12:44.293Z error: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  
+2021-11-28T17:12:44.294Z error: movePreviewFile - ERROR: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-11-28T17:12:44.294Z error: OOPS! need recovery: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  "updateRequest"
+2021-11-28T17:12:44.298Z error: ERROR: movePreviewFile: fs.move Error: dest already exists. - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png  

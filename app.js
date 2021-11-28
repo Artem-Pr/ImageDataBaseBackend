@@ -13,6 +13,7 @@ const {removeFilesItem} = require("./requests/removeFilesItem")
 const {checkDirectory} = require("./requests/checkDirectory")
 const {removeDirController} = require("./requests/removeDirectory")
 const {matchingNumberOfFilesTest} = require("./requests/testRequests/matchingNumberOfFilesTest")
+const {matchingVideoThumbnailsTest} = require('./requests/testRequests/matchingVideoThumbnailsTest')
 const {MongoClient} = require("mongodb")
 const express = require('express')
 const cors = require('cors')
@@ -135,6 +136,15 @@ app.use("/test/matching-files",
 app.post("/test/matching-files", (req, res) => {
     logger.http('POST-query', {message: '/test/matching-files', data: req.body})
     matchingNumberOfFilesTest(req, res, databaseFolder)
+})
+
+app.use("/test/matching-videos",
+    express.json({extended: true})
+)
+
+app.post("/test/matching-videos", (req, res) => {
+    logger.http('POST-query', {message: '/test/matching-videos', data: req.body})
+    matchingVideoThumbnailsTest(req, res, databaseFolder)
 })
 
 app.use((req, res, next) => {

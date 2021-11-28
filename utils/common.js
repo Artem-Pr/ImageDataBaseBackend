@@ -2,6 +2,8 @@ const fs = require('fs-extra')
 const ObjectId = require('mongodb').ObjectID
 const {logger} = require("./logger")
 
+const VIDEO_EXTENSION_LIST = ['mkv', 'flv', 'avi', 'mov', 'wmv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2', 'mpeg', 'm2v', '3gp']
+
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, length))
             .toString()
@@ -105,6 +107,39 @@ const moveFileAndCleanTemp = async (tempPath, targetPath) => {
  */
 const pickFileName = (filePath) => {
     return filePath.split('/').slice(-1)[0]
+}
+
+/**
+ * Get file name without extension
+ *
+ * @param {string} filePath
+ * @return {string} fileName
+ */
+const removeFileExt = (filePath) => {
+    console.log(filePath, 'filePath')
+    return filePath.split('.').slice(0, -1).join('.')
+}
+
+/**
+ * @param {string} fileName
+ */
+const isVideoFile = (fileName) => {
+    const ext = fileName.split('.').slice(-1)[0]
+    return VIDEO_EXTENSION_LIST.includes(ext)
+}
+
+/**
+ * @param {string} fileName
+ */
+const isVideoThumbnail = (fileName) => {
+    return fileName.includes('thumbnail') && fileName.endsWith('.png')
+}
+
+/**
+ * @param {Object} DBObject - file object from DB
+ */
+const isVideoDBFile = (DBObject) => {
+    return DBObject.mimetype.startsWith('video')
 }
 
 /**
@@ -392,6 +427,10 @@ module.exports = {
     throwError,
     moveFileAndCleanTemp,
     pickFileName,
+    removeFileExt,
+    isVideoFile,
+    isVideoThumbnail,
+    isVideoDBFile,
     renameFile,
     asyncMoveFile,
     asyncCopyFile,

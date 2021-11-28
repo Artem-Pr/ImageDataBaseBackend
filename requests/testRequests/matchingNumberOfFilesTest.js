@@ -1,5 +1,4 @@
-// const {readdir, stat} = require('fs/promises')
-const {readdirSync, statSync} = require('fs-extra')
+const {readdir, stat} = require('fs/promises')
 const {logger} = require("../../utils/logger")
 const {difference, uniq} = require("ramda")
 const {
@@ -8,7 +7,7 @@ const {
     getFilePathWithoutName,
     getUniqPaths,
     removeExtraFirstSlash,
-    removeExtraSlash
+    removeExtraSlash, throwError
 } = require("../../utils/common")
 const {DBRequestsController} = require("../../utils/DBRequestsController")
 const pidsList = {}
@@ -83,7 +82,7 @@ class matchingNumberOfFilesTestController {
             await this.fetchPathsFromConfig()
             await this.fetchNumberOfFilesInDB()
             this.getAllDirectoriesFromDBFiles()
-            this.getFilesListFromRootDirectory()
+            await this.getFilesListFromRootDirectory()
             
             this.getExcessiveFoldersFromConfig()
             this.getExcessiveFoldersInDBFiles()
@@ -114,38 +113,45 @@ class matchingNumberOfFilesTestController {
         this.updateProgress(20)
     }
     
-    getFilesListFromRootDirectory() {
-        const getAllFilesRecursively = function(dirPath, filesInRootDirectory) {
-            const files = readdirSync(dirPath)
+    async getFilesListFromRootDirectory() {
+        const getAllFilesRecursively = async function(dirPath, filesInRootDirectory) {
+            const files = await readdir(dirPath)
     
             filesInRootDirectory = filesInRootDirectory || {
                 filesList: [],
                 directoriesList: []
             }
     
-            files.forEach(function (file) {
-                if (statSync(dirPath + "/" + file).isDirectory()) {
+            const filesResponse = files.map(async function (file) {
+                const fileStat = await stat(dirPath + "/" + file)
+                if (fileStat.isDirectory()) {
                     filesInRootDirectory.directoriesList.push(dirPath + "/" + file)
-                    filesInRootDirectory = getAllFilesRecursively(dirPath + "/" + file, filesInRootDirectory)
+                    filesInRootDirectory = await getAllFilesRecursively(dirPath + "/" + file, filesInRootDirectory)
                 } else {
                     !file.includes('thumbnail') && filesInRootDirectory.filesList.push(dirPath + "/" + file)
                 }
             })
             
+            await Promise.all(filesResponse)
+            
             return filesInRootDirectory
         }
-        const response = getAllFilesRecursively(this.rootDirectory)
-        
-        // save response
-        this.directoriesListFromDisk = this.cutRootDirectoryPathFromPathsArr(response.directoriesList)
-        this.filesListFromDisk = this.cutRootDirectoryPathFromPathsArr(response.filesList)
-        
-        this.responseModel = {
-            ...this.responseModel,
-            filesInDirectory: response.filesList.length,
-            foldersInDirectory: response.directoriesList.length
+        try {
+            const response = await getAllFilesRecursively(this.rootDirectory)
+            
+            // save response
+            this.directoriesListFromDisk = this.cutRootDirectoryPathFromPathsArr(response.directoriesList)
+            this.filesListFromDisk = this.cutRootDirectoryPathFromPathsArr(response.filesList)
+            
+            this.responseModel = {
+                ...this.responseModel,
+                filesInDirectory: response.filesList.length,
+                foldersInDirectory: response.directoriesList.length
+            }
+            this.updateProgress(5)
+        } catch (error) {
+            throwError('getFilesListFromRootDirectory', true)
         }
-        this.updateProgress(5)
     }
     
     getAllDirectoriesFromDBFiles() {

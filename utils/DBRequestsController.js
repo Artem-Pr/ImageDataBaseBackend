@@ -17,6 +17,7 @@ class DBRequestsController {
         this.foldersController = null
         this.pathsConfigArr = null
         this.allFiles = null
+        this.allVideoFiles = null
     }
     
     initPathsArrayController(DBRequest) {
@@ -43,6 +44,7 @@ class DBRequestsController {
     
     /**
      * Fetch all files from database
+     * @description save files list in this.allFiles
      *
      * @return {Promise<void>}
      */
@@ -52,6 +54,23 @@ class DBRequestsController {
             const response = await this.foldersController.find('collection')
             this.allFiles = response || throwError('DB collection is empty', true)
             this.successLog('fetch all files from DB (show only length)', this.allFiles.length)
+        } catch (error) {
+            throwError(error.message, true)
+        }
+    }
+    
+    /**
+     * Fetch all video files from database
+     * @description save files list in this.allVideoFiles
+     *
+     * @return {Promise<void>}
+     */
+    async fetchAllVideoFiles() {
+        try {
+            this.initPathsArrayController(DBRequests.byFieldUsingStartsWith('mimetype', 'video'))
+            const response = await this.foldersController.find('collection')
+            this.allVideoFiles = response || throwError('no video files found', true)
+            this.successLog('fetch all video files from DB (show only length)', this.allVideoFiles.length)
         } catch (error) {
             throwError(error.message, true)
         }

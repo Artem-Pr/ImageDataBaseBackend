@@ -41,8 +41,8 @@ describe('matchingNumberOfFilesTestSpec', () => {
         })
         
         describe('getFilesListFromRootDirectory:', () => {
-            test('should create file list', () => {
-                testController.getFilesListFromRootDirectory()
+            test('should create file list', async () => {
+                await testController.getFilesListFromRootDirectory()
                 expect(testController.directoriesListFromDisk).toEqual(directoriesListFromDisk)
                 expect(testController.filesListFromDisk).toEqual(filesListFromDisk)
             })
