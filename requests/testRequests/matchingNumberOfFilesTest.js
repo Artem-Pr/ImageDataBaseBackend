@@ -1,16 +1,11 @@
 const {readdir, stat} = require('fs/promises')
-const {logger} = require("../../utils/logger")
 const {difference, uniq} = require("ramda")
 const {
-    getAndSendError,
-    createPid,
     getFilePathWithoutName,
     getUniqPaths,
-    removeExtraFirstSlash,
-    removeExtraSlash, throwError
+    throwError
 } = require("../../utils/common")
-const {DBRequestsController} = require("../../utils/DBRequestsController")
-const pidsList = {}
+const {TestController} = require('./testController');
 
 const initialResponseModel = {
     foldersInConfig: 0,
@@ -30,7 +25,7 @@ const initialResponseModel = {
     pid: 0,
 }
 
-class matchingNumberOfFilesTestController {
+class MatchingNumberOfFilesTestController extends TestController {
     /**
      * Test matching number of files in root directory and DB
      *
@@ -42,16 +37,10 @@ class matchingNumberOfFilesTestController {
      * @param {string} dbFolder
      */
     constructor(req, res, dbFolder) {
-        const pid = req.body && req.body.pid
-        if (!pid && pid !== 0) this.sendError('missing pid')
+        super(req, res, dbFolder);
         
-        this.pid = pid
-        this.res = res
-        this.req = req
-        this.rootDirectory = dbFolder
-        this.responseModel = pidsList[pid] || initialResponseModel
+        this.responseModel = this.pidsList[this.pid] || initialResponseModel
         this.url = '/test/matching-files'
-        this.pathsController = {pathsConfigArr: []}
         
         this.directoriesListFromDB = []
         this.directoriesListFromConfig = []
@@ -59,20 +48,8 @@ class matchingNumberOfFilesTestController {
         
         this.filesListFromDisk = []
         this.filesListFromDB = []
-        
-        logger.info('matchingNumberOfFilesTestController init -', {message: 'SUCCESS'})
-    }
     
-    isFirstRequest() {
-        return (this.pid === 0)
-    }
-    
-    startTests() {
-        this.pid = createPid(6)
-        this.responseModel = {...this.responseModel, pid: this.pid}
-        this.updatePid()
-        this.sendProgress()
-        this.pathsController = new DBRequestsController(this.req)
+        this.init('matchingNumberOfFilesTestController')
     }
     
     async startTestsPipeline() {
@@ -221,59 +198,11 @@ class matchingNumberOfFilesTestController {
         }
         this.updateProgress(5)
     }
-    
-    updateProgress(additionalPercent) {
-        this.responseModel = {
-            ...this.responseModel,
-            progress: this.responseModel.progress + additionalPercent,
-            success: true
-        }
-        this.updatePid()
-    }
-    
-    setProgress(percent) {
-        this.responseModel = {
-            ...this.responseModel,
-            progress: percent,
-            success: true
-        }
-        this.updatePid()
-    }
-    
-    removeExtraSlashesFromPathsArr(pathList) {
-        return pathList.map(path => removeExtraFirstSlash(removeExtraSlash(path)))
-    }
-    
-    cutRootDirectoryPathFromPathsArr(pathList) {
-        const response = pathList
-            .map(path => path.slice(this.rootDirectory.length))
-            .sort()
-        return this.removeExtraSlashesFromPathsArr(response)
-    }
-    
-    updatePid() {
-        pidsList[this.pid] = this.responseModel
-    }
-    
-    sendProgress() {
-        logger.http('POST-response', {message: this.url, data: pidsList[this.pid]})
-        this.res.send(pidsList[this.pid])
-    }
-    
-    sendError(errorMessage) {
-        getAndSendError(
-            this.res,
-            "POST",
-            this.url,
-            errorMessage,
-            'matchingNumberOfFilesTestController'
-        )
-    }
 }
 
 
 const matchingNumberOfFilesTest = async (req, res, dbFolder) => {
-    const testController = new matchingNumberOfFilesTestController(req, res, dbFolder)
+    const testController = new MatchingNumberOfFilesTestController(req, res, dbFolder)
     if (testController.isFirstRequest()) {
         await testController.startTestsPipeline()
     } else {
@@ -281,4 +210,4 @@ const matchingNumberOfFilesTest = async (req, res, dbFolder) => {
     }
 }
 
-module.exports = {matchingNumberOfFilesTest, matchingNumberOfFilesTestController}
+module.exports = {matchingNumberOfFilesTest, MatchingNumberOfFilesTestController }

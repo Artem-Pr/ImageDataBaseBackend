@@ -1,7 +1,7 @@
 const {copySync, mkdirpSync} = require('fs-extra')
 const {logger} = require("../utils/logger")
 
-const {matchingNumberOfFilesTestController} = require("../requests/testRequests/matchingNumberOfFilesTest")
+const {MatchingNumberOfFilesTestController} = require("../requests/testRequests/matchingNumberOfFilesTest")
 const fs = require("fs-extra");
 
 const directoriesListFromDisk = [
@@ -22,7 +22,7 @@ describe('matchingNumberOfFilesTestSpec', () => {
     describe('matchingNumberOfFilesTestController', () => {
         let req = {body: {pid: 111111}}
         let res = {send: null}
-        const testController = new matchingNumberOfFilesTestController(req, res, 'tests/testDirectory')
+        const testController = new MatchingNumberOfFilesTestController(req, res, 'tests/testDirectory')
         beforeAll(() => {
             logger.verbose('beforeAll')
             mkdirpSync('tests/testDirectory/video')
