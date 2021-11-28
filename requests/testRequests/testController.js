@@ -4,6 +4,7 @@ const {
     createPid,
     removeExtraFirstSlash,
     removeExtraSlash,
+    normalize,
 } = require('../../utils/common');
 const {DBRequestsController} = require('../../utils/DBRequestsController');
 
@@ -69,6 +70,16 @@ class TestController {
             success: true
         }
         this.updatePid()
+    }
+    
+    /**
+     * Normalized string array with "NFC"
+     *
+     * @param {string[]} strings
+     * @return {string[]}
+     */
+    normalizedStringArr(strings) {
+        return strings.map(string => normalize(string))
     }
     
     removeExtraSlashesFromPathsArr(pathList) {

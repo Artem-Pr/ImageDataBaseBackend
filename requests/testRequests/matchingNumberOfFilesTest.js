@@ -149,8 +149,14 @@ class MatchingNumberOfFilesTestController extends TestController {
     }
     
     getExcessiveFoldersFromConfig() {
-        const difList__Config_DB = difference(this.directoriesListFromConfig, this.directoriesListFromDB)
-        const difList__Config_Disk = difference(this.directoriesListFromConfig, this.directoriesListFromDisk)
+        const difList__Config_DB = difference(
+            this.normalizedStringArr(this.directoriesListFromConfig),
+            this.normalizedStringArr(this.directoriesListFromDB),
+        )
+        const difList__Config_Disk = difference(
+            this.normalizedStringArr(this.directoriesListFromConfig),
+            this.normalizedStringArr(this.directoriesListFromDisk),
+        )
         this.responseModel = {
             ...this.responseModel,
             excessiveFolders__Config_DB: difList__Config_DB,
@@ -160,8 +166,14 @@ class MatchingNumberOfFilesTestController extends TestController {
     }
     
     getExcessiveFoldersInDBFiles() {
-        const difList__DB_Config = difference(this.directoriesListFromDB, this.directoriesListFromConfig)
-        const difList__DB_Disk = difference(this.directoriesListFromDB, this.directoriesListFromDisk)
+        const difList__DB_Config = difference(
+            this.normalizedStringArr(this.directoriesListFromDB),
+            this.normalizedStringArr(this.directoriesListFromConfig),
+        )
+        const difList__DB_Disk = difference(
+            this.normalizedStringArr(this.directoriesListFromDB),
+            this.normalizedStringArr(this.directoriesListFromDisk),
+        )
         this.responseModel = {
             ...this.responseModel,
             excessiveFolders__DB_Config: difList__DB_Config,
@@ -171,8 +183,14 @@ class MatchingNumberOfFilesTestController extends TestController {
     }
     
     getExcessiveFoldersInDirectories() {
-        const difList__Disk_Config = difference(this.directoriesListFromDisk, this.directoriesListFromConfig)
-        const difList__Disk_DB = difference(this.directoriesListFromDisk, this.directoriesListFromDB)
+        const difList__Disk_Config = difference(
+            this.normalizedStringArr(this.directoriesListFromDisk),
+            this.normalizedStringArr(this.directoriesListFromConfig),
+        )
+        const difList__Disk_DB = difference(
+            this.normalizedStringArr(this.directoriesListFromDisk),
+            this.normalizedStringArr(this.directoriesListFromDB),
+        )
         this.responseModel = {
             ...this.responseModel,
             excessiveFolders__Disk_Config: difList__Disk_Config,
@@ -182,7 +200,10 @@ class MatchingNumberOfFilesTestController extends TestController {
     }
     
     getExcessiveFilesInDB() {
-        const difList__DB_Disk = difference(this.filesListFromDB, this.filesListFromDisk)
+        const difList__DB_Disk = difference(
+            this.normalizedStringArr(this.filesListFromDB),
+            this.normalizedStringArr(this.filesListFromDisk),
+        )
         this.responseModel = {
             ...this.responseModel,
             excessiveFiles__DB_Disk: difList__DB_Disk,
@@ -191,7 +212,10 @@ class MatchingNumberOfFilesTestController extends TestController {
     }
     
     getExcessiveFilesInDirectories() {
-        const difList__Disk_DB = difference(this.filesListFromDisk, this.filesListFromDB)
+        const difList__Disk_DB = difference(
+            this.normalizedStringArr(this.filesListFromDisk),
+            this.normalizedStringArr(this.filesListFromDB),
+        )
         this.responseModel = {
             ...this.responseModel,
             excessiveFiles__Disk_DB: difList__Disk_DB,

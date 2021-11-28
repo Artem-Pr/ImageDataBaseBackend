@@ -415,6 +415,16 @@ const getParam = (req, paramName) => {
     return param
 }
 
+/**
+ * Normalize string with "NFC"
+ *
+ * @param {string} string
+ * @return {string} normalized string
+ */
+const normalize = (string) => {
+    return string.normalize()
+}
+
 module.exports = {
     deepCopy,
     createPid,
@@ -445,5 +455,6 @@ module.exports = {
     removeFilesArr,
     getSubdirectories,
     getParam,
+    normalize,
     DBFilters
 }

@@ -97,7 +97,7 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
     
     logger.info('Started exiftool process %s', {data: pid})
     
-    const responsePromise = await pathsArr.map(async (currentPath, i) => {
+    const responsePromise = pathsArr.map(async (currentPath, i) => {
         const isInvalidFormat = filedata[i].type === 'video/avi'
         const isAvoidEmptyFields = filedata[i].type === 'image/gif'
         if (isInvalidFormat) {

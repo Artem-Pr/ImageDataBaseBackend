@@ -4,6 +4,7 @@ const {
     throwError,
     isVideoThumbnail,
     removeFileExt,
+    normalize,
 } = require('../../utils/common');
 const {difference} = require('ramda');
 const {TestController} = require('./testController');
@@ -140,7 +141,10 @@ class MatchingVideoThumbnailsTestController extends TestController{
     }
     
     getExcessiveVideosOnDisk() {
-        const difList__Disk_DB = difference(this.videoFromDisk, this.videoFromDB)
+        const difList__Disk_DB = difference(
+            this.normalizedStringArr(this.videoFromDisk),
+            this.normalizedStringArr(this.videoFromDB),
+        )
         const difList__Disk_DiskThumbnails = difference(
             this.getFileNameListWithoutExt(this.videoFromDisk),
             this.getFileNameListFromThumbnailsList(this.thumbnailsFromDisk)
@@ -154,7 +158,10 @@ class MatchingVideoThumbnailsTestController extends TestController{
     }
     
     getExcessiveVideosInDB() {
-        const difList__DB_Disk = difference(this.videoFromDB, this.videoFromDisk)
+        const difList__DB_Disk = difference(
+            this.normalizedStringArr(this.videoFromDB),
+            this.normalizedStringArr(this.videoFromDisk),
+        )
         const difList__DB_DBThumbnails = difference(
             this.getFileNameListWithoutExt(this.videoFromDB),
             this.getFileNameListFromThumbnailsList(this.thumbnailsFromDB)
@@ -172,7 +179,10 @@ class MatchingVideoThumbnailsTestController extends TestController{
             this.getFileNameListFromThumbnailsList(this.thumbnailsFromDisk),
             this.getFileNameListWithoutExt(this.videoFromDisk)
         )
-        const difList__DiskThumbnails_DBThumbnails = difference(this.thumbnailsFromDisk, this.thumbnailsFromDB)
+        const difList__DiskThumbnails_DBThumbnails = difference(
+            this.normalizedStringArr(this.thumbnailsFromDisk),
+            this.normalizedStringArr(this.thumbnailsFromDB),
+        )
         this.responseModel = {
             ...this.responseModel,
             excessiveVideo__DiskThumbnails_Disk: difList__DiskThumbnails_Disk,
@@ -182,7 +192,10 @@ class MatchingVideoThumbnailsTestController extends TestController{
     }
     
     getExcessiveVideosThumbnailsInDB() {
-        const difList__DBThumbnails_DiskThumbnails = difference(this.thumbnailsFromDB, this.thumbnailsFromDisk)
+        const difList__DBThumbnails_DiskThumbnails = difference(
+            this.normalizedStringArr(this.thumbnailsFromDB),
+            this.normalizedStringArr(this.thumbnailsFromDisk),
+        )
         const difList__DBThumbnails_DB = difference(
             this.getFileNameListFromThumbnailsList(this.thumbnailsFromDB),
             this.getFileNameListWithoutExt(this.videoFromDB)
@@ -212,7 +225,7 @@ class MatchingVideoThumbnailsTestController extends TestController{
      * @return {string[]}
      */
     getFileNameListFromThumbnailsList(thumbnailList) {
-        return thumbnailList.map(thumbnail => this.cutThumbnailEndOfFileName(thumbnail))
+        return thumbnailList.map(thumbnail => this.cutThumbnailEndOfFileName(normalize(thumbnail)))
     }
     
     /**
@@ -222,7 +235,7 @@ class MatchingVideoThumbnailsTestController extends TestController{
      * @return {string[]}
      */
     getFileNameListWithoutExt(fileNameList) {
-        return fileNameList.map(fileName => removeFileExt(fileName))
+        return fileNameList.map(fileName => removeFileExt(normalize(fileName)))
     }
 }
 
