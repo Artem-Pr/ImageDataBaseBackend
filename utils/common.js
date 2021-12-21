@@ -116,7 +116,6 @@ const pickFileName = (filePath) => {
  * @return {string} fileName
  */
 const removeFileExt = (filePath) => {
-    console.log(filePath, 'filePath')
     return filePath.split('.').slice(0, -1).join('.')
 }
 

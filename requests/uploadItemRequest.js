@@ -2,7 +2,7 @@ const sharp = require("sharp")
 const ThumbnailGenerator = require('video-thumbnail-generator').default
 const {logger} = require("../utils/logger")
 
-const uploadItemRequest = (req, res) => {
+const uploadItemRequest = async (req, res) => {
     let filedata = req.file
     if (!filedata) {
         logger.error("Request doesn't contain filedata")
@@ -16,7 +16,7 @@ const uploadItemRequest = (req, res) => {
             thumbnailPath: 'temp/',
         });
         
-        tg.generate({
+        await tg.generate({
             percent: 1,
             timestamps: [0],
             size: '1000x?'
@@ -33,10 +33,10 @@ const uploadItemRequest = (req, res) => {
             .catch(err => logger.error('video-preview ERROR', {data: err, module: 'uploadItemRequest'}));
         
     } else {
-        sharp(filedata.path)
+        await sharp(filedata.path)
             .withMetadata()
             .clone()
-            .resize(200)
+            .resize(200, 200, {fit: 'outside'})
             .jpeg({quality: 80})
             .toFile(filedata.path + '-preview.jpg')
             .then(() => {

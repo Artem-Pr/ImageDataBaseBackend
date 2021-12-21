@@ -56,8 +56,9 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
 }
 
 const updateDatabase = async (filedata, DBObjectArr, collection) => {
-    const dataResponseArr = filedata.map(({id, updatedFields}, i) => {
-        return updateFile(id, updatedFields, DBObjectArr[i], collection)
+    const dataResponseArr = filedata.map(({id, updatedFields}) => {
+        const currentDBObject = DBObjectArr.find(({_id}) => _id.toString() === id)
+        return updateFile(id, updatedFields, currentDBObject, collection)
     })
     return await Promise.all(dataResponseArr)
 }
@@ -208,6 +209,27 @@ const addNewFilePath = async (req, updateFields) => {
 }
 
 /**
+ * Create fileData for pushing exif
+ *
+ * @param {object[]} updateFileDataArr - updatedFields array
+ * @param {object[]} originalDBObjects - array of dataBase objects
+ * @return {object[]}
+ */
+const createFiledataForUpdatedExif = (updateFileDataArr, originalDBObjects) => {
+    return originalDBObjects.map(({_id, mimetype, filePath}) => {
+        const currentUpdatedFields = updateFileDataArr
+            .find(({id}) => _id.toString() === id)
+            .updatedFields
+        return {
+            mimetype,
+            filePath,
+            ...(currentUpdatedFields.originalDate && {originalDate: currentUpdatedFields.originalDate}),
+            ...(currentUpdatedFields.keywords && {keywords: currentUpdatedFields.keywords}),
+        }
+    })
+}
+
+/**
  * Push new exif to files, rename files if needed, update filePath and DB info
  *
  * @param {object} req - request object. Minimal: {
@@ -241,17 +263,25 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
         filesBackup = await backupFiles([...pathsArr, ...previewArr])
         
         if (isUpdatedKeywords || isUpdateOriginalDate) {
-            await pushExif(pathsArr, updatedKeywords, updateFields, exiftoolProcess)
+            const pushExifData = createFiledataForUpdatedExif(filedata, savedOriginalDBObjectsArr)
+            
+            await pushExif(
+                pushExifData.map(({filePath}) => dbFolder + filePath),
+                pushExifData.map(item => item.keywords),
+                pushExifData,
+                exiftoolProcess
+            )
         }
         
-        const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-            const newPaths = await renameFileIfNeeded(DBObject, filedata[i], dbFolder, filesNewNameArr)
+        const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject) => {
+            const currentFileDataItem = filedata.find(({id}) => DBObject._id.toString() === id)
+            const newPaths = await renameFileIfNeeded(DBObject, currentFileDataItem, dbFolder, filesNewNameArr)
             newPaths.newNamePath && filesNewNameArr.push(newPaths.newNamePath)
             newPaths.newPreviewPath && filesNewNameArr.push(newPaths.newPreviewPath)
             return true
         })
-        const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject, i) => {
-            const {updatedFields} = filedata[i]
+        const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject) => {
+            const {updatedFields} = filedata.find(({id}) => DBObject._id.toString() === id)
             const filePathWithoutName = updatedFields && updatedFields.filePath
             const newFileName = updatedFields && updatedFields.originalName
             if (filePathWithoutName) {

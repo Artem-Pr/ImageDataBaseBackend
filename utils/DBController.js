@@ -155,7 +155,6 @@ class DBController {
      */
     insertOne(insertObject, collectionType) {
         try {
-            console.log('{ ...this._DBRequest, ...insertObject}', { ...this._DBRequest, ...insertObject})
             return this[collectionType || this._collectionType].insertOne({ ...this._DBRequest, ...insertObject})
         } catch (error) {
             logger.error('DBController - insertOne: ', {data: error})

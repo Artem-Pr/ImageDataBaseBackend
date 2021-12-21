@@ -109,7 +109,11 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
         const keywords = isChangedKeywordsItem ? changedKeywordsArr[i] : ""
         
         let originalDate = null
-        if (filedata[i].originalDate !== '' && filedata[i].originalDate !== '-') {
+        if (
+            filedata[i].originalDate
+            && filedata[i].originalDate !== ''
+            && filedata[i].originalDate !== '-'
+        ) {
             originalDate = moment(filedata[i].originalDate, 'YYYY.MM.DD').format('YYYY:MM:DD hh:mm:ss')
         }
         

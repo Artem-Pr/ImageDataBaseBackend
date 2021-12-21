@@ -17,7 +17,7 @@ const {
     updateFileDataWithFilePath,
     shortPathArr,
 } = require("./Data")
-const {deepCopy, renameFile, DBFilters} = require("../utils/common")
+const {deepCopy, renameFile} = require("../utils/common")
 const {
     renameFileIfNeeded,
     isDifferentNames,

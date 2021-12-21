@@ -73,7 +73,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
                     await sharp(fullPath)
                         .withMetadata()
                         .clone()
-                        .resize(200)
+                        .resize(200, 200, {fit: 'outside'})
                         .jpeg({quality: 80})
                         .toFile('temp/' + randomName + '-preview.jpg')
                         .then(() => {
