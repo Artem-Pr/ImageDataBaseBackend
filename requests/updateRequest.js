@@ -18,6 +18,8 @@ const {
     backupFiles,
     cleanBackup,
     filesRecovery,
+    transformDBResponseDateToString,
+    stringToDate,
     DBFilters,
 } = require("../utils/common")
 const ObjectId = require('mongodb').ObjectID
@@ -36,7 +38,13 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
         ? updatedFields.filePath + '/' + (updatedFields.originalName || DBObject.originalName)
         : updateNamePath(DBObject, {id, updatedFields})
     const preview = updatePreviewPath(DBObject, {id, updatedFields})
-    const updatedFieldsWithFilePath = {...updatedFields, filePath, preview}
+    const updatedFieldsWithFilePath = {
+        ...updatedFields,
+        ...(updatedFields.originalDate && {originalDate: stringToDate(updatedFields.originalDate)}),
+        filePath,
+        preview
+    }
+    console.log('updatedFields.originalDate', updatedFieldsWithFilePath)
     const filter = {_id: ObjectId(id)}
     const update = {$set: updatedFieldsWithFilePath}
     // [MONGODB DRIVER] DeprecationWarning: collection.findOneAndUpdate option [returnOriginal] is deprecated and will be removed in a later version.
@@ -48,7 +56,7 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
         const updatedResponse = await collection.findOneAndUpdate(filter, update, options)
         //Todo: добавить в логгер модуль и все родительские модули
         logger.debug('updateFile - findOneAndUpdate: update SUCCESS', {module: 'updateRequest'})
-        return updatedResponse.value
+        return transformDBResponseDateToString(updatedResponse.value)
     } catch (error) {
         logger.error('updateFile - findOneAndUpdate: update ERROR', {message: error.message, module: 'updateRequest'})
         throw createError(500, `file update error`)

@@ -3,6 +3,7 @@ const ObjectId = require('mongodb').ObjectID
 const {removeFilesItem} = require("../requests/removeFilesItem")
 const {deepCopy} = require("../utils/common")
 const {MongoClient} = require('mongodb')
+const moment = require('moment');
 
 
 const originalDirectory = 'tests/test-images/'
@@ -21,7 +22,7 @@ const originalData = [{
     imageSize: '3000x3000',
     keywords: ['map', 'forest', 'estonia'],
     changeDate: '2011.11.11',
-    originalDate: '2010.10.10',
+    originalDate: moment.utc('2010.10.10', 'YYYY.MM.DD').toDate(),
     filePath: directory + file1,
     preview: '',
 }, {
@@ -33,7 +34,7 @@ const originalData = [{
     imageSize: '2000x2000',
     keywords: ['bike', 'Olga', 'estonia'],
     changeDate: '2011.12.12',
-    originalDate: '2010.01.01',
+    originalDate: moment.utc('2010.01.01', 'YYYY.MM.DD').toDate(),
     filePath: directory + file2,
     preview: '',
 }, {
@@ -45,7 +46,7 @@ const originalData = [{
     imageSize: '3000x3000',
     keywords: null,
     changeDate: '2011.11.11',
-    originalDate: '2010.10.10',
+    originalDate: moment.utc('2010.10.10', 'YYYY.MM.DD').toDate(),
     filePath: directory + video,
     preview: directory + videoThumbnail,
 }]

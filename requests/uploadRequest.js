@@ -1,6 +1,6 @@
 const {getExifFromArr, pushExif} = require("../utils/exifTool")
 const moment = require("moment")
-const {moveFileAndCleanTemp, getParam} = require("../utils/common")
+const {moveFileAndCleanTemp, getParam, stringToDate} = require("../utils/common")
 const createError = require("http-errors")
 const {logger} = require("../utils/logger")
 const {addKeywordsToBase} = require("../utils/addKeywordsToBase")
@@ -132,7 +132,7 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
         imageSize: exifResponse[i].data[0].ImageSize,
         keywords: changedKeywordsArr[i],
         changeDate: image.changeDate,
-        originalDate: image.originalDate,
+        originalDate: stringToDate(image.originalDate),
         filePath: image.filePath,
         preview: image.filePathPreview,
     }))

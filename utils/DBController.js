@@ -6,6 +6,14 @@ class DBRequests {
     static allFiles = {}
     
     /**
+     * @param {string} fileId
+     * @return {{_id: object}}
+     */
+    static byId(fileId) {
+        return {_id: fileId}
+    }
+    
+    /**
      * @param {string} fieldName
      * @param {string} subString - searching string
      * @return {{$and: [{$expr: {$eq: [{$indexOfCP: (string|*)[]}, number]}}]}}
@@ -20,6 +28,14 @@ class DBRequests {
      */
     static updateDirectoriesList(directoriesList) {
         return {$set: {pathsArr: directoriesList}}
+    }
+    
+    /**
+     * @param {Date} originalDate
+     * @return {{$set: {pathsArr}}}
+     */
+    static updateDate(originalDate) {
+        return {$set: {originalDate}}
     }
 }
 

@@ -14,6 +14,7 @@ const {checkDirectory} = require("./requests/checkDirectory")
 const {removeDirController} = require("./requests/removeDirectory")
 const {matchingNumberOfFilesTest} = require("./requests/testRequests/matchingNumberOfFilesTest")
 const {matchingVideoThumbnailsTest} = require('./requests/testRequests/matchingVideoThumbnailsTest')
+// const {updateStringDateToDateFormat} = require('./utils/updateStringDateToDateFormat')
 const {MongoClient} = require("mongodb")
 const express = require('express')
 const cors = require('cors')
@@ -172,6 +173,9 @@ mongoClient.connect(function (err, client) {
     app.listen(port, function () {
         logger.info('Start listening on port', {message: port})
     })
+    
+    // включить, если нужно обновить даты коллекции со string на Date
+    // updateStringDateToDateFormat({app, body: null})
 })
 
 // прослушиваем прерывание работы программы (ctrl-c)

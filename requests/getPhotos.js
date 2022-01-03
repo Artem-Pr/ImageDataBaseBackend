@@ -2,6 +2,7 @@ const fs = require("fs-extra")
 const createError = require("http-errors")
 const sharp = require("sharp")
 const {logger} = require("../utils/logger")
+const {dateToString} = require('../utils/common')
 
 //Todo: add tests
 const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
@@ -47,7 +48,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
         if (currentPage > totalPages) currentPage = 1
     })
     AllFoundedResults
-        .sort({changeDate: -1, _id: 1})
+        .sort({mimetype: 1, originalDate: -1, filePath: 1})
         .skip(currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0)
         .limit(nPerPage)
         .toArray(async function (err, photos) {
@@ -84,7 +85,10 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
                         })
                         .catch(err => logger.error('OOPS!, Sharp ERROR:', {data: err}))
                 }
-                return item
+                return {
+                    ...item,
+                    ...(item.originalDate && {originalDate: dateToString(item.originalDate)})
+                }
             })
             const filesWithTempPath = await Promise.all(filesWithTempPathPromise)
             const responseObject = {

@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const ObjectId = require('mongodb').ObjectID
 const {logger} = require("./logger")
+const moment = require('moment');
 
 const VIDEO_EXTENSION_LIST = ['mkv', 'flv', 'avi', 'mov', 'wmv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2', 'mpeg', 'm2v', '3gp']
 
@@ -11,6 +12,21 @@ const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, lengt
 const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : value)
 const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
 const getFilePathWithoutName = (fullPath) => (fullPath.split('/').slice(0, -1).join('/'))
+
+const stringToDate = (stringDate) => moment.utc(stringDate, 'YYYY.MM.DD').toDate()
+const dateToString = (date) => moment(new Date(date)).format('YYYY.MM.DD')
+
+const transformDBObjectDateToString = ({originalDate, ...rest}) => ({
+    ...rest,
+    originalDate: dateToString(originalDate)
+})
+
+const transformDBResponseDateToString = (DBObjectRes) => {
+    if (Array.isArray(DBObjectRes)) {
+        return DBObjectRes.map(item => transformDBObjectDateToString(item))
+    }
+    return transformDBObjectDateToString(DBObjectRes)
+}
 
 /**
  * Create uniq paths: recursively get all folders and subfolders from fullPaths list
@@ -455,5 +471,8 @@ module.exports = {
     getSubdirectories,
     getParam,
     normalize,
+    transformDBResponseDateToString,
+    stringToDate,
+    dateToString,
     DBFilters
 }

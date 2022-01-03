@@ -95,7 +95,7 @@ describe('updateRequest: ', () => {
     
     describe('updateFile: ', () => {
         test('should return correct response.value from database', async () => {
-            const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}"
+            const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\",\"originalDate\":\"2019.06.20\"}"
             const id = "5fef484b497f3af84699e88c"
             const updatedFields = Object.assign(updateFiledata[1].updatedFields)
             const filedata = Object.assign(originalData[0])
@@ -104,7 +104,7 @@ describe('updateRequest: ', () => {
             await expect(JSON.stringify(response)).toBe(correctResponse)
         })
         test('should return correct response.value from database if send new filePath', async () => {
-            const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/testDirectory/проверка локализации/123.jpg\",\"preview\":\"\"}"
+            const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/testDirectory/проверка локализации/123.jpg\",\"preview\":\"\",\"originalDate\":\"2019.06.24\"}"
             const id = "5fef484b497f3af84699e88c"
             const updatedFields = Object.assign(updateFileDataWithFilePath[0].updatedFields)
             const filedata = Object.assign(originalData[0])
@@ -113,7 +113,7 @@ describe('updateRequest: ', () => {
             await expect(JSON.stringify(response)).toBe(correctResponse)
         })
         test('should return correct response.value from database if send ONLY filePath', async () => {
-            const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"image001-map.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"map\",\"forest\",\"estonia\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2010.10.10\",\"filePath\":\"tests/testDirectory/проверка локализации/image001-map.jpg\",\"preview\":\"\"}"
+            const correctResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"image001-map.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"map\",\"forest\",\"estonia\"],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/testDirectory/проверка локализации/image001-map.jpg\",\"preview\":\"\",\"originalDate\":\"2010.10.10\"}"
             const id = "5fef484b497f3af84699e88c"
             const updatedFields = Object.assign(updateFileDataWithFilePath[0].updatedFields)
             const currentUploadingFields = {filePath: updatedFields.filePath}
@@ -130,7 +130,7 @@ describe('updateRequest: ', () => {
                 logger.verbose("testCollections insert error", err)
             }
             
-            const correctResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\"}"
+            const correctResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\",\"originalDate\":\"2021.07.26\"}"
             const id = "60fd9b60e52cbf5832df4bb7"
             const updatedFields = {...videoUpdatedData[0].updatedFields}
             const filedata = {...videoOriginalFileData[0]}
@@ -141,8 +141,8 @@ describe('updateRequest: ', () => {
     })
     describe('updateDatabase: ', () => {
         test('should return correct Array of updated data', async () => {
-            const firstResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\"}"
-            const secondResponse = "{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\"}"
+            const firstResponse = "{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\",\"originalDate\":\"2019.06.24\"}"
+            const secondResponse = "{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\",\"originalDate\":\"2019.06.20\"}"
             const filedata = req.body
             const collection = req.app.locals.collection
             const fileDataArr = deepCopy(originalData)
@@ -160,7 +160,7 @@ describe('updateRequest: ', () => {
             req.app.locals.collection = testCollections
             
             const updatedFiles = deepCopy(videoUpdatedData)
-            const videoFormatResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\"}"
+            const videoFormatResponse = "{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/tempVideos/bom-bom.mp4\",\"preview\":\"tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png\",\"originalDate\":\"2021.07.26\"}"
             const collection = req.app.locals.collection
             const response = await updateDatabase(updatedFiles, videoOriginalFileData, collection)
             await expect(JSON.stringify(response[0])).toBe(videoFormatResponse)
@@ -506,7 +506,7 @@ describe('updateRequest: ', () => {
             expect(updatedExifObj[shortPathArr[1]].DateTimeOriginal).toBe('2019:06:20 12:00:00')
         })
         test('should return correct response.value from updateRequest', async () => {
-            const correctResponse = "{\"files\":[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2019.06.24\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\",\"tempPath\":\"tests/test-images/123.jpg\",\"originalPath\":\"http://localhost:5000/tests/test-images/123.jpg\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"originalDate\":\"2019.06.20\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\",\"tempPath\":\"tests/test-images/bom-bom.jpg\",\"originalPath\":\"http://localhost:5000/tests/test-images/bom-bom.jpg\"},{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"originalDate\":\"2021.07.26\",\"filePath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"preview\":\"tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png\",\"tempPath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"originalPath\":\"http://localhost:5000/tests/testDirectory/проверка локализации/bom-bom.mp4\"}],\"newFilePath\":[\"bom\",\"bom/Банско\",\"bom/Оля\",\"bom/озеро\",\"nature\",\"nature/вода\",\"tests\",\"tests/test-images\",\"tests/test-images/photo\",\"tests/testDirectory\",\"tests/testDirectory/проверка локализации\",\"природа\",\"природа/активный отдых\",\"природа/активный отдых/video\",\"природа/активный отдых/эстония\",\"природа/видео\",\"природа/видео/уточки\",\"природа/корпоратив\",\"пустая папка\"]}"
+            const correctResponse = "{\"files\":[{\"_id\":\"5fef484b497f3af84699e88c\",\"originalName\":\"123.jpg\",\"mimetype\":\"image/jpeg\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/test-images/123.jpg\",\"preview\":\"\",\"originalDate\":\"2019.06.24\",\"tempPath\":\"tests/test-images/123.jpg\",\"originalPath\":\"http://localhost:5000/tests/test-images/123.jpg\"},{\"_id\":\"5fef4856497f3af84699e77e\",\"originalName\":\"bom-bom.jpg\",\"mimetype\":\"image/jpeg\",\"size\":1000000,\"megapixels\":10,\"imageSize\":\"2000x2000\",\"keywords\":[\"green\"],\"changeDate\":\"2011.12.12\",\"filePath\":\"tests/test-images/bom-bom.jpg\",\"preview\":\"\",\"originalDate\":\"2019.06.20\",\"tempPath\":\"tests/test-images/bom-bom.jpg\",\"originalPath\":\"http://localhost:5000/tests/test-images/bom-bom.jpg\"},{\"_id\":\"60fd9b60e52cbf5832df4bb7\",\"originalName\":\"bom-bom.mp4\",\"mimetype\":\"video/mp4\",\"size\":2000000,\"megapixels\":8,\"imageSize\":\"3000x3000\",\"keywords\":[\"green\",\"песня про озеро\"],\"changeDate\":\"2011.11.11\",\"filePath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"preview\":\"tests/testDirectory/проверка локализации/bom-bom-thumbnail-1000x562-0001.png\",\"originalDate\":\"2021.07.26\",\"tempPath\":\"tests/testDirectory/проверка локализации/bom-bom.mp4\",\"originalPath\":\"http://localhost:5000/tests/testDirectory/проверка локализации/bom-bom.mp4\"}],\"newFilePath\":[\"bom\",\"bom/Банско\",\"bom/Оля\",\"bom/озеро\",\"nature\",\"nature/вода\",\"tests\",\"tests/test-images\",\"tests/test-images/photo\",\"tests/testDirectory\",\"tests/testDirectory/проверка локализации\",\"природа\",\"природа/активный отдых\",\"природа/активный отдых/video\",\"природа/активный отдых/эстония\",\"природа/видео\",\"природа/видео/уточки\",\"природа/корпоратив\",\"пустая папка\"]}"
             
             res.send = jest.fn(value => JSON.stringify(value))
             req.body = [...deepCopy(updateFiledata), ...deepCopy(videoUpdatedData)]
