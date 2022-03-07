@@ -44,7 +44,6 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
         filePath,
         preview
     }
-    console.log('updatedFields.originalDate', updatedFieldsWithFilePath)
     const filter = {_id: ObjectId(id)}
     const update = {$set: updatedFieldsWithFilePath}
     // [MONGODB DRIVER] DeprecationWarning: collection.findOneAndUpdate option [returnOriginal] is deprecated and will be removed in a later version.
