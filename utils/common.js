@@ -402,7 +402,7 @@ const getSubdirectories = (directory, pathsArr) => {
     const trimmedDirectory = removeExtraFirstSlash(directory)
     const subDirectories = pathsArr
         .map(path => removeExtraFirstSlash(path))
-        .filter(path => path.startsWith(trimmedDirectory) && path !== trimmedDirectory)
+        .filter(path => path.startsWith(`${trimmedDirectory}/`) && path !== trimmedDirectory)
     return {
         subDirectories,
         numberOfSubdirectories: subDirectories.length

@@ -109,7 +109,7 @@ class removeDirController {
         try {
             this.removingController = new DBController(
                 this.req,
-                DBRequests.byFieldUsingStartsWith('filePath', `/${this._directory}`)
+                DBRequests.byFieldUsingStartsWith('filePath', `/${this._directory}/`)
             )
             const response = await this.removingController.removeObjects('collection')
             this.successLog(`${response.deletedCount} files were deleted from the database by "filePath"`)

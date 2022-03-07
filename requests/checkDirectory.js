@@ -43,7 +43,7 @@ const checkDirectory = async (req, res) => {
         const {numberOfSubdirectories} = getSubdirectories(directory, pathsArr)
         
         const collection = req.app.locals.collection
-        const findObject = {$and: [{$expr: {$eq: [{$indexOfCP: ['$filePath', `/${directory}`]}, 0]}}]}
+        const findObject = {$and: [{$expr: {$eq: [{$indexOfCP: ['$filePath', `/${directory}/`]}, 0]}}]}
         await collection
             .find(findObject)
             .count()

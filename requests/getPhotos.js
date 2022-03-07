@@ -31,7 +31,8 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     fs.emptyDirSync(tempFolder)
     
     const conditionArr = []
-    if (folderPath) conditionArr.push({$expr: {$eq: [{$indexOfCP: ['$filePath', `/${folderPath}`]}, 0]}})
+    // if (folderPath) conditionArr.push({$expr: {$eq: ['$filePath', "/other2"]}})
+    if (folderPath) conditionArr.push({$expr: {$eq: [{$indexOfCP: ['$filePath', `/${folderPath}/`]}, 0]}})
     if (searchTags.length) conditionArr.push({"keywords": {$in: searchTags || []}})
     if (excludeTags.length) conditionArr.push({"keywords": {$nin: excludeTags || []}})
     
@@ -48,7 +49,10 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
         if (currentPage > totalPages) currentPage = 1
     })
     AllFoundedResults
-        .sort({mimetype: 1, originalDate: -1, filePath: 1})
+        // .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
+        // .sort({originalDate: -1, filePath: 1}) // Сортировка по дате, фото и видео в перемешку
+        // .sort({mimetype: 1, _id: -1}) // Последние добавленные
+        .sort({originalName: 1}) // Сортировка по имени
         .skip(currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0)
         .limit(nPerPage)
         .toArray(async function (err, photos) {
