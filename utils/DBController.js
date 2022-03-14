@@ -19,7 +19,16 @@ class DBRequests {
      * @return {{$and: [{$expr: {$eq: [{$indexOfCP: (string|*)[]}, number]}}]}}
      */
     static byFieldUsingStartsWith(fieldName, subString) {
-        return {$and: [{$expr: {$eq: [{$indexOfCP: [`$${fieldName}`, subString]}, 0]}}]}
+        return {$and: [this.byFieldPartsOfAndCondition(fieldName, subString)]}
+    }
+    
+    /**
+     * @param {string} fieldName
+     * @param {string} subString - searching string
+     * @return {{$and: [{$expr: {$eq: [{$indexOfCP: (string|*)[]}, number]}}]}}
+     */
+    static byFieldPartsOfAndCondition(fieldName, subString) {
+        return {$expr: {$eq: [{$indexOfCP: [`$${fieldName}`, subString]}, 0]}}
     }
     
     /**

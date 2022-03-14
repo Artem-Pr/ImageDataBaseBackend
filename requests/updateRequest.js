@@ -21,7 +21,9 @@ const {
     transformDBResponseDateToString,
     stringToDate,
     DBFilters,
+    getFilePathWithoutName,
 } = require("../utils/common")
+const {DBRequests, DBController} = require('../utils/DBController');
 const ObjectId = require('mongodb').ObjectID
 
 /**
@@ -237,6 +239,82 @@ const createFiledataForUpdatedExif = (updateFileDataArr, originalDBObjects) => {
 }
 
 /**
+ * Find current file data item by ID
+ *
+ * @param {object[]} filedata
+ * @param {object} DBObject
+ * @return {object}
+ */
+const getFileDataItem = (filedata, DBObject) => {
+    return filedata.find(({id}) => DBObject._id.toString() === id)
+}
+
+/**
+ * @param {object[]} savedOriginalDBObjectsArr - db objects,that matched with filedata
+ * @param {object[]} filedata - updated object array with updatedFields inside
+ * @return {string[]} - list of updated fullNames
+ */
+const getUpdatedFullNamesArr = (savedOriginalDBObjectsArr, filedata) => (
+    savedOriginalDBObjectsArr
+        .map(DBObject => {
+            const currentFileDataItem = getFileDataItem(filedata, DBObject)
+            const filePathWithoutName = getFilePathWithoutName(DBObject.filePath)
+            
+            const {filePath, originalName} = currentFileDataItem.updatedFields
+            
+            if (!filePath && !originalName) {
+                return false
+            }
+            const resultFilePath = filePath || filePathWithoutName
+            const resultFileName = originalName || DBObject.originalName
+            return resultFilePath + '/' + resultFileName
+        })
+        .filter(Boolean)
+)
+
+/**
+ * @param {object} req - request object. Minimal: {
+ *   app: {locals: {collection: null}},
+ *   body: null
+ * }
+ * @param {string[]} newFullNames - list of updated fullNames (newFullNames has to be not empty)
+ * @return {Promise<Object[]>}
+ */
+const isFullNamesExistInDB = (req, newFullNames) => {
+    const checkFileNamesDBRequest = {
+        $or: newFullNames.map(newFileName => (
+            DBRequests.byFieldPartsOfAndCondition('filePath', newFileName)
+        ))
+    }
+    
+    const dbController = new DBController(req, checkFileNamesDBRequest)
+    return dbController.find('collection')
+}
+
+/**
+ * @param {object} req - request object. Minimal: {
+ *   app: {locals: {collection: null}},
+ *   body: null
+ * }
+ * @param {object[]} savedOriginalDBObjectsArr - db objects,that matched with filedata
+ * @param {object[]} filedata - updated object array with updatedFields inside
+ * @return {Promise<Boolean>}
+ */
+// Todo: add tests
+const throwErrorIfNewFullNameExist = async (req, savedOriginalDBObjectsArr, filedata) => {
+    const newFullNames = getUpdatedFullNamesArr(savedOriginalDBObjectsArr, filedata)
+    
+    if (newFullNames.length) {
+        const dbResponse = await isFullNamesExistInDB(req, newFullNames)
+        if (dbResponse.length) throw new Error(
+            'File name: ' + dbResponse.map(({filePath}) => filePath) + '  already exist'
+        )
+    }
+    
+    logger.debug('Check existing files - SUCCESS', {module: 'throwErrorIfNewFullNameExist'})
+}
+
+/**
  * Push new exif to files, rename files if needed, update filePath and DB info
  *
  * @param {object} req - request object. Minimal: {
@@ -266,6 +344,9 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
     try {
         const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
         const pathsArr = savedOriginalDBObjectsArr.map(DBObject => dbFolder + DBObject.filePath)
+        
+        await throwErrorIfNewFullNameExist(req, savedOriginalDBObjectsArr, filedata)
+        
         const previewArr = getPreviewArray(savedOriginalDBObjectsArr, dbFolder)
         filesBackup = await backupFiles([...pathsArr, ...previewArr])
         
@@ -281,14 +362,14 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
         }
         
         const renameFilePromiseArr = savedOriginalDBObjectsArr.map(async (DBObject) => {
-            const currentFileDataItem = filedata.find(({id}) => DBObject._id.toString() === id)
+            const currentFileDataItem = getFileDataItem(filedata, DBObject)
             const newPaths = await renameFileIfNeeded(DBObject, currentFileDataItem, dbFolder, filesNewNameArr)
             newPaths.newNamePath && filesNewNameArr.push(newPaths.newNamePath)
             newPaths.newPreviewPath && filesNewNameArr.push(newPaths.newPreviewPath)
             return true
         })
         const updateFilePathPromiseArr = savedOriginalDBObjectsArr.map(async (DBObject) => {
-            const {updatedFields} = filedata.find(({id}) => DBObject._id.toString() === id)
+            const {updatedFields} = getFileDataItem(filedata, DBObject)
             const filePathWithoutName = updatedFields && updatedFields.filePath
             const newFileName = updatedFields && updatedFields.originalName
             if (filePathWithoutName) {
@@ -325,6 +406,10 @@ const updateRequest = async (req, res, exiftoolProcess, dbFolder = '') => {
         return response
         
     } catch (error) {
+        if (error.message.includes('File name:')) {
+            res.send(getError(error.message))
+            return
+        }
         logger.error('OOPS! need recovery:', {message: error.message, module: 'updateRequest'})
         const recoveryResponse = await filesRecovery(filesBackup, Array.from(new Set(filesNewNameArr)))
         const recoveryError = recoveryResponse === true ? '' : recoveryResponse
