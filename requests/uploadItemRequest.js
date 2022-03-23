@@ -18,6 +18,7 @@ const uploadItemRequest = async (req, res) => {
         
         await tg.generate({
             // timestamps: ['5%'],
+            // timestamps: ['01:30.000'],
             timestamps: [0],
             size: '1000x?'
         })
