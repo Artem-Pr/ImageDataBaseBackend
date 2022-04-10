@@ -3,17 +3,28 @@ const createError = require("http-errors")
 const sharp = require("sharp")
 const {logger} = require("../utils/logger")
 const {dateToString, removeFileExt} = require('../utils/common')
+const {clone, pipe, map, prop, sum} = require('ramda');
 
 const getName = (dbObject) => removeFileExt(dbObject.originalName)
 // const getName = (dbObject) => dbObject.size
 
 const isOtherFolder = (dbObject, folder) => dbObject.filePath.startsWith(`/${folder}/`)
 
+const getTotalFilesSize = (filesArr) => {
+    const filesSizeTotal = pipe(
+        map(prop('size')),
+        sum,
+    )(filesArr)
+    logger.debug('loadedFilesSizeSum', {data: filesSizeTotal})
+    return filesSizeTotal
+}
+
 const createPreviewAndSendFiles = async (
     res,
     filteredPhotos,
     databaseFolder,
-    searchPagination
+    searchPagination,
+    filesSizeSum,
 ) => {
     logger.debug('filteredPhotos.length: ', {message: filteredPhotos.length})
     const filesWithTempPathPromise = filteredPhotos.map(async item => {
@@ -50,13 +61,15 @@ const createPreviewAndSendFiles = async (
     const filesWithTempPath = await Promise.all(filesWithTempPathPromise)
     const responseObject = {
         files: filesWithTempPath,
-        searchPagination
+        searchPagination,
+        filesSizeSum
     }
     logger.http('POST-response', {
         message: '/filtered-photos',
         data: {
             filesLength: responseObject.files.length,
-            searchPagination: responseObject.searchPagination
+            searchPagination: responseObject.searchPagination,
+            filesSizeSum
         }
     })
     res.send(responseObject)
@@ -123,63 +136,71 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
         if (currentPage > totalPages) currentPage = 1
     })
     
-    if (isNameComparison) {
-        AllFoundedResults
-            .sort({originalName: 1})
-            .toArray(async function (err, photos) {
-                if (err) {
-                    logger.error("collection load error", {data: err})
-                    throw createError(400, `collection load error`)
-                }
-                
-                logger.debug('rootLibPath', {message: databaseFolder})
-                logger.info('Sharp start. Number of photos:', {message: photos.length})
-                const filteredPhotos = photos.filter((item, idx) => {
-                    const prevItem = idx > 0 && photos[idx - 1]
-                    const nextItem = idx < photos.length && photos[idx + 1]
-                    if (comparisonFolder) {
-                        return prevItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(prevItem)) || // сравнение имен с папкой other
-                            prevItem && isOtherFolder(prevItem, comparisonFolder) && getName(prevItem).startsWith(getName(item)) ||
-                            nextItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(nextItem)) ||
-                            nextItem && isOtherFolder(nextItem, comparisonFolder) && getName(nextItem).startsWith(getName(item));
-                    } else {
-                        return prevItem && getName(item).startsWith(getName(prevItem)) ||  // сравнение имен везде
-                            prevItem && getName(prevItem).startsWith(getName(item)) ||
-                            nextItem && getName(item).startsWith(getName(nextItem)) ||
-                            nextItem && getName(nextItem).startsWith(getName(item));
-                    }
-                    // return prevItem && getName(item) === getName(prevItem) || // сравнение поля size (нужно исправить также getName)
-                    //     prevItem && getName(prevItem) === getName(item) ||
-                    //     nextItem && getName(item) === getName(nextItem) ||
-                    //     nextItem && getName(nextItem) === getName(item);
-                    
-                })
-                
-                const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
-                await createPreviewAndSendFiles(res, filteredPhotos, databaseFolder, searchPagination)
-            });
-    } else {
-        AllFoundedResults
-            .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
-            // .sort({originalDate: -1, filePath: 1}) // Сортировка по дате, фото и видео в перемешку
-            // .sort({mimetype: 1, _id: -1}) // Последние добавленные
-            // .sort({originalName: 1}) // Сортировка по имени
-            .skip(currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0)
-            .limit(nPerPage)
-            .toArray(async function (err, photos) {
-                if (err) {
-                    logger.error("collection load error", {data: err})
-                    throw createError(400, `collection load error`)
-                }
-                
-                logger.debug('rootLibPath', {message: databaseFolder})
-                logger.info('Sharp start. Number of photos:', {message: photos.length})
-                
-                const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
-                await createPreviewAndSendFiles(res, photos, databaseFolder, searchPagination)
-            });
-    }
+    clone(AllFoundedResults)
+        .toArray(async (err, filesArr) => {
+            if (err) {
+                logger.error("collection load error", {data: err})
+                throw createError(400, `collection load error`)
+            }
+            const filesSizeSum = getTotalFilesSize(filesArr)
     
+            if (isNameComparison) {
+                AllFoundedResults
+                    .sort({originalName: 1})
+                    .toArray(async function (err, photos) {
+                        if (err) {
+                            logger.error("collection load error", {data: err})
+                            throw createError(400, `collection load error`)
+                        }
+                
+                        logger.debug('rootLibPath', {message: databaseFolder})
+                        logger.info('Sharp start. Number of photos:', {message: photos.length})
+                        const filteredPhotos = photos.filter((item, idx) => {
+                            const prevItem = idx > 0 && photos[idx - 1]
+                            const nextItem = idx < photos.length && photos[idx + 1]
+                            if (comparisonFolder) {
+                                return prevItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(prevItem)) || // сравнение имен с папкой other
+                                    prevItem && isOtherFolder(prevItem, comparisonFolder) && getName(prevItem).startsWith(getName(item)) ||
+                                    nextItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(nextItem)) ||
+                                    nextItem && isOtherFolder(nextItem, comparisonFolder) && getName(nextItem).startsWith(getName(item));
+                            } else {
+                                return prevItem && getName(item).startsWith(getName(prevItem)) ||  // сравнение имен везде
+                                    prevItem && getName(prevItem).startsWith(getName(item)) ||
+                                    nextItem && getName(item).startsWith(getName(nextItem)) ||
+                                    nextItem && getName(nextItem).startsWith(getName(item));
+                            }
+                            // return prevItem && getName(item) === getName(prevItem) || // сравнение поля size (нужно исправить также getName)
+                            //     prevItem && getName(prevItem) === getName(item) ||
+                            //     nextItem && getName(item) === getName(nextItem) ||
+                            //     nextItem && getName(nextItem) === getName(item);
+                    
+                        })
+                
+                        const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
+                        await createPreviewAndSendFiles(res, filteredPhotos, databaseFolder, searchPagination, filesSizeSum)
+                    });
+            } else {
+                AllFoundedResults
+                    .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
+                    // .sort({originalDate: -1, filePath: 1}) // Сортировка по дате, фото и видео в перемешку
+                    // .sort({mimetype: 1, _id: -1}) // Последние добавленные
+                    // .sort({originalName: 1}) // Сортировка по имени
+                    .skip(currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0)
+                    .limit(nPerPage)
+                    .toArray(async function (err, photos) {
+                        if (err) {
+                            logger.error("collection load error", {data: err})
+                            throw createError(400, `collection load error`)
+                        }
+                
+                        logger.debug('rootLibPath', {message: databaseFolder})
+                        logger.info('Sharp start. Number of photos:', {message: photos.length})
+                
+                        const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
+                        await createPreviewAndSendFiles(res, photos, databaseFolder, searchPagination, filesSizeSum)
+                    });
+            }
+        })
 }
 
 module.exports = {getFilesFromDB}
