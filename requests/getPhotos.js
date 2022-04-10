@@ -76,6 +76,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     const isNameComparison = Boolean(filedata.isNameComparison)
     const comparisonFolder = filedata.comparisonFolder
     const includeAllTags = true
+    const types = filedata.mimeTypes || []
     let currentPage = +filedata.page || 1
     let searchTags = filedata.searchTags || []
     let excludeTags = filedata.excludeTags || []
@@ -90,6 +91,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     logger.debug('folderPath', {data: folderPath})
     logger.debug('searchTags', {data: searchTags})
     logger.debug('excludeTags', {data: excludeTags})
+    logger.debug('types', {data: types})
     
     // очищаем temp
     fs.emptyDirSync(tempFolder)
@@ -99,10 +101,14 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     if (folderPath) conditionArr.push({$expr: {$eq: [{$indexOfCP: ['$filePath', `/${folderPath}/`]}, 0]}})
     
     const searchTagsCondition = includeAllTags
-        ? {"keywords": {$all: searchTags || []}}
-        : {"keywords": {$in: searchTags || []}}
+        ? {keywords: {$all: searchTags || []}}
+        : {keywords: {$in: searchTags || []}}
     if (searchTags.length) conditionArr.push(searchTagsCondition)
-    if (excludeTags.length) conditionArr.push({"keywords": {$nin: excludeTags || []}})
+    if (excludeTags.length) conditionArr.push({keywords: {$nin: excludeTags || []}})
+    if (types.length) {
+        const mimeTypeObjArr = types.map(type => ({mimetype: type}))
+        conditionArr.push({$or: mimeTypeObjArr})
+    }
     
     const findObject = conditionArr.length ? {$and: conditionArr} : {}
     
@@ -154,10 +160,10 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
             });
     } else {
         AllFoundedResults
-            // .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
+            .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
             // .sort({originalDate: -1, filePath: 1}) // Сортировка по дате, фото и видео в перемешку
             // .sort({mimetype: 1, _id: -1}) // Последние добавленные
-            .sort({originalName: 1}) // Сортировка по имени
+            // .sort({originalName: 1}) // Сортировка по имени
             .skip(currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0)
             .limit(nPerPage)
             .toArray(async function (err, photos) {
