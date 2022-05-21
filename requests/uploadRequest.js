@@ -78,12 +78,16 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
     // записываем в массив changedKeywordsArr новые keywords или null
     // также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
     let keywordsRawList = []
-    const changedKeywordsArr = getKeywordsArr(req, keywordsRawList, exifResponse, filedata)
+    let changedKeywordsArr = getKeywordsArr(req, keywordsRawList, exifResponse, filedata)
     logger.debug('changedKeywordsArr:', {data: changedKeywordsArr, module: 'uploadRequest'})
     
     // Записываем измененные ключевые слова в файлы в папке темп
     // Todo: cover all functions with try catch and return "throw createError(500, `oops..`)"
-    await pushExif(pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
+    try {
+        await pushExif(pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
+    } catch (error) {
+        logger.error('pushExif - Error, continue uploading')
+    }
     
     // Переносим картинки в папку библиотеки и добавляем в filedata относительные пути к картинкам
     filedata = filedata.map(item => {

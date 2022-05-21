@@ -85,6 +85,13 @@ const getExifFromArr = async (pathsArr, exiftoolProcess) => {
 }
 
 /**
+ *
+ * @param {string} type
+ * @return {boolean}
+ */
+const isInvalidFormat = (type) => (type === 'video/avi') || (type === 'video/wmv')
+
+/**
  * Push exif array.
  *
  * @param {string[]} pathsArr - array of paths to the files
@@ -98,9 +105,8 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
     logger.info('Started exiftool process %s', {data: pid})
     
     const responsePromise = pathsArr.map(async (currentPath, i) => {
-        const isInvalidFormat = filedata[i].type === 'video/avi'
         const isAvoidEmptyFields = filedata[i].type === 'image/gif'
-        if (isInvalidFormat) {
+        if (isInvalidFormat(filedata[i].type)) {
             logger.info('omit invalid format -', {message: filedata[i].type})
             return 'invalidFormat'
         }

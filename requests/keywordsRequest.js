@@ -16,7 +16,7 @@ const keywordsRequest = (request, response, tempFolder) => {
     
         const keywordsRes = res ? res.keywordsArr : []
         
-        logger.http('GET-response', {message: '/keywords', data: keywordsRes})
+        logger.http('GET-response', {message: '/keywords', data: `long-list (keywordsRes: ${keywordsRes})`})
         response.send(keywordsRes)
     })
 }

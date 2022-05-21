@@ -11,7 +11,7 @@ const pathRequest = (req, response) => {
         
         const pathsArrResponse = res ? res.pathsArr : []
     
-        logger.http('GET-response', {message: '/paths', data: pathsArrResponse})
+        logger.http('GET-response', {message: '/paths', data: `long-list (pathsArrResponse: ${pathsArrResponse})`})
         response.send(pathsArrResponse)
     })
 }

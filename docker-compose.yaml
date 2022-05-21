@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  image_db_backend:
+    build: ImageDataBaseBackend/
+    container_name: IDB_backend
+    ports:
+      - 5000:5000
+    volumes:
+      - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+    restart: unless-stopped
+
+  mongo:
+    image : mongo:4.4
+    container_name: IDB_mongodb
+    user: nobody
+    volumes:
+      - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/mongodb:/data/db
+    ports:
+      - 27017:27017
+    restart: unless-stopped

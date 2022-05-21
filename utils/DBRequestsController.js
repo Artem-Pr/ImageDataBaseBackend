@@ -36,7 +36,7 @@ class DBRequestsController {
             const response = await this.foldersController.findOne("configCollection")
             this.pathsConfigArr = (response && response.pathsArr) ||
                 (init ? null : throwError('Cannot find property \'pathsArr\' in pathConfig', true))
-            this.successLog('fetch pathsArr', this.pathsConfigArr)
+            this.successLog('fetch pathsArr', `long-list (this.pathsConfigArr: ${this.pathsConfigArr})`)
         } catch (error) {
             throwError(error.message, true)
         }

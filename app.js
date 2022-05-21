@@ -28,12 +28,9 @@ const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express()
 
 const tempFolder = 'temp'
-// const databaseFolder = '../../../../../../../Volumes/Transcend V/IDBase'
-const databaseFolder = '../../../../../../../Volumes/Transcend V/Yandex.Disk.localized'
-// const databaseFolder = '../../../../../../../Volumes/Transcend V/dataBase'
-// const databaseFolder = '../../../../../../../Volumes/Transcend V/TestDB'
+const databaseFolder = '/app/dataBase'
 const port = 5000
-const mongoClient = new MongoClient("mongodb://localhost:27017/", {
+const mongoClient = new MongoClient("mongodb://mongo:27017/", {
     useUnifiedTopology: true,
     useNewUrlParser: true
 })
