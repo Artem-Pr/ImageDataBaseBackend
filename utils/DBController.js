@@ -15,6 +15,15 @@ class DBRequests {
     
     /**
      * @param {string} fieldName
+     * @param {string[]} subStrings - searching strings array
+     * @return {{$or: [{$expr: {$eq: [{$indexOfCP: (string|*)[]}, number]}}]}}
+     */
+    static findAnyFileUsingConditionOr(fieldName, subStrings) {
+        return {$or: subStrings.map(string => this.byFieldPartsOfAndCondition(fieldName, string))}
+    }
+    
+    /**
+     * @param {string} fieldName
      * @param {string} subString - searching string
      * @return {{$and: [{$expr: {$eq: [{$indexOfCP: (string|*)[]}, number]}}]}}
      */

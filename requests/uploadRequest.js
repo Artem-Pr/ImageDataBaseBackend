@@ -1,10 +1,11 @@
 const {getExifFromArr, pushExif} = require("../utils/exifTool")
 const moment = require("moment")
-const {moveFileAndCleanTemp, getParam, stringToDate} = require("../utils/common")
+const {moveFileAndCleanTemp, getParam, stringToDate, getError} = require("../utils/common")
 const createError = require("http-errors")
 const {logger} = require("../utils/logger")
 const {addKeywordsToBase} = require("../utils/addKeywordsToBase")
 const {addPathToBase} = require("../utils/addPathToBase")
+const {DBController, DBRequests} = require("../utils/DBController")
 
 // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
 // также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
@@ -54,6 +55,24 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
     return keywordsArr
 }
 
+/**
+ * @param {object} req - request object. Minimal: {
+ *   app: {locals: {collection: null}},
+ *   body: null
+ * }
+ * @param {string[]} targetPathArr
+ * @return {object[]} matchedFilesArr
+ */
+const checkIfFilesAreExist = async (req, targetPathArr) => {
+    logger.debug('checkIfFilesAreExist - targetPathArr:', {data: targetPathArr})
+    const collectionController = new DBController(
+        req,
+        DBRequests.findAnyFileUsingConditionOr('filePath', targetPathArr)
+    )
+    const matchedFilesArr = await collectionController.find('collection')
+    logger.debug('matchedFilesArr:', {data: matchedFilesArr})
+    return matchedFilesArr
+}
 
 const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
     const basePathWithoutRootDirectory = getParam(req, 'path')
@@ -62,8 +81,20 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
     let filedata = req.body
     if (!filedata) {
         logger.error("Request doesn't contain filedata", {module: 'uploadRequest'})
-        logger.http('POST-request', {message: '/upload', data: 'Uploading files error'})
-        res.send('Uploading files error')
+        logger.http('POST-response', {message: '/upload', data: 'Uploading files error'})
+        res.send({error: 'Uploading files error'})
+    }
+    
+    const targetPathArr = filedata.map(item => `/${basePathWithoutRootDirectory}/${item.name}`)
+    const existedFilesArr = await checkIfFilesAreExist(req, targetPathArr)
+    if (existedFilesArr.length) {
+        const errorMessage = getError(
+            `This file already exist: ${existedFilesArr.map(item => item.originalName)}`,
+            'uploadRequest'
+        )
+        logger.http('POST-response', {message: '/upload', data: 'Error: file already exist'})
+        res.send(errorMessage)
+        return
     }
     
     let pathsArr = filedata.map(dataItem => {
@@ -153,8 +184,8 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
         logger.info('UploadRequest - SUCCESS', {module: 'uploadRequest'})
         logger.debug('insertedIds:', {data: response.insertedIds, module: 'uploadRequest'})
         
-        logger.http('POST-request', {message: '/upload', data: 'Files uploaded successfully'})
-        res.send("Files uploaded successfully")
+        logger.http('POST-response', {message: '/upload', data: 'Files uploaded successfully'})
+        res.send({success: 'Files uploaded successfully'})
     } catch (err) {
         logger.error('collection insert ERROR', {data: err, module: 'uploadRequest'})
         throw createError(400, `collection insert error`)
