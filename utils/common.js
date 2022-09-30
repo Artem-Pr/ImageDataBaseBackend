@@ -7,8 +7,8 @@ const VIDEO_EXTENSION_LIST = ['mkv', 'flv', 'avi', 'mov', 'wmv', 'mp4', 'm4p', '
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, length))
-            .toString()
-            .padStart(length, '0'))
+    .toString()
+    .padStart(length, '0'))
 const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : value)
 const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
 const getFilePathWithoutName = (fullPath) => (fullPath.split('/').slice(0, -1).join('/'))
@@ -94,7 +94,8 @@ const getError = (message, moduleName) => {
 const getAndSendError = (res, queryType, queryUrl, errorMessage, moduleName) => {
     const error = getError(errorMessage, moduleName)
     logger.http(`${queryType}-response`, {message: queryUrl, data: error})
-    res ? res.send(error) : throwError(errorMessage, true)
+    // res ? res.send(error) : throwError(errorMessage, true)
+    res ? res.status(500).send(error) : throwError(errorMessage, true)
 }
 
 /**

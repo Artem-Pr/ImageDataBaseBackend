@@ -1,6 +1,7 @@
 const sharp = require("sharp")
 const ThumbnailGenerator = require('video-thumbnail-generator').default
 const {logger} = require("../utils/logger")
+const {getAndSendError} = require("../utils/common")
 
 const uploadItemRequest = async (req, res) => {
     let filedata = req.file
@@ -31,7 +32,11 @@ const uploadItemRequest = async (req, res) => {
                 logger.http('POST-response', {message: '/uploadItem', data: photoProps})
                 res.send(photoProps)
             })
-            .catch(err => logger.error('video-preview ERROR', {data: err, module: 'uploadItemRequest'}));
+            // .catch(err => logger.error('video-preview ERROR', {data: err, module: 'uploadItemRequest'}));
+            .catch(err => {
+                console.log(err)
+                getAndSendError(res, "POST", '/uploadItem', 'video-preview', 'uploadItemRequest')
+            });
         
     } else {
         await sharp(filedata.path)
@@ -49,7 +54,11 @@ const uploadItemRequest = async (req, res) => {
                 logger.http('POST-response', {message: '/uploadItem', data: photoProps})
                 res.send(photoProps)
             })
-            .catch(err => logger.error('sharp ERROR', {data: err, module: 'uploadItemRequest'}));
+            // .catch(err => logger.error('sharp ERROR', {data: err, module: 'uploadItemRequest'}));
+            .catch(err => {
+                console.log(err)
+                getAndSendError(res, "POST", '/uploadItem', 'sharp', 'uploadItemRequest')
+            });
     }
 }
 

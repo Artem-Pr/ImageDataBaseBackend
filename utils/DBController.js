@@ -1,5 +1,6 @@
 const {logger} = require("./logger")
 const {throwError} = require("./common")
+const {regExp} = require('./regExp')
 
 class DBRequests {
     static directoriesList = {name: "paths"}
@@ -54,6 +55,26 @@ class DBRequests {
      */
     static updateDate(originalDate) {
         return {$set: {originalDate}}
+    }
+    
+    /**
+     * Used to get elements if the path matches a regular expression
+     * @param {RegExp} folderPathRegex
+     * @return {{filePath: {$regex}}}
+     */
+    static filePathRegex(folderPathRegex) {
+        return {filePath: {$regex: folderPathRegex}}
+    }
+    
+    /**
+     * Get a query that finds files starting with filePath and excludes subfolders
+     * @param {string} folderPath
+     * @return {{filePath: {$regex}}}
+     */
+    static getFilesExcludeFilesInSubfolders(folderPath) {
+        const escapedString = regExp.getEscapedString(folderPath)
+        const folderPathExcludeSubFolderRegExp = regExp.getFolderPathExcludeSubFolder(escapedString)
+        return this.filePathRegex(folderPathExcludeSubFolderRegExp)
     }
 }
 
@@ -189,7 +210,7 @@ class DBController {
      */
     insertOne(insertObject, collectionType) {
         try {
-            return this[collectionType || this._collectionType].insertOne({ ...this._DBRequest, ...insertObject})
+            return this[collectionType || this._collectionType].insertOne({...this._DBRequest, ...insertObject})
         } catch (error) {
             logger.error('DBController - insertOne: ', {data: error})
             throwError('DBController - insertOne: ', true)

@@ -28,9 +28,11 @@ const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express()
 
 const tempFolder = 'temp'
-const databaseFolder = '/app/dataBase'
+const databaseFolder = '/app/dataBase' //docker mode
+// const databaseFolder = 'dataBase' //local mode
 const port = 5000
-const mongoClient = new MongoClient("mongodb://mongo:27017/", {
+const mongoClient = new MongoClient("mongodb://mongo:27017/", { //docker mode
+// const mongoClient = new MongoClient("mongodb://localhost:27017/", {  //local mode
     useUnifiedTopology: true,
     useNewUrlParser: true
 })
@@ -47,8 +49,10 @@ const upload = getMulterSettings(tempFolder)
 
 app.use(cors())
 // Todo: move all paths to constants
-app.use('/images', express.static(__dirname + '/temp'))
-app.use('/database', express.static(databaseFolder))
+app.use('/images', express.static(__dirname + '/temp')) //docker mode
+// app.use('/images', express.static(__dirname + '/' + tempFolder)) //local mode
+app.use('/database', express.static(databaseFolder)) //docker mode
+// app.use('/database', express.static(__dirname + '/' + databaseFolder)) //local mode
 logger.info('static database', {message: databaseFolder + '/database'})
 
 app.get("/keywords", (req, res) => {
@@ -158,7 +162,12 @@ app.use((req, res, next) => {
 })
 
 mongoClient.connect(function (err, client) {
-    if (err) return logger.error('mongoClient.connect - oops!', {data: err})
+    if (err) {
+        logger.error('mongoClient.connect - oops!', {data: err})
+        console.error(err)
+        return
+    }
+    
     dbClient = client
     // app.locals.collection = client.db("IDB").collection("photos")
     // app.locals.configCollection = client.db("IDB").collection("config")

@@ -4,9 +4,10 @@ const sharp = require("sharp")
 const {logger} = require("../utils/logger")
 const {dateToString, removeFileExt} = require('../utils/common')
 const {clone, pipe, map, prop, sum} = require('ramda');
+const {DBRequests} = require('../utils/DBController');
 
 const getName = (dbObject) => removeFileExt(dbObject.originalName)
-// const getName = (dbObject) => dbObject.size
+// const getName = (dbObject) => dbObject.size //нужно для изменения вариантов сравнения
 
 const isOtherFolder = (dbObject, folder) => dbObject.filePath.startsWith(`/${folder}/`)
 
@@ -88,6 +89,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     const nPerPage = +filedata.perPage || 0
     const isNameComparison = Boolean(filedata.isNameComparison)
     const comparisonFolder = filedata.comparisonFolder
+    const showSubfolders = filedata.showSubfolders
     const includeAllTags = true
     const types = filedata.mimeTypes || []
     let currentPage = +filedata.page || 1
@@ -102,6 +104,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     logger.debug('comparisonFolder', {data: comparisonFolder})
     
     logger.debug('folderPath', {data: folderPath})
+    logger.debug('showSubfolders', {data: showSubfolders})
     logger.debug('searchTags', {data: searchTags})
     logger.debug('excludeTags', {data: excludeTags})
     logger.debug('types', {data: types})
@@ -110,8 +113,13 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     fs.emptyDirSync(tempFolder)
     
     const conditionArr = []
-    // if (folderPath) conditionArr.push({$expr: {$eq: ['$filePath', "/other2"]}})
-    if (folderPath) conditionArr.push({$expr: {$eq: [{$indexOfCP: ['$filePath', `/${folderPath}/`]}, 0]}})
+    
+    if (folderPath && showSubfolders) conditionArr.push(
+        {$expr: {$eq: [{$indexOfCP: ['$filePath', `/${folderPath}/`]}, 0]}}
+    )
+    if (folderPath && !showSubfolders) {
+        conditionArr.push(DBRequests.getFilesExcludeFilesInSubfolders(folderPath))
+    }
     
     const searchTagsCondition = includeAllTags
         ? {keywords: {$all: searchTags || []}}
