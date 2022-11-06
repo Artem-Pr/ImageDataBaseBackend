@@ -105,7 +105,9 @@ class MatchingNumberOfFilesTestController extends TestController {
                     filesInRootDirectory.directoriesList.push(dirPath + "/" + file)
                     filesInRootDirectory = await getAllFilesRecursively(dirPath + "/" + file, filesInRootDirectory)
                 } else {
-                    !file.includes('thumbnail') && filesInRootDirectory.filesList.push(dirPath + "/" + file)
+                    !file.includes('thumbnail')
+                        && !file.startsWith('._')
+                        && filesInRootDirectory.filesList.push(dirPath + "/" + file)
                 }
             })
             

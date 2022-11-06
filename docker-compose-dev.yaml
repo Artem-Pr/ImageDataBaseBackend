@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  image_db_backend:
+    build: .
+    container_name: IDB_backend_dev
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ../dev-volumes/database:/app/dataBase
+    restart: unless-stopped
+
+  mongo:
+    image : mongo:4.4
+    container_name: IDB_mongodb_dev
+    user: nobody
+    volumes:
+      - ../dev-volumes/mongoDB:/data/db
+    ports:
+      - "27017:27017"
+    restart: unless-stopped

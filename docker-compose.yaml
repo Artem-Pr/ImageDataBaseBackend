@@ -2,12 +2,13 @@ version: "3.8"
 
 services:
   image_db_backend:
-    build: ImageDataBaseBackend/
+    build: .
     container_name: IDB_backend
     ports:
-      - 5000:5000
+      - "5000:5000"
     volumes:
       - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+    #  - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
     restart: unless-stopped
 
   mongo:
@@ -16,6 +17,7 @@ services:
     user: nobody
     volumes:
       - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/mongodb:/data/db
+    #  - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/mongodb:/data/db
     ports:
-      - 27017:27017
+      - "27017:27017"
     restart: unless-stopped

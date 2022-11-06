@@ -83,8 +83,12 @@ class MatchingVideoThumbnailsTestController extends TestController{
                 if (fileStat.isDirectory()) {
                     filesInRootDirectory = await getVideoFilesRecursively(dirPath + "/" + file, filesInRootDirectory)
                 } else {
-                    isVideoThumbnail(file) && filesInRootDirectory.videoThumbnailsList.push(dirPath + "/" + file)
-                    isVideoFile(file) && filesInRootDirectory.videoFilesList.push(dirPath + "/" + file)
+                    isVideoThumbnail(file)
+                        && !file.startsWith('._')
+                        && filesInRootDirectory.videoThumbnailsList.push(dirPath + "/" + file)
+                    isVideoFile(file)
+                        && !file.startsWith('._')
+                        && filesInRootDirectory.videoFilesList.push(dirPath + "/" + file)
                 }
             })
     
