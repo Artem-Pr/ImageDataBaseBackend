@@ -6,6 +6,7 @@ const {
     throwError
 } = require("../../utils/common")
 const {TestController} = require('./testController');
+const {DATABASE_FOLDER} = require('../../constants')
 
 const initialResponseModel = {
     foldersInConfig: 0,
@@ -227,8 +228,8 @@ class MatchingNumberOfFilesTestController extends TestController {
 }
 
 
-const matchingNumberOfFilesTest = async (req, res, dbFolder) => {
-    const testController = new MatchingNumberOfFilesTestController(req, res, dbFolder)
+const matchingNumberOfFilesTest = async (req, res) => {
+    const testController = new MatchingNumberOfFilesTestController(req, res, DATABASE_FOLDER)
     if (testController.isFirstRequest()) {
         await testController.startTestsPipeline()
     } else {

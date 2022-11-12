@@ -9,6 +9,7 @@ const {
     removeExtraSlash
 } = require("../utils/common")
 const {DBController, DBRequests} = require("../utils/DBController")
+const {DATABASE_FOLDER} = require('../constants')
 const {difference} = require("ramda")
 
 
@@ -19,10 +20,10 @@ class removeDirController {
      *   app: {locals: {collection: null}},
      *   body: null
      * }
-     * @param {string | undefined} DBFolder - database root folder
+     * @param {boolean} useDBFolder - use DB folder as a root Directory
      * @param {string | undefined} directory - use if req doesn't has directory in url params
      */
-    constructor(res, req, DBFolder, directory) {
+    constructor(res, req, useDBFolder, directory = undefined) {
         this.res = res
         this.req = req
         
@@ -30,7 +31,7 @@ class removeDirController {
         if (directory) this._directory = directory
         else this.directory = 'name'
         
-        this.rootDirectory = DBFolder
+        this.rootDirectory = useDBFolder ? DATABASE_FOLDER : undefined
         this.pathsConfigArr = null
         this.foldersController = null
         this.removingController = null

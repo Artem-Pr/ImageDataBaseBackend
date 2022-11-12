@@ -1,23 +1,23 @@
 version: "3.8"
 
 services:
-  image_db_backend_dev:
+  image_db_backend_test:
     build: .
-    container_name: IDB_backend_dev
+    container_name: IDB_backend_test
     ports:
       - "5000:5000"
     volumes:
       - .:/app
       - /app/node_modules
-      - ../dev-volumes/database:/app/dataBase
+      - /Volumes/Seagate 2TB/IDBVolume/filesVolume:/app/dataBase
     restart: unless-stopped
 
-  mongo-dev:
+  mongo-test:
     image : mongo:4.4
-    container_name: IDB_mongodb_dev
+    container_name: IDB_mongodb_test
     user: nobody
     volumes:
-      - ../dev-volumes/mongoDB:/data/db
+      - /Volumes/Seagate 2TB/IDBVolume/mongodb:/data/db
     ports:
       - "27017:27017"
     restart: unless-stopped

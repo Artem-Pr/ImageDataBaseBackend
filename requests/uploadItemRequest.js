@@ -2,6 +2,11 @@ const sharp = require("sharp")
 const ThumbnailGenerator = require('video-thumbnail-generator').default
 const {logger} = require("../utils/logger")
 const {getAndSendError} = require("../utils/common")
+const {
+    PORT,
+    UPLOAD_IMAGES_TEMP_FOLDER,
+    UPLOAD_TEMP_FOLDER,
+} = require("../constants")
 
 const uploadItemRequest = async (req, res) => {
     let filedata = req.file
@@ -14,7 +19,7 @@ const uploadItemRequest = async (req, res) => {
     if (filedata.mimetype.startsWith('video')) {
         const tg = new ThumbnailGenerator({
             sourcePath: filedata.path,
-            thumbnailPath: 'temp/',
+            thumbnailPath: UPLOAD_TEMP_FOLDER + '/',
         });
         
         await tg.generate({
@@ -26,7 +31,7 @@ const uploadItemRequest = async (req, res) => {
             .then((preview) => {
                 logger.debug('video-preview SUCCESS', {data: preview, module: 'uploadItemRequest'})
                 const photoProps = {
-                    preview: 'http://localhost:5000/images/' + preview[0],
+                    preview: `http://localhost:${PORT}/${UPLOAD_IMAGES_TEMP_FOLDER}/${preview[0]}`,
                     tempPath: filedata.path,
                 }
                 logger.http('POST-response', {message: '/uploadItem', data: photoProps})
@@ -47,7 +52,7 @@ const uploadItemRequest = async (req, res) => {
             .toFile(filedata.path + '-preview.jpg')
             .then(() => {
                 const photoProps = {
-                    preview: 'http://localhost:5000/images/' + filedata.filename + '-preview.jpg',
+                    preview: `http://localhost:${PORT}/${UPLOAD_IMAGES_TEMP_FOLDER}/${filedata.filename}-preview.jpg`,
                     tempPath: filedata.path,
                 }
                 logger.debug('sharp SUCCESS', {data: filedata.originalname, module: 'uploadItemRequest'})

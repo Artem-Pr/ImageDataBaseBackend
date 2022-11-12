@@ -6,6 +6,12 @@ const {logger} = require("../utils/logger")
 const {addKeywordsToBase} = require("../utils/addKeywordsToBase")
 const {addPathToBase} = require("../utils/addPathToBase")
 const {DBController, DBRequests} = require("../utils/DBController")
+const {
+    PORT,
+    UPLOAD_IMAGES_TEMP_FOLDER,
+    DATABASE_FOLDER,
+    UPLOAD_TEMP_FOLDER,
+} = require("../constants")
 
 // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
 // также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
@@ -74,9 +80,9 @@ const checkIfFilesAreExist = async (req, targetPathArr) => {
     return matchedFilesArr
 }
 
-const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
+const uploadRequest = async (req, res, exiftoolProcess) => {
     const basePathWithoutRootDirectory = getParam(req, 'path')
-    const targetFolder = databaseFolder + '/' + basePathWithoutRootDirectory
+    const targetFolder = DATABASE_FOLDER + '/' + basePathWithoutRootDirectory
     logger.debug('uploadRequest - targetFolder:', {message: targetFolder, module: 'uploadRequest'})
     let filedata = req.body
     if (!filedata) {
@@ -128,12 +134,12 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
         //  Переносим видео превью туда же, куда и видео файлы
         let previewTargetPath = ''
         if (item.type.startsWith('video')) {
-            const tempName = item.tempPath.slice('temp/'.length)
-            const previewTempName = item.preview.slice('http://localhost:5000/images/'.length)
+            const tempName = item.tempPath.slice(`${UPLOAD_TEMP_FOLDER}/`.length)
+            const previewTempName = item.preview.slice(`http://localhost:${PORT}/${UPLOAD_IMAGES_TEMP_FOLDER}/`.length)
             const originalNamePreview = previewTempName.replace(tempName, item.name.slice(0, -4))
             previewTargetPath = targetFolder + '/' + originalNamePreview
             try {
-                moveFileAndCleanTemp('temp/' + previewTempName, previewTargetPath)
+                moveFileAndCleanTemp(UPLOAD_TEMP_FOLDER + '/' + previewTempName, previewTargetPath)
             } catch (e) {
                 logger.error('moveFileAndCleanTemp ERROR:', {data: e, module: 'uploadRequest'})
                 throw createError(500, `moveFileAndCleanTemp error`)
@@ -147,9 +153,9 @@ const uploadRequest = async (req, res, exiftoolProcess, databaseFolder) => {
             throw createError(500, `moveFileAndCleanTemp error`)
         }
         
-        if (targetPath.startsWith(databaseFolder)) {
-            item.filePath = targetPath.slice(databaseFolder.length)
-            item.filePathPreview = previewTargetPath.slice(databaseFolder.length)
+        if (targetPath.startsWith(DATABASE_FOLDER)) {
+            item.filePath = targetPath.slice(DATABASE_FOLDER.length)
+            item.filePathPreview = previewTargetPath.slice(DATABASE_FOLDER.length)
         } else {
             logger.error(`Lib Path ERROR: "targetPath" doesn't start with "databaseFolder"`, {module: 'uploadRequest'})
             throw createError(500, 'Lib Path Error! Oy-Oy!')

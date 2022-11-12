@@ -1,5 +1,6 @@
 const {logger} = require("../utils/logger")
 const {getError, getSubdirectories} = require("../utils/common")
+const {PORT} = require('../constants')
 
 /**
  * Checking the number of files in a directory
@@ -13,7 +14,7 @@ const {getError, getSubdirectories} = require("../utils/common")
 const checkDirectory = async (req, res) => {
     const getDirectory = () => {
         if (!req.url) return null
-        const url = new URL('http://localhost:5000' + req.url)
+        const url = new URL('http://localhost:' + PORT + req.url)
         const directory = url.searchParams.get('directory')
         if (!directory) {
             const error = getError('Request does not contain a required parameter')

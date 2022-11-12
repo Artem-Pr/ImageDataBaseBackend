@@ -5,6 +5,13 @@ const {logger} = require("../utils/logger")
 const {dateToString, removeFileExt} = require('../utils/common')
 const {clone, pipe, map, prop, sum} = require('ramda');
 const {DBRequests} = require('../utils/DBController');
+const {
+    PORT,
+    IMAGES_TEMP_FOLDER,
+    DATABASE_FOLDER_NAME,
+    TEMP_FOLDER,
+    DATABASE_FOLDER,
+} = require('../constants')
 
 const getName = (dbObject) => removeFileExt(dbObject.originalName)
 // const getName = (dbObject) => dbObject.size //нужно для изменения вариантов сравнения
@@ -23,20 +30,19 @@ const getTotalFilesSize = (filesArr) => {
 const createPreviewAndSendFiles = async (
     res,
     filteredPhotos,
-    databaseFolder,
     searchPagination,
     filesSizeSum,
 ) => {
     logger.debug('filteredPhotos.length: ', {message: filteredPhotos.length})
     const filesWithTempPathPromise = filteredPhotos.map(async item => {
-        const fullPath = databaseFolder + item.filePath
-        const staticPath = 'database' + item.filePath
+        const fullPath = DATABASE_FOLDER + item.filePath
+        const staticPath = DATABASE_FOLDER_NAME + item.filePath
         
         // если тип "video", то не делаем превью, а просто достаем его из папки, иначе делаем превью
         if (item.mimetype.startsWith('video')) {
-            const fullPreviewPath = 'database' + item.preview
-            item.originalPath = 'http://localhost:5000/' + staticPath
-            item.preview = 'http://localhost:5000/' + fullPreviewPath
+            const fullPreviewPath = DATABASE_FOLDER_NAME + item.preview
+            item.originalPath = `http://localhost:${PORT}/${staticPath}`
+            item.preview = `http://localhost:${PORT}/${fullPreviewPath}`
             item.tempPath = item.filePath
         } else {
             const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
@@ -45,10 +51,10 @@ const createPreviewAndSendFiles = async (
                 .clone()
                 .resize(300, 300, {fit: 'outside'})
                 .jpeg({quality: 80})
-                .toFile('temp/' + randomName + '-preview.jpg')
+                .toFile(`${TEMP_FOLDER}/${randomName}-preview.jpg`)
                 .then(() => {
-                    item.originalPath = 'http://localhost:5000/' + staticPath
-                    item.preview = 'http://localhost:5000/images/' + randomName + '-preview.jpg'
+                    item.originalPath = `http://localhost:${PORT}/${staticPath}`
+                    item.preview = `http://localhost:${PORT}/${IMAGES_TEMP_FOLDER}/${randomName}-preview.jpg`
                     item.tempPath = item.filePath
                     logger.info('Sharp SUCCESS:', {message: item.originalName})
                 })
@@ -77,7 +83,7 @@ const createPreviewAndSendFiles = async (
 }
 
 //Todo: add tests
-const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
+const getFilesFromDB = async (req, res) => {
     let filedata = req.body
     if (!filedata) {
         logger.error("Request doesn't contain filedata")
@@ -110,7 +116,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
     logger.debug('types', {data: types})
     
     // очищаем temp
-    fs.emptyDirSync(tempFolder)
+    fs.emptyDirSync(TEMP_FOLDER)
     
     const conditionArr = []
     
@@ -161,7 +167,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
                             throw createError(400, `collection load error`)
                         }
                 
-                        logger.debug('rootLibPath', {message: databaseFolder})
+                        logger.debug('rootLibPath', {message: DATABASE_FOLDER})
                         logger.info('Sharp start. Number of photos:', {message: photos.length})
                         const filteredPhotos = photos.filter((item, idx) => {
                             const prevItem = idx > 0 && photos[idx - 1]
@@ -185,7 +191,7 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
                         })
                 
                         const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
-                        await createPreviewAndSendFiles(res, filteredPhotos, databaseFolder, searchPagination, filesSizeSum)
+                        await createPreviewAndSendFiles(res, filteredPhotos, searchPagination, filesSizeSum)
                     });
             } else {
                 AllFoundedResults
@@ -201,11 +207,11 @@ const getFilesFromDB = async (req, res, tempFolder, databaseFolder) => {
                             throw createError(400, `collection load error`)
                         }
                 
-                        logger.debug('rootLibPath', {message: databaseFolder})
+                        logger.debug('rootLibPath', {message: DATABASE_FOLDER})
                         logger.info('Sharp start. Number of photos:', {message: photos.length})
                 
                         const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
-                        await createPreviewAndSendFiles(res, photos, databaseFolder, searchPagination, filesSizeSum)
+                        await createPreviewAndSendFiles(res, photos, searchPagination, filesSizeSum)
                     });
             }
         })

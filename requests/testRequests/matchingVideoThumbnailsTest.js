@@ -8,6 +8,7 @@ const {
 } = require('../../utils/common');
 const {difference} = require('ramda');
 const {TestController} = require('./testController');
+const {DATABASE_FOLDER} = require('../../constants')
 
 const initialResponseModel = {
     videoOnDisk: 0,
@@ -243,8 +244,8 @@ class MatchingVideoThumbnailsTestController extends TestController{
     }
 }
 
-const matchingVideoThumbnailsTest = async (req, res, dbFolder) => {
-    const testController = new MatchingVideoThumbnailsTestController(req, res, dbFolder)
+const matchingVideoThumbnailsTest = async (req, res) => {
+    const testController = new MatchingVideoThumbnailsTestController(req, res, DATABASE_FOLDER)
     if (testController.isFirstRequest()) {
         await testController.startTestsPipeline()
     } else {

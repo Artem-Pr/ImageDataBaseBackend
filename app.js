@@ -15,6 +15,18 @@ const {removeDirController} = require("./requests/removeDirectory")
 const {matchingNumberOfFilesTest} = require("./requests/testRequests/matchingNumberOfFilesTest")
 const {matchingVideoThumbnailsTest} = require('./requests/testRequests/matchingVideoThumbnailsTest')
 // const {updateStringDateToDateFormat} = require('./utils/updateStringDateToDateFormat')
+
+const {
+    PORT,
+    DATABASE_FOLDER_NAME,
+    DATABASE_FOLDER,
+    UPLOAD_IMAGES_TEMP_FOLDER,
+    IMAGES_TEMP_FOLDER,
+    MONGO_HOST_NAME,
+    TEMP_FOLDER,
+    UPLOAD_TEMP_FOLDER,
+} = require('./constants')
+
 const {MongoClient} = require("mongodb")
 const express = require('express')
 const cors = require('cors')
@@ -27,37 +39,29 @@ const exiftoolBin = require('dist-exiftool')
 const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express()
 
-const tempFolder = 'temp'
-const databaseFolder = '/app/dataBase' //docker mode
-// const databaseFolder = 'dataBase' //local mode
-const port = 5000
-const mongoClient = new MongoClient("mongodb://mongo:27017/", { //docker mode
-// const mongoClient = new MongoClient("mongodb://localhost:27017/", {  //local mode
+const mongoClient = new MongoClient(`mongodb://${MONGO_HOST_NAME}:27017/`, {
     useUnifiedTopology: true,
     useNewUrlParser: true
 })
 let dbClient
 
-const isDataBaseExist = fs.existsSync(databaseFolder)
+const isDataBaseExist = fs.existsSync(DATABASE_FOLDER)
 if (!isDataBaseExist) {
     logger.error('Can not find main database folder')
     return
 }
 
-
-const upload = getMulterSettings(tempFolder)
+const upload = getMulterSettings(UPLOAD_TEMP_FOLDER)
 
 app.use(cors())
-// Todo: move all paths to constants
-app.use('/images', express.static(__dirname + '/temp')) //docker mode
-// app.use('/images', express.static(__dirname + '/' + tempFolder)) //local mode
-app.use('/database', express.static(databaseFolder)) //docker mode
-// app.use('/database', express.static(__dirname + '/' + databaseFolder)) //local mode
-logger.info('static database', {message: databaseFolder + '/database'})
+app.use('/' + IMAGES_TEMP_FOLDER, express.static(__dirname + '/' + TEMP_FOLDER))
+app.use('/' + UPLOAD_IMAGES_TEMP_FOLDER, express.static(__dirname + '/' + UPLOAD_TEMP_FOLDER))
+app.use('/' + DATABASE_FOLDER_NAME, express.static(DATABASE_FOLDER))
+logger.info('static database', {message: DATABASE_FOLDER})
 
 app.get("/keywords", (req, res) => {
     logger.http('GET-query', {message: '/keywords'})
-    keywordsRequest(req, res, tempFolder)
+    keywordsRequest(req, res)
 })
 
 app.get("/paths", (req, res) => {
@@ -81,33 +85,30 @@ app.post("/uploadItem",
 app.use("/image-exif",
     express.json({extended: true})
 )
-
 app.post("/image-exif",
     (req, res) => {
         logger.http('POST-query', {message: '/image-exif', data: req.body})
-        imageItemRequest(req, res, databaseFolder, exiftoolProcess)
+        imageItemRequest(req, res, exiftoolProcess)
     }
 )
 
 app.use("/upload",
     express.json({extended: true})
 )
-
 app.post("/upload",
     (req, res) => {
         logger.http('POST-query', {message: '/upload', data: req.body})
-        uploadRequest(req, res, exiftoolProcess, databaseFolder)
+        uploadRequest(req, res, exiftoolProcess)
     }
 )
 
 app.use("/update",
     express.json({extended: true})
 )
-
 app.put("/update",
     (req, res) => {
         logger.http('POST-query', {message: '/update', data: req.body})
-        updateRequest(req, res, exiftoolProcess, databaseFolder)
+        updateRequest(req, res, exiftoolProcess)
     }
 )
 
@@ -118,19 +119,19 @@ app.use("/filtered-photos",
 app.post("/filtered-photos",
     (req, res) => {
         logger.http('POST-query', {message: '/filtered-photos', data: req.body})
-        getFilesFromDB(req, res, tempFolder, databaseFolder)
+        getFilesFromDB(req, res)
     }
 )
 
 app.delete("/photo/:id", (req, res) => {
     logger.http('DELETE-query', {message: '/photo/:id', data: req.params.id})
-    removeFilesItem(req, res, databaseFolder)
+    removeFilesItem(req, res)
 })
 
 app.delete("/directory", (req, res) => {
     logger.http('DELETE-query', {message: '/directory', data: getParam(req, 'name')})
-    const removingController = new removeDirController(res, req, databaseFolder)
-    removingController.startRemovingPipeline()
+    const removingController = new removeDirController(res, req, true)
+    void removingController.startRemovingPipeline()
 })
 
 app.use("/test/matching-files",
@@ -139,7 +140,7 @@ app.use("/test/matching-files",
 
 app.post("/test/matching-files", (req, res) => {
     logger.http('POST-query', {message: '/test/matching-files', data: req.body})
-    matchingNumberOfFilesTest(req, res, databaseFolder)
+    void matchingNumberOfFilesTest(req, res)
 })
 
 app.use("/test/matching-videos",
@@ -148,7 +149,7 @@ app.use("/test/matching-videos",
 
 app.post("/test/matching-videos", (req, res) => {
     logger.http('POST-query', {message: '/test/matching-videos', data: req.body})
-    matchingVideoThumbnailsTest(req, res, databaseFolder)
+    void matchingVideoThumbnailsTest(req, res)
 })
 
 app.use((req, res, next) => {
@@ -177,8 +178,8 @@ mongoClient.connect(function (err, client) {
     // app.locals.configCollection = client.db("dataBase").collection("config")
     // app.locals.collection = client.db("TestDB").collection("photos")
     // app.locals.configCollection = client.db("TestDB").collection("config")
-    app.listen(port, function () {
-        logger.info('Start listening on port', {message: port})
+    app.listen(PORT, function () {
+        logger.info('Start listening on port', {message: PORT})
     })
     
     // включить, если нужно обновить даты коллекции со string на Date

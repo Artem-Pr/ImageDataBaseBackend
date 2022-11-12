@@ -10,7 +10,7 @@ const {getUniqPaths, throwError} = require("./common")
 const addPathToBase = async (req, basePathWithoutRootDirectory) => {
     try {
         //Todo: create another controller for this goal and move paths logic from "removeDirController" to new one
-        const pathsController = new removeDirController(null, req, undefined, basePathWithoutRootDirectory)
+        const pathsController = new removeDirController(null, req, false, basePathWithoutRootDirectory)
         await pathsController.fetchPathsConfig('init')
         const basePaths = Array.isArray(basePathWithoutRootDirectory)
             ? basePathWithoutRootDirectory

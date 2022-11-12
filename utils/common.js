@@ -1,9 +1,12 @@
 const fs = require('fs-extra')
 const ObjectId = require('mongodb').ObjectID
 const {logger} = require("./logger")
-const moment = require('moment');
-
-const VIDEO_EXTENSION_LIST = ['mkv', 'flv', 'avi', 'mov', 'wmv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2', 'mpeg', 'm2v', '3gp']
+const moment = require('moment')
+const {
+    PORT,
+    VIDEO_EXTENSION_LIST,
+    TEMP_FOLDER,
+} = require('../constants')
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, length))
@@ -319,7 +322,7 @@ const updatePreviewPath = (DBObject, updatedFileDataItem) => {
  * @return {Array<Promise<Object>>} [{backupPath: string, originalPath: string}]
  */
 const backupFiles = async (pathArr) => {
-    const getBackupPath = () => 'temp/backup' + getRandomCode(6)
+    const getBackupPath = () => TEMP_FOLDER + '/backup' + getRandomCode(6)
     try {
         const promiseArr = pathArr.map(async (originalPath) => {
             const dest = getBackupPath()
@@ -422,7 +425,7 @@ const getParam = (req, paramName) => {
         throwError('There is no req.url', true)
         return null
     }
-    const url = new URL('http://localhost:5000' + req.url)
+    const url = new URL('http://localhost:' + PORT + req.url)
     const param = url.searchParams.get(paramName)
     if (!param) {
         throwError('Request does not contain a required parameter', true)

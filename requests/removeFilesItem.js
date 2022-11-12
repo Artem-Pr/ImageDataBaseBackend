@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const {logger} = require("../utils/logger")
 const {getError, removeFilesArr} = require("../utils/common")
+const {DATABASE_FOLDER} = require('../constants')
 const ObjectId = require('mongodb').ObjectID
 
 const returnValuesIfError = (error) => {
@@ -18,9 +19,8 @@ const returnValuesIfError = (error) => {
  *   body: null
  * }
  * @param {object} res - response object. Minimal: {send: null}
- * @param {string} dbFolder
  */
-const removeFilesItem = async (req, res, dbFolder = '') => {
+const removeFilesItem = async (req, res) => {
     const isExistingError = (value, errorMessage) => {
         if (value) return false
         logger.http('DELETE-response', {message: '/photo/:id', data: errorMessage})
@@ -31,15 +31,15 @@ const removeFilesItem = async (req, res, dbFolder = '') => {
     const isFileIdUndefined = fileId => isExistingError(fileId, 'Remove files item - missing id')
     const isFileExistInCollection = result => !isExistingError(result, 'Remove files item - file not found in DB')
     const isFileExistInDirectory = result => {
-        const isFileExist = !isExistingError(fs.existsSync(dbFolder + result.filePath), 'Remove files item - file not found in Directory')
+        const isFileExist = !isExistingError(fs.existsSync(DATABASE_FOLDER + result.filePath), 'Remove files item - file not found in Directory')
         const isThumbnailExist = isVideo(result)
-            ? !isExistingError(fs.existsSync(dbFolder + result.preview), 'Remove files item - thumbnail not found in Directory')
+            ? !isExistingError(fs.existsSync(DATABASE_FOLDER + result.preview), 'Remove files item - thumbnail not found in Directory')
             : true
         return isFileExist && isThumbnailExist
     }
     const isFileNotExist = result => !(isFileExistInCollection(result) && isFileExistInDirectory(result))
     const prepareRemovingPaths = ({filePath, preview, mimetype}) => {
-        const getFullPath = shortPath => `${dbFolder}${shortPath}`
+        const getFullPath = shortPath => `${DATABASE_FOLDER}${shortPath}`
         return isVideo({mimetype}) ? [getFullPath(filePath), getFullPath(preview)] : [getFullPath(filePath)]
     }
     
@@ -52,7 +52,7 @@ const removeFilesItem = async (req, res, dbFolder = '') => {
         const result = await collection.findOne(filter)
         
         if (isFileNotExist(result)) return null
-        logger.debug('Full removing filePath -', {message: dbFolder + result.filePath, module: 'removeFilesItem'})
+        logger.debug('Full removing filePath -', {message: DATABASE_FOLDER + result.filePath, module: 'removeFilesItem'})
         
         await removeFilesArr(prepareRemovingPaths(result))
         const removedFilesResponse = await collection.deleteMany(filter)

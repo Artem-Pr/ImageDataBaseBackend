@@ -1,26 +1,30 @@
 const {logger} = require("../utils/logger")
 const {getExifFromPhoto} = require("../utils/exifTool")
+const {DATABASE_FOLDER, TEMP_FOLDER, UPLOAD_TEMP_FOLDER} = require("../constants")
 
 /**
  * Get prepared path
  *
  * @param {string[]} shortPaths
- * @param {string} databaseFolder
  */
-const addFullPathToArr = (shortPaths, databaseFolder) => {
+const addFullPathToArr = (shortPaths) => {
     return shortPaths.map(shortPath => {
-        return shortPath.startsWith('temp') ? shortPath : databaseFolder + shortPath
+        const isTempFolder = (
+            shortPath.startsWith(TEMP_FOLDER)
+            || shortPath.startsWith(UPLOAD_TEMP_FOLDER)
+        )
+        return isTempFolder ? shortPath : DATABASE_FOLDER + shortPath
     })
 }
 
-const imageItemRequest = async (request, response, databaseFolder, exiftoolProcess) => {
+const imageItemRequest = async (request, response, exiftoolProcess) => {
     let filedata = request.body
     if (!filedata) {
         logger.error("Request doesn't contain filedata")
         response.send("Getting EXIF error")
     }
     
-    const fullPaths = addFullPathToArr(filedata, databaseFolder)
+    const fullPaths = addFullPathToArr(filedata)
     const exifListObj = await getExifFromPhoto(fullPaths, filedata, exiftoolProcess)
     
     logger.http('POST-response', {
