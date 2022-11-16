@@ -1,6 +1,6 @@
 const fs = require('fs-extra')
 const {logger} = require("../utils/logger")
-const {getError, removeFilesArr} = require("../utils/common")
+const {getError, removeFilesArr, isVideoDBFile} = require("../utils/common")
 const {DATABASE_FOLDER} = require('../constants')
 const ObjectId = require('mongodb').ObjectID
 
@@ -27,12 +27,11 @@ const removeFilesItem = async (req, res) => {
         res.send(getError(errorMessage))
         return true
     }
-    const isVideo = result => result.mimetype.startsWith('video')
     const isFileIdUndefined = fileId => isExistingError(fileId, 'Remove files item - missing id')
     const isFileExistInCollection = result => !isExistingError(result, 'Remove files item - file not found in DB')
     const isFileExistInDirectory = result => {
         const isFileExist = !isExistingError(fs.existsSync(DATABASE_FOLDER + result.filePath), 'Remove files item - file not found in Directory')
-        const isThumbnailExist = isVideo(result)
+        const isThumbnailExist = isVideoDBFile(result)
             ? !isExistingError(fs.existsSync(DATABASE_FOLDER + result.preview), 'Remove files item - thumbnail not found in Directory')
             : true
         return isFileExist && isThumbnailExist
@@ -40,7 +39,7 @@ const removeFilesItem = async (req, res) => {
     const isFileNotExist = result => !(isFileExistInCollection(result) && isFileExistInDirectory(result))
     const prepareRemovingPaths = ({filePath, preview, mimetype}) => {
         const getFullPath = shortPath => `${DATABASE_FOLDER}${shortPath}`
-        return isVideo({mimetype}) ? [getFullPath(filePath), getFullPath(preview)] : [getFullPath(filePath)]
+        return isVideoDBFile({mimetype}) ? [getFullPath(filePath), getFullPath(preview)] : [getFullPath(filePath)]
     }
     
     const fileId = req && req.params && req.params.id

@@ -1,7 +1,7 @@
 const sharp = require("sharp")
 const ThumbnailGenerator = require('video-thumbnail-generator').default
 const {logger} = require("../utils/logger")
-const {getAndSendError} = require("../utils/common")
+const {getAndSendError, isVideoDBFile} = require("../utils/common")
 const {
     PORT,
     UPLOAD_IMAGES_TEMP_FOLDER,
@@ -16,7 +16,7 @@ const uploadItemRequest = async (req, res) => {
         res.send("Uploading file error")
     }
     
-    if (filedata.mimetype.startsWith('video')) {
+    if (isVideoDBFile(filedata)) {
         const tg = new ThumbnailGenerator({
             sourcePath: filedata.path,
             thumbnailPath: UPLOAD_TEMP_FOLDER + '/',

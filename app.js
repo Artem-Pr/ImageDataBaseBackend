@@ -71,14 +71,14 @@ app.get("/paths", (req, res) => {
 
 app.get("/check-directory", (req, res) => {
     logger.http('GET-query', {message: '/check-directory', data: getParam(req, 'directory')})
-    checkDirectory(req, res)
+    void checkDirectory(req, res)
 })
 
 app.post("/uploadItem",
     upload.single("filedata"),
     (req, res) => {
         logger.http('POST-query', {message: '/uploadItem', data: req.file})
-        uploadItemRequest(req, res)
+        void uploadItemRequest(req, res)
     }
 )
 
@@ -88,7 +88,7 @@ app.use("/image-exif",
 app.post("/image-exif",
     (req, res) => {
         logger.http('POST-query', {message: '/image-exif', data: req.body})
-        imageItemRequest(req, res, exiftoolProcess)
+        void imageItemRequest(req, res, exiftoolProcess)
     }
 )
 
@@ -98,7 +98,7 @@ app.use("/upload",
 app.post("/upload",
     (req, res) => {
         logger.http('POST-query', {message: '/upload', data: req.body})
-        uploadRequest(req, res, exiftoolProcess)
+        void uploadRequest(req, res, exiftoolProcess)
     }
 )
 
@@ -108,24 +108,23 @@ app.use("/update",
 app.put("/update",
     (req, res) => {
         logger.http('POST-query', {message: '/update', data: req.body})
-        updateRequest(req, res, exiftoolProcess)
+        void updateRequest(req, res, exiftoolProcess)
     }
 )
 
 app.use("/filtered-photos",
     express.json({extended: true})
 )
-
 app.post("/filtered-photos",
     (req, res) => {
         logger.http('POST-query', {message: '/filtered-photos', data: req.body})
-        getFilesFromDB(req, res)
+        void getFilesFromDB(req, res)
     }
 )
 
 app.delete("/photo/:id", (req, res) => {
     logger.http('DELETE-query', {message: '/photo/:id', data: req.params.id})
-    removeFilesItem(req, res)
+    void removeFilesItem(req, res)
 })
 
 app.delete("/directory", (req, res) => {
@@ -137,7 +136,6 @@ app.delete("/directory", (req, res) => {
 app.use("/test/matching-files",
     express.json({extended: true})
 )
-
 app.post("/test/matching-files", (req, res) => {
     logger.http('POST-query', {message: '/test/matching-files', data: req.body})
     void matchingNumberOfFilesTest(req, res)
@@ -146,7 +144,6 @@ app.post("/test/matching-files", (req, res) => {
 app.use("/test/matching-videos",
     express.json({extended: true})
 )
-
 app.post("/test/matching-videos", (req, res) => {
     logger.http('POST-query', {message: '/test/matching-videos', data: req.body})
     void matchingVideoThumbnailsTest(req, res)

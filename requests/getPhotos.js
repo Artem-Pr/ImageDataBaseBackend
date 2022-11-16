@@ -2,7 +2,7 @@ const fs = require("fs-extra")
 const createError = require("http-errors")
 const sharp = require("sharp")
 const {logger} = require("../utils/logger")
-const {dateToString, removeFileExt} = require('../utils/common')
+const {dateToString, removeFileExt, isVideoDBFile} = require('../utils/common')
 const {clone, pipe, map, prop, sum} = require('ramda');
 const {DBRequests} = require('../utils/DBController');
 const {
@@ -32,34 +32,47 @@ const createPreviewAndSendFiles = async (
     filteredPhotos,
     searchPagination,
     filesSizeSum,
+    isFullSizePreview,
 ) => {
     logger.debug('filteredPhotos.length: ', {message: filteredPhotos.length})
     const filesWithTempPathPromise = filteredPhotos.map(async item => {
         const fullPath = DATABASE_FOLDER + item.filePath
         const staticPath = DATABASE_FOLDER_NAME + item.filePath
+        const isVideo = isVideoDBFile(item)
         
-        // если тип "video", то не делаем превью, а просто достаем его из папки, иначе делаем превью
-        if (item.mimetype.startsWith('video')) {
-            const fullPreviewPath = DATABASE_FOLDER_NAME + item.preview
+        if (isFullSizePreview) {
+            logger.info('FULL SIZE PREVIEW MODE: ON', {message: item.originalName})
             item.originalPath = `http://localhost:${PORT}/${staticPath}`
-            item.preview = `http://localhost:${PORT}/${fullPreviewPath}`
             item.tempPath = item.filePath
+            item.preview = isVideo
+                ? `http://localhost:${PORT}/${DATABASE_FOLDER_NAME}${item.preview}`
+                : `http://localhost:${PORT}/${staticPath}`
         } else {
-            const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
-            await sharp(fullPath)
-                .withMetadata()
-                .clone()
-                .resize(300, 300, {fit: 'outside'})
-                .jpeg({quality: 80})
-                .toFile(`${TEMP_FOLDER}/${randomName}-preview.jpg`)
-                .then(() => {
-                    item.originalPath = `http://localhost:${PORT}/${staticPath}`
-                    item.preview = `http://localhost:${PORT}/${IMAGES_TEMP_FOLDER}/${randomName}-preview.jpg`
-                    item.tempPath = item.filePath
-                    logger.info('Sharp SUCCESS:', {message: item.originalName})
-                })
-                .catch(err => logger.error('OOPS!, Sharp ERROR:', {data: err}))
+            // если тип "video", то не делаем превью, а просто достаем его из папки, иначе делаем превью
+            if (isVideo) {
+                const fullPreviewPath = DATABASE_FOLDER_NAME + item.preview
+                item.originalPath = `http://localhost:${PORT}/${staticPath}`
+                item.preview = `http://localhost:${PORT}/${fullPreviewPath}`
+                item.tempPath = item.filePath
+            } else {
+                logger.info('FULL SIZE PREVIEW MODE: OFF', {message: item.originalName})
+                const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
+                await sharp(fullPath)
+                    .withMetadata()
+                    .clone()
+                    .resize(300, 300, {fit: 'outside'})
+                    .jpeg({quality: 80})
+                    .toFile(`${TEMP_FOLDER}/${randomName}-preview.jpg`)
+                    .then(() => {
+                        item.originalPath = `http://localhost:${PORT}/${staticPath}`
+                        item.preview = `http://localhost:${PORT}/${IMAGES_TEMP_FOLDER}/${randomName}-preview.jpg`
+                        item.tempPath = item.filePath
+                        logger.info('Sharp SUCCESS:', {message: item.originalName})
+                    })
+                    .catch(err => logger.error('OOPS!, Sharp ERROR:', {data: err}))
+            }
         }
+        
         return {
             ...item,
             ...(item.originalDate && {originalDate: dateToString(item.originalDate)})
@@ -98,6 +111,7 @@ const getFilesFromDB = async (req, res) => {
     const showSubfolders = filedata.showSubfolders
     const includeAllTags = true
     const types = filedata.mimeTypes || []
+    const isFullSizePreview = Boolean(filedata.isFullSizePreview)
     let currentPage = +filedata.page || 1
     let searchTags = filedata.searchTags || []
     let excludeTags = filedata.excludeTags || []
@@ -211,7 +225,7 @@ const getFilesFromDB = async (req, res) => {
                         logger.info('Sharp start. Number of photos:', {message: photos.length})
                 
                         const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
-                        await createPreviewAndSendFiles(res, photos, searchPagination, filesSizeSum)
+                        await createPreviewAndSendFiles(res, photos, searchPagination, filesSizeSum, isFullSizePreview)
                     });
             }
         })

@@ -155,7 +155,7 @@ const isVideoThumbnail = (fileName) => {
 }
 
 /**
- * @param {Object} DBObject - file object from DB
+ * @param {{mimetype: string}} DBObject - file object from DB
  */
 const isVideoDBFile = (DBObject) => {
     return DBObject.mimetype.startsWith('video')
