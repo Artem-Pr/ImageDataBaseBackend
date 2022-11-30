@@ -104,13 +104,14 @@ const getFilesFromDB = async (req, res) => {
         return
     }
     
+    const sorting = filedata.sorting
     const folderPath = filedata.folderPath
     const nPerPage = +filedata.perPage || 0
     const isNameComparison = Boolean(filedata.isNameComparison)
     const comparisonFolder = filedata.comparisonFolder
     const showSubfolders = filedata.showSubfolders
     const includeAllTags = true
-    const types = filedata.mimeTypes || []
+    const types = filedata.mimetypes || []
     const isFullSizePreview = Boolean(filedata.isFullSizePreview)
     let currentPage = +filedata.page || 1
     let searchTags = filedata.searchTags || []
@@ -119,6 +120,8 @@ const getFilesFromDB = async (req, res) => {
     if (searchTags && !Array.isArray(searchTags)) searchTags = [searchTags]
     if (excludeTags && !Array.isArray(excludeTags)) excludeTags = [excludeTags]
     
+    
+    logger.debug('sorting', {data: JSON.stringify(sorting)})
     
     logger.debug('isNameComparison', {data: isNameComparison})
     logger.debug('comparisonFolder', {data: comparisonFolder})
@@ -209,7 +212,8 @@ const getFilesFromDB = async (req, res) => {
                     });
             } else {
                 AllFoundedResults
-                    .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
+                    .sort(sorting)
+                    // .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
                     // .sort({originalDate: -1, filePath: 1}) // Сортировка по дате, фото и видео в перемешку
                     // .sort({mimetype: 1, _id: -1}) // Последние добавленные
                     // .sort({originalName: 1}) // Сортировка по имени
