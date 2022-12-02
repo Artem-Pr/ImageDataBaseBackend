@@ -3,7 +3,6 @@ const createError = require("http-errors")
 const sharp = require("sharp")
 const {logger} = require("../utils/logger")
 const {dateToString, removeFileExt, isVideoDBFile} = require('../utils/common')
-const {clone, pipe, map, prop, sum} = require('ramda');
 const {DBRequests} = require('../utils/DBController');
 const {
     PORT,
@@ -17,15 +16,6 @@ const getName = (dbObject) => removeFileExt(dbObject.originalName)
 // const getName = (dbObject) => dbObject.size //нужно для изменения вариантов сравнения
 
 const isOtherFolder = (dbObject, folder) => dbObject.filePath.startsWith(`/${folder}/`)
-
-const getTotalFilesSize = (filesArr) => {
-    const filesSizeTotal = pipe(
-        map(prop('size')),
-        sum,
-    )(filesArr)
-    logger.debug('loadedFilesSizeSum', {data: filesSizeTotal})
-    return filesSizeTotal
-}
 
 const createPreviewAndSendFiles = async (
     res,
@@ -96,6 +86,22 @@ const createPreviewAndSendFiles = async (
 }
 
 //Todo: add tests
+/**
+ * Checking the number of files in a directory
+ *
+ * @param {
+ *  {
+ *      app: {locals: {collection: {
+ *          aggregate: (Array, object) => ({toArray: () => Promise<any>})
+ *      }}},
+ *      body: null
+ *  }
+ * } req - request object. Minimal: {
+ *   app: {locals: {collection: null}},
+ *   body: null
+ * }
+ * @param {object} res - response object. Minimal: {send: null}
+ */
 const getFilesFromDB = async (req, res) => {
     let filedata = req.body
     if (!filedata) {
@@ -104,6 +110,7 @@ const getFilesFromDB = async (req, res) => {
         return
     }
     
+    const randomSort = Boolean(filedata.randomSort)
     const sorting = filedata.sorting
     const folderPath = filedata.folderPath
     const nPerPage = +filedata.perPage || 0
@@ -121,6 +128,7 @@ const getFilesFromDB = async (req, res) => {
     if (excludeTags && !Array.isArray(excludeTags)) excludeTags = [excludeTags]
     
     
+    logger.debug('randomSort', {data: randomSort})
     logger.debug('sorting', {data: JSON.stringify(sorting)})
     
     logger.debug('isNameComparison', {data: isNameComparison})
@@ -157,82 +165,117 @@ const getFilesFromDB = async (req, res) => {
     const findObject = conditionArr.length ? {$and: conditionArr} : {}
     
     const collection = req.app.locals.collection
-    let resultsCount = 0
-    let totalPages = 0
     
-    const AllFoundedResults = collection.find(findObject)
-    await AllFoundedResults.count().then(response => {
-        resultsCount = response
-        totalPages = Math.ceil(resultsCount / nPerPage)
-        if (currentPage > totalPages) currentPage = 1
-    })
+    const aggregationBasic = [
+        {$match: findObject},
+        {$sort: sorting},
+    ]
     
-    clone(AllFoundedResults)
-        .toArray(async (err, filesArr) => {
-            if (err) {
-                logger.error("collection load error", {data: err})
-                throw createError(400, `collection load error`)
-            }
-            const filesSizeSum = getTotalFilesSize(filesArr)
+    const aggregationSample = [
+        {$sample: {size: nPerPage}},
+    ]
     
-            if (isNameComparison) {
-                AllFoundedResults
-                    .sort({originalName: 1})
-                    .toArray(async function (err, photos) {
-                        if (err) {
-                            logger.error("collection load error", {data: err})
-                            throw createError(400, `collection load error`)
+    const aggregationResponse = [
+        {
+            $facet: {
+                response: [
+                    {$skip: currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0},
+                    {$limit: nPerPage},
+                ],
+                total: [
+                    {$group: {_id: null, filesSizeSum: {$sum: '$size'}}},
+                ],
+                pagination: [
+                    {$count: 'resultsCount'},
+                    {
+                        $addFields: {
+                            totalPages: {
+                                $ceil: {
+                                    $divide: ['$resultsCount', nPerPage],
+                                }
+                            },
                         }
-                
-                        logger.debug('rootLibPath', {message: DATABASE_FOLDER})
-                        logger.info('Sharp start. Number of photos:', {message: photos.length})
-                        const filteredPhotos = photos.filter((item, idx) => {
-                            const prevItem = idx > 0 && photos[idx - 1]
-                            const nextItem = idx < photos.length && photos[idx + 1]
-                            if (comparisonFolder) {
-                                return prevItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(prevItem)) || // сравнение имен с папкой other
-                                    prevItem && isOtherFolder(prevItem, comparisonFolder) && getName(prevItem).startsWith(getName(item)) ||
-                                    nextItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(nextItem)) ||
-                                    nextItem && isOtherFolder(nextItem, comparisonFolder) && getName(nextItem).startsWith(getName(item));
-                            } else {
-                                return prevItem && getName(item).startsWith(getName(prevItem)) ||  // сравнение имен везде
-                                    prevItem && getName(prevItem).startsWith(getName(item)) ||
-                                    nextItem && getName(item).startsWith(getName(nextItem)) ||
-                                    nextItem && getName(nextItem).startsWith(getName(item));
+                    },
+                    {
+                        $addFields: {
+                            currentPage: {
+                                $cond: [{$gt: [currentPage, '$totalPages']}, 1, currentPage]
                             }
-                            // return prevItem && getName(item) === getName(prevItem) || // сравнение поля size (нужно исправить также getName)
-                            //     prevItem && getName(prevItem) === getName(item) ||
-                            //     nextItem && getName(item) === getName(nextItem) ||
-                            //     nextItem && getName(nextItem) === getName(item);
-                    
-                        })
-                
-                        const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
-                        await createPreviewAndSendFiles(res, filteredPhotos, searchPagination, filesSizeSum)
-                    });
-            } else {
-                AllFoundedResults
-                    .sort(sorting)
-                    // .sort({mimetype: 1, originalDate: -1, filePath: 1}) // сортировка по дате, фото и видео разделены
-                    // .sort({originalDate: -1, filePath: 1}) // Сортировка по дате, фото и видео в перемешку
-                    // .sort({mimetype: 1, _id: -1}) // Последние добавленные
-                    // .sort({originalName: 1}) // Сортировка по имени
-                    .skip(currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0)
-                    .limit(nPerPage)
-                    .toArray(async function (err, photos) {
-                        if (err) {
-                            logger.error("collection load error", {data: err})
-                            throw createError(400, `collection load error`)
                         }
-                
-                        logger.debug('rootLibPath', {message: DATABASE_FOLDER})
-                        logger.info('Sharp start. Number of photos:', {message: photos.length})
-                
-                        const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
-                        await createPreviewAndSendFiles(res, photos, searchPagination, filesSizeSum, isFullSizePreview)
-                    });
+                    }
+                ]
             }
+        },
+    ]
+    
+    const aggregationArray = randomSort
+        ? [...aggregationBasic, ...aggregationSample, ...aggregationResponse]
+        : [...aggregationBasic, ...aggregationResponse]
+    
+    const comparisonAggregationArray = [
+        {$match: findObject},
+        {$sort: {originalName: 1}},
+        {
+            $facet: {
+                response: [],
+                total: [
+                    {$group: {_id: null, filesSizeSum: {$sum: '$size'}}},
+                ],
+                pagination: []
+            }
+        }
+    ]
+    
+    try {
+        const [mongoResponse] = await collection
+            .aggregate(
+                isNameComparison
+                    ? comparisonAggregationArray
+                    : aggregationArray,
+                {allowDiskUse: true})
+            .toArray()
+        
+        const {response, total, pagination} = mongoResponse
+        const {filesSizeSum} = total[0]
+    
+        logger.debug('rootLibPath', {message: DATABASE_FOLDER})
+        logger.info('Sharp start. Number of photos:', {message: response.length})
+        
+        if (!isNameComparison) {
+            const {resultsCount, totalPages, currentPage} = pagination[0]
+            const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
+            
+            await createPreviewAndSendFiles(res, response, searchPagination, filesSizeSum, isFullSizePreview)
+            return
+        }
+        
+        const filteredPhotos = response.filter((item, idx) => {
+            const prevItem = idx > 0 && response[idx - 1]
+            const nextItem = idx < response.length && response[idx + 1]
+            if (comparisonFolder) {
+                return prevItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(prevItem)) || // сравнение имен с папкой other
+                    prevItem && isOtherFolder(prevItem, comparisonFolder) && getName(prevItem).startsWith(getName(item)) ||
+                    nextItem && isOtherFolder(item, comparisonFolder) && getName(item).startsWith(getName(nextItem)) ||
+                    nextItem && isOtherFolder(nextItem, comparisonFolder) && getName(nextItem).startsWith(getName(item));
+            } else {
+                return prevItem && getName(item).startsWith(getName(prevItem)) ||  // сравнение имен везде
+                    prevItem && getName(prevItem).startsWith(getName(item)) ||
+                    nextItem && getName(item).startsWith(getName(nextItem)) ||
+                    nextItem && getName(nextItem).startsWith(getName(item));
+            }
+            // return prevItem && getName(item) === getName(prevItem) || // сравнение поля size (нужно исправить также getName)
+            //     prevItem && getName(prevItem) === getName(item) ||
+            //     nextItem && getName(item) === getName(nextItem) ||
+            //     nextItem && getName(nextItem) === getName(item);
+
         })
+    
+        const searchPagination = {currentPage: 1, totalPages: 1, nPerPage: 100, resultsCount: 0}
+        await createPreviewAndSendFiles(res, filteredPhotos, searchPagination, filesSizeSum, isFullSizePreview)
+    } catch (err) {
+        logger.error("collection load error", {data: JSON.stringify(err)})
+        throw createError(400, `collection load error`)
+    }
 }
 
 module.exports = {getFilesFromDB}
