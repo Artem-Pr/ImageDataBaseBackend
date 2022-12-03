@@ -1,6 +1,6 @@
 const fs = require("fs-extra")
-const createError = require("http-errors")
 const sharp = require("sharp")
+const {isEmpty} = require("ramda")
 const {logger} = require("../utils/logger")
 const {dateToString, removeFileExt, isVideoDBFile} = require('../utils/common')
 const {DBRequests} = require('../utils/DBController');
@@ -166,51 +166,45 @@ const getFilesFromDB = async (req, res) => {
     
     const collection = req.app.locals.collection
     
-    const aggregationBasic = [
-        {$match: findObject},
-        {$sort: sorting},
-    ]
-    
-    const aggregationSample = [
-        {$sample: {size: nPerPage}},
-    ]
-    
-    const aggregationResponse = [
-        {
-            $facet: {
-                response: [
-                    {$skip: currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0},
-                    {$limit: nPerPage},
-                ],
-                total: [
-                    {$group: {_id: null, filesSizeSum: {$sum: '$size'}}},
-                ],
-                pagination: [
-                    {$count: 'resultsCount'},
-                    {
-                        $addFields: {
-                            totalPages: {
-                                $ceil: {
-                                    $divide: ['$resultsCount', nPerPage],
-                                }
-                            },
-                        }
-                    },
-                    {
-                        $addFields: {
-                            currentPage: {
-                                $cond: [{$gt: [currentPage, '$totalPages']}, 1, currentPage]
+    const aggregationMatch = {$match: findObject}
+    const aggregationSort = {$sort: sorting}
+    const aggregationSample = {$sample: {size: nPerPage}}
+    const aggregationResponse = {
+        $facet: {
+            response: [
+                {$skip: currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0},
+                {$limit: nPerPage},
+            ],
+            total: [
+                {$group: {_id: null, filesSizeSum: {$sum: '$size'}}},
+                {$unset: "_id"}
+            ],
+            pagination: [
+                {$count: 'resultsCount'},
+                {
+                    $addFields: {
+                        totalPages: {
+                            $ceil: {
+                                $divide: ['$resultsCount', nPerPage],
                             }
+                        },
+                    }
+                },
+                {
+                    $addFields: {
+                        currentPage: {
+                            $cond: [{$gt: [currentPage, '$totalPages']}, 1, currentPage]
                         }
                     }
-                ]
-            }
-        },
-    ]
+                }
+            ]
+        }
+    }
     
-    const aggregationArray = randomSort
-        ? [...aggregationBasic, ...aggregationSample, ...aggregationResponse]
-        : [...aggregationBasic, ...aggregationResponse]
+    let aggregationArray = [aggregationMatch]
+    !(randomSort || isEmpty(sorting)) && aggregationArray.push(aggregationSort)
+    randomSort && aggregationArray.push(aggregationSample)
+    aggregationArray.push(aggregationResponse)
     
     const comparisonAggregationArray = [
         {$match: findObject},
@@ -220,6 +214,7 @@ const getFilesFromDB = async (req, res) => {
                 response: [],
                 total: [
                     {$group: {_id: null, filesSizeSum: {$sum: '$size'}}},
+                    {$unset: "_id"}
                 ],
                 pagination: []
             }
@@ -236,13 +231,15 @@ const getFilesFromDB = async (req, res) => {
             .toArray()
         
         const {response, total, pagination} = mongoResponse
-        const {filesSizeSum} = total[0]
-    
+        const filesSizeSum = total[0] ? total[0].filesSizeSum : 0
+        
         logger.debug('rootLibPath', {message: DATABASE_FOLDER})
         logger.info('Sharp start. Number of photos:', {message: response.length})
         
         if (!isNameComparison) {
-            const {resultsCount, totalPages, currentPage} = pagination[0]
+            const {resultsCount, totalPages, currentPage} = pagination.length
+                ? pagination[0]
+                : {resultsCount: 0, totalPages: 0, currentPage: 0}
             const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
             
             await createPreviewAndSendFiles(res, response, searchPagination, filesSizeSum, isFullSizePreview)
@@ -267,14 +264,14 @@ const getFilesFromDB = async (req, res) => {
             //     prevItem && getName(prevItem) === getName(item) ||
             //     nextItem && getName(item) === getName(nextItem) ||
             //     nextItem && getName(nextItem) === getName(item);
-
+            
         })
-    
+        
         const searchPagination = {currentPage: 1, totalPages: 1, nPerPage: 100, resultsCount: 0}
         await createPreviewAndSendFiles(res, filteredPhotos, searchPagination, filesSizeSum, isFullSizePreview)
     } catch (err) {
-        logger.error("collection load error", {data: JSON.stringify(err)})
-        throw createError(400, `collection load error`)
+        logger.error("collection load error:", {message: err.message})
+        res.status(500).send({message: `collection load error: ${err.message}`})
     }
 }
 
