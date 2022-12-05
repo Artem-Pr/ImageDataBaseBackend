@@ -120,6 +120,7 @@ const getFilesFromDB = async (req, res) => {
     const includeAllTags = true
     const types = filedata.mimetypes || []
     const isFullSizePreview = Boolean(filedata.isFullSizePreview)
+    const filterDateRange = filedata.dateRange
     let currentPage = +filedata.page || 1
     let searchTags = filedata.searchTags || []
     let excludeTags = filedata.excludeTags || []
@@ -139,6 +140,7 @@ const getFilesFromDB = async (req, res) => {
     logger.debug('searchTags', {data: searchTags})
     logger.debug('excludeTags', {data: excludeTags})
     logger.debug('types', {data: types})
+    logger.debug('filterDateRange', {data: filterDateRange})
     
     // очищаем temp
     fs.emptyDirSync(TEMP_FOLDER)
@@ -160,6 +162,14 @@ const getFilesFromDB = async (req, res) => {
     if (types.length) {
         const mimeTypeObjArr = types.map(type => ({mimetype: type}))
         conditionArr.push({$or: mimeTypeObjArr})
+    }
+    if (filterDateRange) {
+        const startDate = new Date(filterDateRange[0])
+        const endDate = new Date(filterDateRange[1])
+        
+        conditionArr.push(
+            {originalDate:{$gte: startDate, $lt: endDate}}
+        )
     }
     
     const findObject = conditionArr.length ? {$and: conditionArr} : {}
