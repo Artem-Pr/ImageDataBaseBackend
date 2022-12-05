@@ -117,7 +117,7 @@ const getFilesFromDB = async (req, res) => {
     const isNameComparison = Boolean(filedata.isNameComparison)
     const comparisonFolder = filedata.comparisonFolder
     const showSubfolders = filedata.showSubfolders
-    const includeAllTags = true
+    const includeAllSearchTags = filedata.includeAllSearchTags
     const types = filedata.mimetypes || []
     const isFullSizePreview = Boolean(filedata.isFullSizePreview)
     const filterDateRange = filedata.dateRange
@@ -160,7 +160,7 @@ const getFilesFromDB = async (req, res) => {
         {originalName: { '$regex': searchFileName, '$options': 'i' }}
     )
     
-    const searchTagsCondition = includeAllTags
+    const searchTagsCondition = includeAllSearchTags
         ? {keywords: {$all: searchTags || []}}
         : {keywords: {$in: searchTags || []}}
     if (searchTags.length) conditionArr.push(searchTagsCondition)
