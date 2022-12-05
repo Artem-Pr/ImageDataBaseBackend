@@ -121,6 +121,7 @@ const getFilesFromDB = async (req, res) => {
     const types = filedata.mimetypes || []
     const isFullSizePreview = Boolean(filedata.isFullSizePreview)
     const filterDateRange = filedata.dateRange
+    const searchFileName = filedata.fileName
     let currentPage = +filedata.page || 1
     let searchTags = filedata.searchTags || []
     let excludeTags = filedata.excludeTags || []
@@ -137,6 +138,7 @@ const getFilesFromDB = async (req, res) => {
     
     logger.debug('folderPath', {data: folderPath})
     logger.debug('showSubfolders', {data: showSubfolders})
+    logger.debug('searchFileName', {data: searchFileName})
     logger.debug('searchTags', {data: searchTags})
     logger.debug('excludeTags', {data: excludeTags})
     logger.debug('types', {data: types})
@@ -153,6 +155,10 @@ const getFilesFromDB = async (req, res) => {
     if (folderPath && !showSubfolders) {
         conditionArr.push(DBRequests.getFilesExcludeFilesInSubfolders(folderPath))
     }
+    
+    if (searchFileName) conditionArr.push(
+        {originalName: { '$regex': searchFileName, '$options': 'i' }}
+    )
     
     const searchTagsCondition = includeAllTags
         ? {keywords: {$all: searchTags || []}}
