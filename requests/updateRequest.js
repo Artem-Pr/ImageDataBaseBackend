@@ -231,6 +231,8 @@ const createFiledataForUpdatedExif = (updateFileDataArr, originalDBObjects) => {
             filePath,
             ...(currentUpdatedFields.originalDate && {originalDate: currentUpdatedFields.originalDate}),
             ...(currentUpdatedFields.keywords && {keywords: currentUpdatedFields.keywords}),
+            ...(currentUpdatedFields.description && {description: currentUpdatedFields.description}),
+            ...(currentUpdatedFields.rating && {rating: currentUpdatedFields.rating}),
         }
     })
 }
@@ -335,7 +337,7 @@ const updateRequest = async (req, res, exiftoolProcess) => {
     const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
     const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
     const isUpdatedKeywords = updatedKeywords && updatedKeywords.length && updatedKeywords.some(item => item && item.length)
-    const isUpdateOriginalDate = updateFields.some(item => item.originalDate)
+    const isUpdateExif = updateFields.some(({originalDate, rating, description}) => originalDate || rating || description)
     
     try {
         const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
@@ -346,7 +348,7 @@ const updateRequest = async (req, res, exiftoolProcess) => {
         const previewArr = getPreviewArray(savedOriginalDBObjectsArr)
         filesBackup = await backupFiles([...pathsArr, ...previewArr])
         
-        if (isUpdatedKeywords || isUpdateOriginalDate) {
+        if (isUpdatedKeywords || isUpdateExif) {
             const pushExifData = createFiledataForUpdatedExif(filedata, savedOriginalDBObjectsArr)
             
             await pushExif(

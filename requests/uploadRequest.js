@@ -91,7 +91,7 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
         res.send({error: 'Uploading files error'})
     }
     
-    const targetPathArr = filedata.map(item => `/${basePathWithoutRootDirectory}/${item.name}`)
+    const targetPathArr = filedata.map(({name}) => `/${basePathWithoutRootDirectory}/${name}`)
     const existedFilesArr = await checkIfFilesAreExist(req, targetPathArr)
     if (existedFilesArr.length) {
         const errorMessage = getError(
@@ -176,6 +176,8 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
         originalDate: stringToDate(image.originalDate),
         filePath: image.filePath,
         preview: image.filePathPreview,
+        ...(image.rating && {rating: image.rating}),
+        ...(image.description && {description: image.description}),
     }))
     
     

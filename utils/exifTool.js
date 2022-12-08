@@ -1,4 +1,3 @@
-const fs = require('fs-extra')
 const moment = require("moment")
 const createError = require("http-errors")
 const {throwError} = require("./common")
@@ -136,6 +135,11 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
             ...(originalDate && {'DateTimeOriginal': originalDate}),
             ...(originalDate && {'CreateDate': originalDate}),
             ...(originalDate && {'MediaCreateDate': originalDate}),
+            ...(filedata[i].rating && {'Rating': filedata[i].rating}),
+            ...(filedata[i].description && {'Description': filedata[i].description}),
+            ...(filedata[i].description && {'ImageDescription': filedata[i].description}),
+            ...(filedata[i].description && {'Caption-Abstract': filedata[i].description}),
+            ...(filedata[i].description && {'UserComment': filedata[i].description}),
         }
         
         const isEmptyExif = Object.keys(preparedExif).length === 0 && preparedExif.constructor === Object
