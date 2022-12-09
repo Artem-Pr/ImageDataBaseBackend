@@ -120,8 +120,12 @@ const getFilesFromDB = async (req, res) => {
     const includeAllSearchTags = filedata.includeAllSearchTags
     const types = filedata.mimetypes || []
     const isFullSizePreview = Boolean(filedata.isFullSizePreview)
-    const filterDateRange = filedata.dateRange
-    const searchFileName = filedata.fileName
+    
+    const ratingFilter = +filedata.rating || 0
+    const dateRangeFilter = filedata.dateRange
+    const fileNameFilter = filedata.fileName
+    const anyDescriptionFilter = filedata.anyDescription
+    const descriptionFilter = filedata.description
     let currentPage = +filedata.page || 1
     let searchTags = filedata.searchTags || []
     let excludeTags = filedata.excludeTags || []
@@ -138,11 +142,14 @@ const getFilesFromDB = async (req, res) => {
     
     logger.debug('folderPath', {data: folderPath})
     logger.debug('showSubfolders', {data: showSubfolders})
-    logger.debug('searchFileName', {data: searchFileName})
+    logger.debug('fileNameFilter', {data: fileNameFilter})
+    logger.debug('ratingFilter', {data: ratingFilter})
+    logger.debug('anyDescriptionFilter', {data: anyDescriptionFilter})
+    logger.debug('descriptionFilter', {data: descriptionFilter})
     logger.debug('searchTags', {data: searchTags})
     logger.debug('excludeTags', {data: excludeTags})
     logger.debug('types', {data: types})
-    logger.debug('filterDateRange', {data: filterDateRange})
+    logger.debug('dateRangeFilter', {data: dateRangeFilter})
     
     // очищаем temp
     fs.emptyDirSync(TEMP_FOLDER)
@@ -156,8 +163,20 @@ const getFilesFromDB = async (req, res) => {
         conditionArr.push(DBRequests.getFilesExcludeFilesInSubfolders(folderPath))
     }
     
-    if (searchFileName) conditionArr.push(
-        {originalName: { '$regex': searchFileName, '$options': 'i' }}
+    if (fileNameFilter) conditionArr.push(
+        {originalName: { '$regex': fileNameFilter, '$options': 'i' }}
+    )
+    
+    if (ratingFilter) conditionArr.push(
+        {rating: { '$eq': ratingFilter}}
+    )
+    
+    if (descriptionFilter) conditionArr.push(
+        {description: { '$regex': descriptionFilter, '$options': 'i' }}
+    )
+    
+    if (anyDescriptionFilter) conditionArr.push(
+        {description : {"$exists" : true, "$ne" : ""}}
     )
     
     const searchTagsCondition = includeAllSearchTags
@@ -169,9 +188,9 @@ const getFilesFromDB = async (req, res) => {
         const mimeTypeObjArr = types.map(type => ({mimetype: type}))
         conditionArr.push({$or: mimeTypeObjArr})
     }
-    if (filterDateRange) {
-        const startDate = new Date(filterDateRange[0])
-        const endDate = new Date(filterDateRange[1])
+    if (dateRangeFilter) {
+        const startDate = new Date(dateRangeFilter[0])
+        const endDate = new Date(dateRangeFilter[1])
         
         conditionArr.push(
             {originalDate:{$gte: startDate, $lt: endDate}}
