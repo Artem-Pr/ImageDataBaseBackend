@@ -87,7 +87,7 @@ const createPreviewAndSendFiles = async (
 
 //Todo: add tests
 /**
- * Checking the number of files in a directory
+ * Getting the filtered and sorted elements from DB
  *
  * @param {
  *  {

@@ -14,6 +14,8 @@ const {checkDirectory} = require("./requests/checkDirectory")
 const {removeDirController} = require("./requests/removeDirectory")
 const {matchingNumberOfFilesTest} = require("./requests/testRequests/matchingNumberOfFilesTest")
 const {matchingVideoThumbnailsTest} = require('./requests/testRequests/matchingVideoThumbnailsTest')
+const {getUnusedKeywordsRequest} = require('./requests/getUnusedKeywordsRequest')
+const {removeKeywordRequest} = require('./requests/removeKeywordRequest')
 // const {updateStringDateToDateFormat} = require('./utils/updateStringDateToDateFormat')
 
 const {
@@ -62,6 +64,16 @@ logger.info('static database', {message: DATABASE_FOLDER})
 app.get("/keywords", (req, res) => {
     logger.http('GET-query', {message: '/keywords'})
     keywordsRequest(req, res)
+})
+
+app.get("/unused-keywords", (req, res) => {
+    logger.http('GET-query', {message: '/unused-keywords'})
+    void getUnusedKeywordsRequest(req, res)
+})
+
+app.delete("/keyword/:keyword", (req, res) => {
+    logger.http('DELETE-query', {message: '/keyword/:keyword', data: req.params.keyword})
+    void removeKeywordRequest(req, res)
 })
 
 app.get("/paths", (req, res) => {
