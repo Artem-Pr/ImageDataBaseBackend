@@ -7,6 +7,7 @@ const {
     VIDEO_EXTENSION_LIST,
     TEMP_FOLDER,
 } = require('../constants')
+const {dateTimeFormat} = require('./dateFormat');
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, length))
@@ -16,8 +17,8 @@ const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : 
 const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
 const getFilePathWithoutName = (fullPath) => (fullPath.split('/').slice(0, -1).join('/'))
 
-const stringToDate = (stringDate) => moment.utc(stringDate, 'YYYY.MM.DD').toDate()
-const dateToString = (date) => moment(new Date(date)).format('YYYY.MM.DD')
+const stringToDate = (stringDate) => moment.utc(stringDate, dateTimeFormat).toDate()
+const dateToString = (date) => moment(new Date(date)).format(dateTimeFormat)
 
 const transformDBObjectDateToString = ({originalDate, ...rest}) => ({
     ...rest,

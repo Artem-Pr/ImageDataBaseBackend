@@ -2,6 +2,7 @@ const moment = require("moment")
 const createError = require("http-errors")
 const {throwError} = require("./common")
 const {logger} = require("./logger")
+const {dateTimeFormat} = require('./dateFormat');
 
 /**
  * log exifTool response, return true if everything is ok,
@@ -119,7 +120,7 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
             && filedata[i].originalDate !== ''
             && filedata[i].originalDate !== '-'
         ) {
-            originalDate = moment(filedata[i].originalDate, 'YYYY.MM.DD').format('YYYY:MM:DD hh:mm:ss')
+            originalDate = moment(filedata[i].originalDate, dateTimeFormat).format(dateTimeFormat)
         }
         
         const getExifField = (fieldName, fieldValue) => {

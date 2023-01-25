@@ -12,6 +12,7 @@ const {
     DATABASE_FOLDER,
     UPLOAD_TEMP_FOLDER,
 } = require("../constants")
+const {dateTimeFormat} = require('../utils/dateFormat');
 
 // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
 // также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
@@ -33,7 +34,7 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
         if (
             originalDate && (filedata[i].originalDate === '' || filedata[i].originalDate === '-')
         ) {
-            filedata[i].originalDate = moment(originalDate, 'YYYY:MM:DD hh:mm:ss').format('YYYY.MM.DD')
+            filedata[i].originalDate = moment(originalDate, dateTimeFormat).format(dateTimeFormat)
         }
         
         // keywords из exifTools (возможно не существуют, тогда возвращаем null)

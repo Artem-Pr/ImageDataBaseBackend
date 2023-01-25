@@ -6,6 +6,7 @@ const {originalPathsList2} = require("./Data")
 const {removeDirController} = require("../requests/removeDirectory")
 const {DBController, DBRequests} = require("../utils/DBController");
 const moment = require('moment');
+const {dateTimeFormat} = require('../utils/dateFormat');
 
 const originalData = [
     {
@@ -17,7 +18,7 @@ const originalData = [
         imageSize: '3000x3000',
         keywords: ['map', 'forest', 'estonia'],
         changeDate: '2011.11.11',
-        originalDate: moment.utc('2010.10.10', 'YYYY.MM.DD').toDate(),
+        originalDate: moment.utc('2010.10.10', dateTimeFormat).toDate(),
         filePath: '/tests/testDirectory/проверка локализации/test-folder/test-subfolder/image001-map.jpg',
         preview: '',
     }, {
@@ -29,7 +30,7 @@ const originalData = [
         imageSize: '2000x2000',
         keywords: ['bike', 'Olga', 'estonia'],
         changeDate: '2011.12.12',
-        originalDate: moment.utc('2010.01.01', 'YYYY.MM.DD').toDate(),
+        originalDate: moment.utc('2010.01.01', dateTimeFormat).toDate(),
         filePath: '/tests/testDirectory/image002-map.jpg',
         preview: '',
     }, {
@@ -41,7 +42,7 @@ const originalData = [
         imageSize: '3000x3000',
         keywords: null,
         changeDate: '2011.11.11',
-        originalDate: moment.utc('2010.10.10', 'YYYY.MM.DD').toDate(),
+        originalDate: moment.utc('2010.10.10', dateTimeFormat).toDate(),
         filePath: '/tests/testDirectory/проверка локализации/test-folder/тестовая папка/YDXJ1442.mp4',
         preview: '/tests/testDirectory/проверка локализации/test-folder/тестовая папка/YDXJ1442-thumbnail-1000x562-0001.png',
     }

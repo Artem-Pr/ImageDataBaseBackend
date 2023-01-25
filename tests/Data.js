@@ -1,4 +1,5 @@
 const moment = require('moment');
+const {dateTimeFormat} = require('../utils/dateFormat');
 const ObjectId = require('mongodb').ObjectID
 
 const originalData = [{
@@ -10,7 +11,7 @@ const originalData = [{
     imageSize: '3000x3000',
     keywords: ['map', 'forest', 'estonia'],
     changeDate: '2011.11.11',
-    originalDate: moment.utc('2010.10.10', 'YYYY.MM.DD').toDate(),
+    originalDate: moment.utc('2010.10.10', dateTimeFormat).toDate(),
     filePath: 'tests/test-images/image001-map.jpg',
     preview: '',
 }, {
@@ -22,7 +23,7 @@ const originalData = [{
     imageSize: '2000x2000',
     keywords: ['bike', 'Olga', 'estonia'],
     changeDate: '2011.12.12',
-    originalDate: moment.utc('2010.01.01', 'YYYY.MM.DD').toDate(),
+    originalDate: moment.utc('2010.01.01', dateTimeFormat).toDate(),
     filePath: 'tests/test-images/image002-map.jpg',
     preview: '',
 }]
@@ -56,7 +57,7 @@ const videoOriginalFileData = [{
     imageSize: '3000x3000',
     keywords: null,
     changeDate: '2011.11.11',
-    originalDate: moment.utc('2010.10.10', 'YYYY.MM.DD').toDate(),
+    originalDate: moment.utc('2010.10.10', dateTimeFormat).toDate(),
     filePath: 'tests/tempVideos/YDXJ1442.mp4',
     preview: 'tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png',
 }]
@@ -103,7 +104,7 @@ const updatedFileDateForReturningValues = [
 
 const pushExifFiledata = [
     {
-        originalDate: moment.utc('2019.06.24', 'YYYY.MM.DD').toDate(),
+        originalDate: moment.utc('2019.06.24', dateTimeFormat).toDate(),
         changeDate: '2019.06.24',
         name: 'IMG_20190624_102400.jpg',
         tempPath: 'tests/tempPhotos/d922425fe7b767cd947799521332ed52',
@@ -114,7 +115,7 @@ const pushExifFiledata = [
         preview: 'http://localhost:5000/images/d922425fe7b767cd947799521332ed52-preview.jpg'
     },
     {
-        originalDate: moment.utc('2019.06.24', 'YYYY.MM.DD').toDate(),
+        originalDate: moment.utc('2019.06.24', dateTimeFormat).toDate(),
         changeDate: '2019.06.24',
         name: 'IMG_20190624_110224.jpg',
         tempPath: 'tests/tempPhotos/663b0881e406189cf53437abd7e687b6',
@@ -128,7 +129,7 @@ const pushExifFiledata = [
 
 const pushExifFiledataVideo = [
     {
-        originalDate: moment.utc('2019.06.24', 'YYYY.MM.DD').toDate(),
+        originalDate: moment.utc('2019.06.24', dateTimeFormat).toDate(),
         changeDate: '2019.06.24',
         name: 'YDXJ1442.mp4',
         tempPath: 'tests/tempVideos/YDXJ1442.mp4',

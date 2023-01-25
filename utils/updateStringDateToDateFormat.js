@@ -1,6 +1,7 @@
 const moment = require('moment')
 const {DBController, DBRequests} = require('./DBController')
 const {logger} = require('./logger')
+const {dateTimeFormat} = require('./dateFormat');
 
 const updateStringDateToDateFormat = async (req) => {
     const collectionController = new DBController(req, DBRequests.allFiles)
@@ -9,7 +10,7 @@ const updateStringDateToDateFormat = async (req) => {
     
     console.log('originalDBCollection', originalDBCollection)
     const updatedCollection = originalDBCollection.map(({_id, originalDate}) => {
-        const dateInDateFormat = moment.utc(originalDate, 'YYYY.MM.DD').toDate()
+        const dateInDateFormat = moment.utc(originalDate, dateTimeFormat).toDate()
         collectionController.DBUpdate = DBRequests.updateDate(dateInDateFormat)
         collectionController.DBRequest = DBRequests.byId(_id)
         return collectionController
