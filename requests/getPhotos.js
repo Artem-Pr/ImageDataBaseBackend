@@ -2,7 +2,7 @@ const fs = require("fs-extra")
 const sharp = require("sharp")
 const {isEmpty} = require("ramda")
 const {logger} = require("../utils/logger")
-const {dateToString, removeFileExt, isVideoDBFile} = require('../utils/common')
+const {dateToString, removeFileExt, isVideoDBFile, isHEICFile} = require('../utils/common')
 const {DBRequests} = require('../utils/DBController');
 const {
     PORT,
@@ -10,7 +10,9 @@ const {
     DATABASE_FOLDER_NAME,
     TEMP_FOLDER,
     DATABASE_FOLDER,
+    PREVIEWS_FOLDER_NAME,
 } = require('../constants')
+const {PreviewCreator} = require('../utils/previewCreator/previewCreator');
 
 const getName = (dbObject) => removeFileExt(dbObject.originalName)
 // const getName = (dbObject) => dbObject.size //нужно для изменения вариантов сравнения
@@ -26,26 +28,39 @@ const createPreviewAndSendFiles = async (
 ) => {
     logger.debug('filteredPhotos.length: ', {message: filteredPhotos.length})
     const filesWithTempPathPromise = filteredPhotos.map(async item => {
-        const fullPath = DATABASE_FOLDER + item.filePath
-        const staticPath = DATABASE_FOLDER_NAME + item.filePath
+        // TODO: Remove after database updates
+        const usePreviewFolder = item.preview.startsWith('/image-') || item.preview.startsWith('/video-')
+        
         const isVideo = isVideoDBFile(item)
+        const isHEIC = isHEICFile(item)
+        const fullPath = DATABASE_FOLDER + item.filePath
+        const staticPath = isHEIC
+            ? PREVIEWS_FOLDER_NAME + item.fullSizeJpg
+            : DATABASE_FOLDER_NAME + item.filePath
         
         if (isFullSizePreview) {
             logger.info('FULL SIZE PREVIEW MODE: ON', {message: item.originalName})
             item.originalPath = `http://localhost:${PORT}/${staticPath}`
             item.tempPath = item.filePath
             item.preview = isVideo
-                ? `http://localhost:${PORT}/${DATABASE_FOLDER_NAME}${item.preview}`
+                ? `http://localhost:${PORT}/${usePreviewFolder ? PREVIEWS_FOLDER_NAME : DATABASE_FOLDER_NAME}${item.preview}`
                 : `http://localhost:${PORT}/${staticPath}`
         } else {
             // если тип "video", то не делаем превью, а просто достаем его из папки, иначе делаем превью
             if (isVideo) {
-                const fullPreviewPath = DATABASE_FOLDER_NAME + item.preview
+                const fullPreviewPath = (usePreviewFolder ? PREVIEWS_FOLDER_NAME : DATABASE_FOLDER_NAME) + item.preview
                 item.originalPath = `http://localhost:${PORT}/${staticPath}`
                 item.preview = `http://localhost:${PORT}/${fullPreviewPath}`
                 item.tempPath = item.filePath
             } else {
                 logger.info('FULL SIZE PREVIEW MODE: OFF', {message: item.originalName})
+    
+                const previewCreator = new PreviewCreator({
+                    originalname: item.originalName,
+                    mimetype: item.mimetype,
+                    path: fullPath,
+                })
+                
                 const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
                 await sharp(fullPath)
                     .withMetadata()
@@ -164,19 +179,19 @@ const getFilesFromDB = async (req, res) => {
     }
     
     if (fileNameFilter) conditionArr.push(
-        {originalName: { '$regex': fileNameFilter, '$options': 'i' }}
+        {originalName: {'$regex': fileNameFilter, '$options': 'i'}}
     )
     
     if (ratingFilter) conditionArr.push(
-        {rating: { '$eq': ratingFilter}}
+        {rating: {'$eq': ratingFilter}}
     )
     
     if (descriptionFilter) conditionArr.push(
-        {description: { '$regex': descriptionFilter, '$options': 'i' }}
+        {description: {'$regex': descriptionFilter, '$options': 'i'}}
     )
     
     if (anyDescriptionFilter) conditionArr.push(
-        {description : {"$exists" : true, "$ne" : ""}}
+        {description: {"$exists": true, "$ne": ""}}
     )
     
     const searchTagsCondition = includeAllSearchTags
@@ -193,7 +208,7 @@ const getFilesFromDB = async (req, res) => {
         const endDate = new Date(dateRangeFilter[1])
         
         conditionArr.push(
-            {originalDate:{$gte: startDate, $lt: endDate}}
+            {originalDate: {$gte: startDate, $lt: endDate}}
         )
     }
     

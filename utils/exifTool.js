@@ -3,6 +3,30 @@ const createError = require("http-errors")
 const {throwError} = require("./common")
 const {logger} = require("./logger")
 const {dateTimeFormat} = require('./dateFormat');
+const {pickFileName} = require('./common');
+
+const exiftool = require("exiftool-vendored").exiftool
+
+exiftool
+    .version()
+    .then((version) => logger.info(`running ExifTool v${version}`))
+
+/**
+ *
+ * @param {{
+ *     [key: string]: any, name?: string, filePath?: string
+ * }} fileDataObj
+ * @return {undefined|string}
+ */
+const getFileName = (fileDataObj) => {
+    if (
+        fileDataObj &&
+        (fileDataObj.name || fileDataObj.filePath)
+    ) {
+        return fileDataObj.name ? fileDataObj.name : pickFileName(fileDataObj.filePath)
+    }
+    return undefined
+}
 
 /**
  * log exifTool response, return true if everything is ok,
@@ -36,20 +60,23 @@ const getExifFromPhoto = async (fullPathsArr, shortPaths, exiftoolProcess) => {
     const exifObjArr = {}
     
     try {
-        const pid = await exiftoolProcess.open('utf8')
-        logger.info('Started exiftool process %s', {data: pid})
+        // const pid = await exiftoolProcess.open('utf8')
+        // logger.info('Started exiftool process %s', {data: pid})
         
         for (let i = 0; i < fullPathsArr.length; i++) {
             logger.debug('getExifFromPhoto - filePath:', {message: fullPathsArr[i]})
-            const exifResponse = await exiftoolProcess.readMetadata(fullPathsArr[i], ['-File:all'])
-            if (!exifResponse.data) throw new Error(exifResponse.error)
-            exifObjArr[shortPaths[i]] = exifResponse.data[0]
+            // const exifResponse = await exiftoolProcess.readMetadata(fullPathsArr[i], ['-File:all'])
+            // if (!exifResponse.data) throw new Error(exifResponse.error)
+            
+            exifObjArr[shortPaths[i]] = await exiftool.read(fullPathsArr[i])
+            // console.log('exifObjArr-------', exifObjArr)
+            
+            // exifObjArr[shortPaths[i]] = exifResponse.data[0]
         }
     } catch (e) {
-        throw throwError('getExifFromPhoto - ' + e.message)
-    } finally {
         logger.info('Close exiftool')
-        await exiftoolProcess.close()
+        await exiftool.end()
+        throw throwError('getExifFromPhoto - ' + e.message)
     }
     
     return exifObjArr
@@ -60,26 +87,27 @@ const getExifFromPhoto = async (fullPathsArr, shortPaths, exiftoolProcess) => {
  *
  * @param {string[]} pathsArr - array of paths to the files
  * @param {any} exiftoolProcess
- * @returns {string[]}
+ * @returns {Promise<string[]>}
  */
 const getExifFromArr = async (pathsArr, exiftoolProcess) => {
     try {
-        const pid = await exiftoolProcess.open('utf8')
-        logger.info('Started exiftool process %s', {data: pid})
+        // const pid = await exiftoolProcess.open('utf8')
+        // logger.info('Started exiftool process %s', {data: pid})
         
         const keywordsPromiseArr = pathsArr.map(async tempImgPath => {
             // const rs = fs.createReadStream(tempImgPath)
             const rs = tempImgPath.replace(/\//g, '\/')
-            return exiftoolProcess.readMetadata(rs, ['-File:all'])
+            logger.debug('getExifFromPhoto - tempImgPath:', {message: rs})
+            // return exiftoolProcess.readMetadata(rs, ['-File:all'])
+            return exiftool.read(rs)
         })
-        const exifResponse = await Promise.all(keywordsPromiseArr)
+        // await exiftoolProcess.close()
         
-        await exiftoolProcess.close()
-        logger.info('Close exiftool')
-        
-        return exifResponse
+        return await Promise.all(keywordsPromiseArr)
     } catch (e) {
-        logger.error('',{data: e})
+        logger.info('Close exiftool')
+        await exiftool.end()
+        logger.error('', {data: e})
         throw createError(500, `oops..`);
     }
 }
@@ -100,9 +128,9 @@ const isInvalidFormat = (type) => (type === 'video/avi') || (type === 'video/wmv
  * @param {any} exiftoolProcess
  */
 const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess) => {
-    const pid = await exiftoolProcess.open('utf8')
+    // const pid = await exiftoolProcess.open('utf8')
     
-    logger.info('Started exiftool process %s', {data: pid})
+    // logger.info('Started exiftool process %s', {data: pid})
     
     const responsePromise = pathsArr.map(async (currentPath, i) => {
         const isAvoidEmptyFields = filedata[i].type === 'image/gif'
@@ -111,7 +139,7 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
             return 'invalidFormat'
         }
         const currentPhotoPath = currentPath.replace(/\//g, '\/')
-        const isChangedKeywordsItem = changedKeywordsArr[i] && changedKeywordsArr[i].length
+        const isChangedKeywordsItem = Boolean(changedKeywordsArr[i] && changedKeywordsArr[i].length)
         const keywords = isChangedKeywordsItem ? changedKeywordsArr[i] : ""
         
         let originalDate = null
@@ -133,8 +161,7 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
         const preparedExif = {
             ...getExifField('Keywords', keywords),
             ...getExifField('Subject', keywords),
-            ...(originalDate && {'DateTimeOriginal': originalDate}),
-            ...(originalDate && {'CreateDate': originalDate}),
+            ...(originalDate && {'AllDates': originalDate}),
             ...(originalDate && {'MediaCreateDate': originalDate}),
             ...(filedata[i].rating && {'Rating': filedata[i].rating}),
             ...(filedata[i].description && {'Description': filedata[i].description}),
@@ -144,22 +171,22 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
         }
         
         const isEmptyExif = Object.keys(preparedExif).length === 0 && preparedExif.constructor === Object
-        return isEmptyExif || await exiftoolProcess.writeMetadata(
-            currentPhotoPath,
-            preparedExif,
-            ['overwrite_original', 'codedcharacterset=utf8']
-        )
+        return isEmptyExif || await exiftool
+            .write(
+                currentPhotoPath,
+                preparedExif,
+                ['-overwrite_original', "-codedcharacterset=utf8"]
+            )
+            .then(response => {
+                logger.info('ExifTool SUCCESS: pushExif - file: ' + currentPhotoPath)
+                logger.debug('preparedExif', {data: preparedExif})
+                return response
+            })
+            .catch((error) => {
+                throw new Error(`exifTool- write ERROR: ${error.message}`)
+            })
     })
-    const response = await Promise.all(responsePromise)
-    
-    await exiftoolProcess.close()
-    logger.info('Closed exiftool')
-    
-    const resWithoutInvalidFormats = response.filter(item => {
-        return item !== 'invalidFormat' && item !== true
-    })
-    
-    return preparedResponse(resWithoutInvalidFormats)
+    await Promise.all(responsePromise)
 }
 
 module.exports = {getExifFromPhoto, getExifFromArr, pushExif, preparedResponse}

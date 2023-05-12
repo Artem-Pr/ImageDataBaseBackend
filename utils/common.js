@@ -7,7 +7,7 @@ const {
     VIDEO_EXTENSION_LIST,
     TEMP_FOLDER,
 } = require('../constants')
-const {dateTimeFormat} = require('./dateFormat');
+const {dateTimeFormat, dateFormat} = require('./dateFormat');
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, length))
@@ -18,7 +18,14 @@ const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1)
 const getFilePathWithoutName = (fullPath) => (fullPath.split('/').slice(0, -1).join('/'))
 
 const stringToDate = (stringDate) => moment.utc(stringDate, dateTimeFormat).toDate()
-const dateToString = (date) => moment(new Date(date)).format(dateTimeFormat)
+/**
+ *
+ * @param date
+ * @param isDateFormat
+ * @return {string}
+ */
+const dateToString = (date, isDateFormat) => moment(new Date(date))
+    .format(isDateFormat ? dateFormat : dateTimeFormat)
 
 const transformDBObjectDateToString = ({originalDate, ...rest}) => ({
     ...rest,
@@ -131,13 +138,53 @@ const pickFileName = (filePath) => {
 }
 
 /**
+ * Get file extension if exist, or ''
+ *
+ * @param {string} filePath - 'folder/subfolder/fileName.ext'
+ * @return {string}
+ */
+const pickExtension = (filePath) => {
+    const filePathArr = filePath.split('.')
+    const hasExtension = filePathArr.length > 1
+    
+    return hasExtension
+        ? filePathArr.at(-1)
+        : ''
+}
+
+/**
  * Get file name without extension
  *
- * @param {string} filePath
+ * @param {string} filePath - 'folder/subfolder/fileName.ext'
  * @return {string} fileName
  */
 const removeFileExt = (filePath) => {
-    return filePath.split('.').slice(0, -1).join('.')
+    const filePathArr = filePath.split('.')
+    const hasExtension = filePathArr.length > 1
+    
+    return hasExtension
+        ? filePathArr.slice(0, -1).join('.')
+        : filePath
+}
+
+/**
+ * @param {object} filedata - Blob or database file object
+ * @param {'filedata'?} filedata.fieldname=filedata
+ * @param {string?} filedata.name=IMG_6649.heic (example).
+ */
+const isBLOB = (filedata) => {
+    return Boolean(filedata.fieldname)
+}
+
+/**
+ * @param {object} filedata - Blob or database file object
+ * @param {'filedata'?} filedata.fieldname=filedata
+ * @param {string?} filedata.name=IMG_6649.heic (example).
+ */
+const isUploadingObject = (filedata) => {
+    console.log('filedata--------', filedata)
+    console.log('filedata: name--------', filedata.name)
+    return Boolean(filedata.name)
 }
 
 /**
@@ -160,6 +207,13 @@ const isVideoThumbnail = (fileName) => {
  */
 const isVideoDBFile = (DBObject) => {
     return DBObject.mimetype.startsWith('video')
+}
+
+/**
+ * @param {{mimetype: string}} fileData - image Blob or DB object
+ */
+const isHEICFile = (fileData) => {
+    return fileData.mimetype === 'image/heic'
 }
 
 /**
@@ -193,7 +247,7 @@ const renameFile = async (originalName, newName) => {
  * @param {string} src - original filePath
  * @param {string} dest - new filePath
  * @param {boolean} isOverwrite
- * @returns {Promise} true or Error
+ * @returns {Promise<string | Error>} true or Error
  */
 const asyncMoveFile = async (src, dest, isOverwrite = false) => {
     const options = {overwrite: !!isOverwrite}
@@ -417,8 +471,9 @@ const getSubdirectories = (directory, pathsArr) => {
 /**
  * get param value from request
  *
- * @param {object} req - request object. Minimal: {url: string}
- * @param {string} paramName
+ * @param {object} req - request object
+ * @param {string} req.url=http://localhost:5000/upload?path=folder/subfolder - (example).
+ * @param {string} paramName - "path" (example).
  * @return {string|null}
  */
 const getParam = (req, paramName) => {
@@ -445,6 +500,14 @@ const normalize = (string) => {
     return string.normalize()
 }
 
+/**
+ * @param {string} nameWithExtension
+ * @param {string} newExtension
+ * @return {string}
+ */
+const changeExtension = (nameWithExtension, newExtension) =>
+    nameWithExtension.split('.').slice(0, -1).join('.') + '.' + newExtension
+
 module.exports = {
     deepCopy,
     createPid,
@@ -457,10 +520,14 @@ module.exports = {
     throwError,
     moveFileAndCleanTemp,
     pickFileName,
+    pickExtension,
     removeFileExt,
+    isBLOB,
+    isUploadingObject,
     isVideoFile,
     isVideoThumbnail,
     isVideoDBFile,
+    isHEICFile,
     renameFile,
     asyncMoveFile,
     asyncCopyFile,
@@ -479,5 +546,6 @@ module.exports = {
     transformDBResponseDateToString,
     stringToDate,
     dateToString,
+    changeExtension,
     DBFilters
 }
