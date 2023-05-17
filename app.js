@@ -7,7 +7,7 @@ const {uploadItemRequest} = require("./requests/uploadItemRequest")
 const {imageItemRequest} = require("./requests/imageItemRequest")
 const {uploadRequest} = require("./requests/uploadRequest")
 const {updateRequest} = require("./requests/updateRequest")
-const {getFilesFromDB} = require("./requests/getPhotos")
+const {getFilesFromDB} = require("./requests/getPhotos/getFilesFromDB")
 const {pathRequest} = require("./requests/pathsRequest")
 const {removeFilesItem} = require("./requests/removeFilesItem")
 const {checkDirectory} = require("./requests/checkDirectory")
@@ -21,7 +21,9 @@ const {removeKeywordRequest} = require('./requests/removeKeywordRequest')
 const {
     PORT,
     DATABASE_FOLDER_NAME,
+    PREVIEWS_FOLDER_NAME,
     DATABASE_FOLDER,
+    PREVIEWS_FOLDER,
     UPLOAD_IMAGES_TEMP_FOLDER,
     IMAGES_TEMP_FOLDER,
     MONGO_HOST_NAME,
@@ -59,6 +61,7 @@ app.use(cors())
 app.use('/' + IMAGES_TEMP_FOLDER, express.static(__dirname + '/' + TEMP_FOLDER))
 app.use('/' + UPLOAD_IMAGES_TEMP_FOLDER, express.static(__dirname + '/' + UPLOAD_TEMP_FOLDER))
 app.use('/' + DATABASE_FOLDER_NAME, express.static(DATABASE_FOLDER))
+app.use('/' + PREVIEWS_FOLDER_NAME, express.static(PREVIEWS_FOLDER))
 logger.info('static database', {message: DATABASE_FOLDER})
 
 app.get("/keywords", (req, res) => {

@@ -1,105 +1,54 @@
 const fs = require("fs-extra")
-const sharp = require("sharp")
 const {isEmpty} = require("ramda")
-const {logger} = require("../utils/logger")
-const {dateToString, removeFileExt, isVideoDBFile} = require('../utils/common')
-const {DBRequests} = require('../utils/DBController');
-const {
-    PORT,
-    IMAGES_TEMP_FOLDER,
-    DATABASE_FOLDER_NAME,
-    TEMP_FOLDER,
-    DATABASE_FOLDER,
-} = require('../constants')
+const {logger} = require("../../utils/logger")
+const {removeFileExt} = require('../../utils/common')
+const {DBRequests} = require('../../utils/DBController');
+const {TEMP_FOLDER, DATABASE_FOLDER} = require('../../constants')
+const {createPreviewAndSendFiles} = require('./helpers/createPreviewAndSendFiles');
 
 const getName = (dbObject) => removeFileExt(dbObject.originalName)
 // const getName = (dbObject) => dbObject.size //нужно для изменения вариантов сравнения
 
 const isOtherFolder = (dbObject, folder) => dbObject.filePath.startsWith(`/${folder}/`)
 
-const createPreviewAndSendFiles = async (
-    res,
-    filteredPhotos,
-    searchPagination,
-    filesSizeSum,
-    isFullSizePreview,
-) => {
-    logger.debug('filteredPhotos.length: ', {message: filteredPhotos.length})
-    const filesWithTempPathPromise = filteredPhotos.map(async item => {
-        const fullPath = DATABASE_FOLDER + item.filePath
-        const staticPath = DATABASE_FOLDER_NAME + item.filePath
-        const isVideo = isVideoDBFile(item)
-        
-        if (isFullSizePreview) {
-            logger.info('FULL SIZE PREVIEW MODE: ON', {message: item.originalName})
-            item.originalPath = `http://localhost:${PORT}/${staticPath}`
-            item.tempPath = item.filePath
-            item.preview = isVideo
-                ? `http://localhost:${PORT}/${DATABASE_FOLDER_NAME}${item.preview}`
-                : `http://localhost:${PORT}/${staticPath}`
-        } else {
-            // если тип "video", то не делаем превью, а просто достаем его из папки, иначе делаем превью
-            if (isVideo) {
-                const fullPreviewPath = DATABASE_FOLDER_NAME + item.preview
-                item.originalPath = `http://localhost:${PORT}/${staticPath}`
-                item.preview = `http://localhost:${PORT}/${fullPreviewPath}`
-                item.tempPath = item.filePath
-            } else {
-                logger.info('FULL SIZE PREVIEW MODE: OFF', {message: item.originalName})
-                const randomName = Math.floor(Math.random() * 1000000).toString().padStart(6, "0")
-                await sharp(fullPath)
-                    .withMetadata()
-                    .clone()
-                    .resize(300, 300, {fit: 'outside'})
-                    .jpeg({quality: 80})
-                    .toFile(`${TEMP_FOLDER}/${randomName}-preview.jpg`)
-                    .then(() => {
-                        item.originalPath = `http://localhost:${PORT}/${staticPath}`
-                        item.preview = `http://localhost:${PORT}/${IMAGES_TEMP_FOLDER}/${randomName}-preview.jpg`
-                        item.tempPath = item.filePath
-                        logger.info('Sharp SUCCESS:', {message: item.originalName})
-                    })
-                    .catch(err => logger.error('OOPS!, Sharp ERROR:', {data: err}))
-            }
-        }
-        
-        return {
-            ...item,
-            ...(item.originalDate && {originalDate: dateToString(item.originalDate)})
-        }
-    })
-    const filesWithTempPath = await Promise.all(filesWithTempPathPromise)
-    const responseObject = {
-        files: filesWithTempPath,
-        searchPagination,
-        filesSizeSum
-    }
-    logger.http('POST-response', {
-        message: '/filtered-photos',
-        data: {
-            filesLength: responseObject.files.length,
-            searchPagination: responseObject.searchPagination,
-            filesSizeSum
-        }
-    })
-    res.send(responseObject)
-}
-
 //Todo: add tests
 /**
  * Getting the filtered and sorted elements from DB
  *
- * @param {
- *  {
- *      app: {locals: {collection: {
- *          aggregate: (Array, object) => ({toArray: () => Promise<any>})
- *      }}},
- *      body: null
- *  }
- * } req - request object. Minimal: {
- *   app: {locals: {collection: null}},
- *   body: null
- * }
+ * @param {object} req
+ * @param {locals: {collection: {
+ *    aggregate: (Array, object) => ({toArray: () => Promise<any>})
+ * }}} req.app.locals - express instance
+ * @param {object | null} req.body - request body
+ * @param {boolean?} req.body.anyDescription - return only files with description
+ * @param {string?} req.body.comparisonFolder - used for test purpose
+ * @param {[string, string]?} req.body.dateRange - tuple of dates (date format: 2023-05-23T13:44:03+02:00)
+ * @param {string?} req.body.description - part of file description
+ * @param {string[]?} req.body.excludeTags - excluded keywords
+ * @param {string?} req.body.fileName - file name (any string)
+ * @param {string} req.body.folderPath - folder path ("main/1")
+ * @param {boolean?} req.body.includeAllSearchTags - return only files that contain all request tags
+ * @param {boolean?} req.body.isFullSizePreview - use original files as preview
+ * @param {boolean?} req.body.isNameComparison - used for test purposes
+ * @param {string[]?} req.body.mimetypes - list of target mimetypes (["image/gif"])
+ * @param {number} req.body.page - 0
+ * @param {number} req.body.perPage - 100
+ * @param {boolean?} req.body.randomSort - return random files from DB
+ * @param {number?} req.body.rating - number from 0 to 5
+ * @param {string[]?} req.body.searchTags - included keywords
+ * @param {boolean?} req.body.showSubfolders - show files from current directory and all subdirectories
+ * @param {boolean?} req.body.dontSavePreview - all preview will be created in temp folder
+ * @param {object} req.body.sorting - object with sorting fields
+ * @param {1 | -1?} req.body.sorting.description
+ * @param {1 | -1?} req.body.sorting.filePath
+ * @param {1 | -1?} req.body.sorting.megapixels
+ * @param {1 | -1?} req.body.sorting.mimetype
+ * @param {1 | -1?} req.body.sorting.originalDate
+ * @param {1 | -1?} req.body.sorting.originalName
+ * @param {1 | -1?} req.body.sorting.rating
+ * @param {1 | -1?} req.body.sorting.size
+ * @param {1 | -1?} req.body.sorting._id
+ *
  * @param {object} res - response object. Minimal: {send: null}
  */
 const getFilesFromDB = async (req, res) => {
@@ -117,6 +66,7 @@ const getFilesFromDB = async (req, res) => {
     const isNameComparison = Boolean(filedata.isNameComparison)
     const comparisonFolder = filedata.comparisonFolder
     const showSubfolders = filedata.showSubfolders
+    const dontSavePreview = Boolean(filedata.dontSavePreview)
     const includeAllSearchTags = filedata.includeAllSearchTags
     const types = filedata.mimetypes || []
     const isFullSizePreview = Boolean(filedata.isFullSizePreview)
@@ -142,6 +92,7 @@ const getFilesFromDB = async (req, res) => {
     
     logger.debug('folderPath', {data: folderPath})
     logger.debug('showSubfolders', {data: showSubfolders})
+    logger.debug('dontSavePreview', {data: dontSavePreview})
     logger.debug('fileNameFilter', {data: fileNameFilter})
     logger.debug('ratingFilter', {data: ratingFilter})
     logger.debug('anyDescriptionFilter', {data: anyDescriptionFilter})
@@ -164,19 +115,19 @@ const getFilesFromDB = async (req, res) => {
     }
     
     if (fileNameFilter) conditionArr.push(
-        {originalName: { '$regex': fileNameFilter, '$options': 'i' }}
+        {originalName: {'$regex': fileNameFilter, '$options': 'i'}}
     )
     
     if (ratingFilter) conditionArr.push(
-        {rating: { '$eq': ratingFilter}}
+        {rating: {'$eq': ratingFilter}}
     )
     
     if (descriptionFilter) conditionArr.push(
-        {description: { '$regex': descriptionFilter, '$options': 'i' }}
+        {description: {'$regex': descriptionFilter, '$options': 'i'}}
     )
     
     if (anyDescriptionFilter) conditionArr.push(
-        {description : {"$exists" : true, "$ne" : ""}}
+        {description: {"$exists": true, "$ne": ""}}
     )
     
     const searchTagsCondition = includeAllSearchTags
@@ -193,7 +144,7 @@ const getFilesFromDB = async (req, res) => {
         const endDate = new Date(dateRangeFilter[1])
         
         conditionArr.push(
-            {originalDate:{$gte: startDate, $lt: endDate}}
+            {originalDate: {$gte: startDate, $lt: endDate}}
         )
     }
     
@@ -269,7 +220,6 @@ const getFilesFromDB = async (req, res) => {
         const filesSizeSum = total[0] ? total[0].filesSizeSum : 0
         
         logger.debug('rootLibPath', {message: DATABASE_FOLDER})
-        logger.info('Sharp start. Number of photos:', {message: response.length})
         
         if (!isNameComparison) {
             const {resultsCount, totalPages, currentPage} = pagination.length
@@ -277,7 +227,7 @@ const getFilesFromDB = async (req, res) => {
                 : {resultsCount: 0, totalPages: 0, currentPage: 0}
             const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
             
-            await createPreviewAndSendFiles(res, response, searchPagination, filesSizeSum, isFullSizePreview)
+            await createPreviewAndSendFiles(res, response, searchPagination, filesSizeSum, isFullSizePreview, dontSavePreview, req)
             return
         }
         
@@ -303,7 +253,7 @@ const getFilesFromDB = async (req, res) => {
         })
         
         const searchPagination = {currentPage: 1, totalPages: 1, nPerPage: 100, resultsCount: 0}
-        await createPreviewAndSendFiles(res, filteredPhotos, searchPagination, filesSizeSum, isFullSizePreview)
+        await createPreviewAndSendFiles(res, filteredPhotos, searchPagination, filesSizeSum, isFullSizePreview, dontSavePreview, req)
     } catch (err) {
         logger.error("collection load error:", {message: err.message})
         res.status(500).send({message: `collection load error: ${err.message}`})

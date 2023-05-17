@@ -10,6 +10,7 @@ services:
       - .:/app
       - /app/node_modules
       - ../dev-volumes/database:/app/dataBase
+      - ../dev-volumes/previews:/app/previews
     restart: unless-stopped
 
   mongo-dev:

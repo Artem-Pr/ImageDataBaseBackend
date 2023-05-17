@@ -1,9 +1,24 @@
 FROM mwader/static-ffmpeg
-FROM node:16
+FROM node:16-alpine3.16
 
 WORKDIR /app
 
 COPY package*.json ./
+
+RUN apk add --no-cache \
+        build-base \
+        glib-dev \
+        jpeg-dev \
+        libexif-dev \
+        libpng-dev \
+        libwebp-dev \
+        tiff-dev \
+        giflib-dev \
+        librsvg-dev \
+        orc-dev \
+        libheif-dev \
+        vips-dev \
+        perl-image-exiftool
 
 RUN npm install
 

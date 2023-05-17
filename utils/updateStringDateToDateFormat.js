@@ -8,7 +8,6 @@ const updateStringDateToDateFormat = async (req) => {
     collectionController.collectionType = 'collection'
     const originalDBCollection = await collectionController.find()
     
-    console.log('originalDBCollection', originalDBCollection)
     const updatedCollection = originalDBCollection.map(({_id, originalDate}) => {
         const dateInDateFormat = moment.utc(originalDate, dateTimeFormat).toDate()
         collectionController.DBUpdate = DBRequests.updateDate(dateInDateFormat)

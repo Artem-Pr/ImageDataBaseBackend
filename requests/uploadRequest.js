@@ -1,18 +1,24 @@
 const {getExifFromArr, pushExif} = require("../utils/exifTool")
 const moment = require("moment")
-const {moveFileAndCleanTemp, getParam, stringToDate, getError} = require("../utils/common")
+const {
+    getParam,
+    stringToDate,
+    getError,
+    pickFileName,
+    getAndSendError,
+} = require("../utils/common")
 const createError = require("http-errors")
 const {logger} = require("../utils/logger")
 const {addKeywordsToBase} = require("../utils/addKeywordsToBase")
 const {addPathToBase} = require("../utils/addPathToBase")
 const {DBController, DBRequests} = require("../utils/DBController")
 const {
-    PORT,
-    UPLOAD_IMAGES_TEMP_FOLDER,
     DATABASE_FOLDER,
     UPLOAD_TEMP_FOLDER,
+    PREVIEWS_FOLDER,
 } = require("../constants")
 const {dateTimeFormat} = require('../utils/dateFormat');
+const {FilePathsManager} = require('../utils/filePathsManager/filePathsManager');
 
 // Сравниваем keywords из картинок и пришедшие (возможно измененные), записываем в массив новые keywords или null
 // также походу добавляем все ключевые слова в массив keywordsRawList и затем в конфиг
@@ -28,17 +34,18 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
         // добавляем в filedata дату создания фоточки (при необходимости)
         // нашел много разных вариантов даты, возможно надо их протестировать
         const originalDate =
-            item.data[0].DateTimeOriginal ||
-            item.data[0].CreateDate ||
-            item.data[0].MediaCreateDate
+            item.DateTimeOriginal ||
+            item.CreateDate ||
+            item.ModifyDate ||
+            item.MediaCreateDate
         if (
             originalDate && (filedata[i].originalDate === '' || filedata[i].originalDate === '-')
         ) {
-            filedata[i].originalDate = moment(originalDate, dateTimeFormat).format(dateTimeFormat)
+            filedata[i].originalDate = moment(originalDate.rawValue, dateTimeFormat).format(dateTimeFormat)
         }
         
         // keywords из exifTools (возможно не существуют, тогда возвращаем null)
-        let originalKeywords = item.data[0].Keywords || []
+        let originalKeywords = item.Keywords || []
         
         if (!Array.isArray(originalKeywords)) originalKeywords = [originalKeywords.toString()]
         else {
@@ -63,12 +70,12 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
 }
 
 /**
- * @param {object} req - request object. Minimal: {
- *   app: {locals: {collection: null}},
- *   body: null
- * }
+ * @param {{
+ *   app: {locals: {collection: null | any}},
+ *   body: null | any
+ * }} req - request object
  * @param {string[]} targetPathArr
- * @return {object[]} matchedFilesArr
+ * @return {Promise<object[]>} matchedFilesArr
  */
 const checkIfFilesAreExist = async (req, targetPathArr) => {
     logger.debug('checkIfFilesAreExist - targetPathArr:', {data: targetPathArr})
@@ -93,6 +100,8 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
     }
     
     const targetPathArr = filedata.map(({name}) => `/${basePathWithoutRootDirectory}/${name}`)
+    
+    // Проверка по базе данных, далее будет еще проверка по диску: checkTargetDirectories()
     const existedFilesArr = await checkIfFilesAreExist(req, targetPathArr)
     if (existedFilesArr.length) {
         const errorMessage = getError(
@@ -124,66 +133,128 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
     try {
         await pushExif(pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
     } catch (error) {
-        logger.error('pushExif - Error, continue uploading')
+        logger.error('pushExif - Error, continue uploading', {data: error.message})
+        if (error.message.includes('File name:')) {
+            res.send(getError(error.message, 'uploadRequest'))
+            return
+        }
     }
     
-    // Переносим картинки в папку библиотеки и добавляем в filedata относительные пути к картинкам
-    filedata = filedata.map(item => {
-        const targetPath = targetFolder + '/' + item.name
-        logger.debug('targetPath:', {data: targetPath, module: 'uploadRequest'})
+    /**
+     * @type {{
+     *    filedataItem: {
+     *       changeDate: number,
+     *       name: string,
+     *       size: number,
+     *       type: string,
+     *       fullSizeJpgPath: string,
+     *       preview: string,
+     *       tempPath: string,
+     *       originalPath: string,
+     *       originalDate: string,
+     *       keywords: null | string[],
+     *       megapixels: string,
+     *       rating: number,
+     *       description: string,
+     *     },
+     *     filedataItem: object,
+     *     movedFilesList: {
+     *       targetFile: string,
+     *       targetPreview: string,
+     *       targetFullSizeJpeg: string
+     *     },
+     *     "exifResponseItem": {
+     *        SourceFile: string,
+     *        FileType: string,
+     *        MIMEType: string,
+     *        Megapixels: number,
+     *        ImageSize: string,
+     *        other: "...Long Exif list"
+     *     },
+     *     changedKeywordsArrItem: string[]
+     * }[]}
+     */
+    let fullFileDataArr
+    
+    try {
+        const root = {
+            original: UPLOAD_TEMP_FOLDER,
+            originalPreview: UPLOAD_TEMP_FOLDER,
+            target: DATABASE_FOLDER,
+            targetPreview: PREVIEWS_FOLDER,
+        }
         
-        //  Переносим видео превью туда же, куда и видео файлы
-        let previewTargetPath = ''
-        if (item.type.startsWith('video')) {
-            const tempName = item.tempPath.slice(`${UPLOAD_TEMP_FOLDER}/`.length)
-            const previewTempName = item.preview.slice(`http://localhost:${PORT}/${UPLOAD_IMAGES_TEMP_FOLDER}/`.length)
-            const originalNamePreview = previewTempName.replace(tempName, item.name.slice(0, -4))
-            previewTargetPath = targetFolder + '/' + originalNamePreview
-            try {
-                moveFileAndCleanTemp(UPLOAD_TEMP_FOLDER + '/' + previewTempName, previewTargetPath)
-            } catch (e) {
-                logger.error('moveFileAndCleanTemp ERROR:', {data: e, module: 'uploadRequest'})
-                throw createError(500, `moveFileAndCleanTemp error`)
+        const fullDataPromise = filedata.map(async (filedataItem, idx) => {
+            const hashName = pickFileName(filedataItem.tempPath)
+            const filePathsManager = new FilePathsManager(filedataItem, root, basePathWithoutRootDirectory, hashName)
+            const successfullyMovedFiles = await filePathsManager
+                .createAllFullPathsForTheFile()
+                .checkTargetDirectories()
+                .safelyMoveTargetFile()
+                .safelyMoveTargetPreview()
+                .safelyMoveTargetFullSizeJpeg()
+                .combineResults()
+                .getSuccessfullyMovedFiles()
+            
+            return {
+                filedataItem,
+                movedFilesList: successfullyMovedFiles,
+                exifResponseItem: exifResponse[idx],
+                changedKeywordsArrItem: changedKeywordsArr[idx]
             }
-        }
+        })
         
-        try {
-            moveFileAndCleanTemp(item.tempPath, targetPath)
-        } catch (e) {
-            logger.error('moveFileAndCleanTemp ERROR:', {data: e, module: 'uploadRequest'})
-            throw createError(500, `moveFileAndCleanTemp error`)
-        }
+        fullFileDataArr = await Promise.all(fullDataPromise)
         
-        if (targetPath.startsWith(DATABASE_FOLDER)) {
-            item.filePath = targetPath.slice(DATABASE_FOLDER.length)
-            item.filePathPreview = previewTargetPath.slice(DATABASE_FOLDER.length)
-        } else {
-            logger.error(`Lib Path ERROR: "targetPath" doesn't start with "databaseFolder"`, {module: 'uploadRequest'})
-            throw createError(500, 'Lib Path Error! Oy-Oy!')
-        }
-        
-        return item
-    })
+        logger.debug('fullFileDataArr', {
+            data: fullFileDataArr.map(item => (
+                {
+                    ...item, exifResponseItem: {
+                        SourceFile: item.exifResponseItem.SourceFile,
+                        FileType: item.exifResponseItem.FileType,
+                        MIMEType: item.exifResponseItem.MIMEType,
+                        Megapixels: item.exifResponseItem.Megapixels,
+                        ImageSize: item.exifResponseItem.ImageSize,
+                        other: '...Long Exif list'
+                    }
+                }
+            )), module: 'uploadRequest'
+        })
+    } catch (err) {
+        getAndSendError(
+            res,
+            "POST",
+            '/upload',
+            err.message,
+            'previewPathList'
+        )
+    }
     
     // Подготавливаем файл базы данных
-    filedata = filedata.map((image, i) => ({
-        originalName: image.name,
-        mimetype: image.type,
-        size: image.size,
-        megapixels: exifResponse[i].data[0].Megapixels,
-        imageSize: exifResponse[i].data[0].ImageSize,
-        keywords: changedKeywordsArr[i],
-        changeDate: image.changeDate,
-        originalDate: stringToDate(image.originalDate),
-        filePath: image.filePath,
-        preview: image.filePathPreview,
-        ...(image.rating && {rating: image.rating}),
-        ...(image.description && {description: image.description}),
+    filedata = fullFileDataArr.map(({
+                                        filedataItem,
+                                        changedKeywordsArrItem,
+                                        exifResponseItem,
+                                        movedFilesList
+                                    }) => ({
+        originalName: filedataItem.name,
+        mimetype: filedataItem.type,
+        size: filedataItem.size,
+        megapixels: exifResponseItem.Megapixels,
+        imageSize: exifResponseItem.ImageSize,
+        keywords: changedKeywordsArrItem,
+        changeDate: filedataItem.changeDate,
+        originalDate: stringToDate(filedataItem.originalDate),
+        filePath: movedFilesList.targetFile,
+        preview: movedFilesList.targetPreview,
+        fullSizeJpg: movedFilesList.targetFullSizeJpeg || '',
+        ...(filedataItem.rating && {rating: filedataItem.rating}),
+        ...(filedataItem.description && {description: filedataItem.description}),
     }))
     
     
     //записываем путь в базу если он не равен ""
-    basePathWithoutRootDirectory.trim() && addPathToBase(req, basePathWithoutRootDirectory)
+    basePathWithoutRootDirectory.trim() && void addPathToBase(req, basePathWithoutRootDirectory)
     
     
     //записываем медиа файлы в базу

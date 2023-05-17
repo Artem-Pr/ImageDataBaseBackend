@@ -58,6 +58,14 @@ class DBRequests {
     }
     
     /**
+     * @param {object} anyFields
+     * @return {{$set: {anyFields}}}
+     */
+    static updateField(anyFields) {
+        return {$set: anyFields}
+    }
+    
+    /**
      * Used to get elements if the path matches a regular expression
      * @param {RegExp} folderPathRegex
      * @return {{filePath: {$regex}}}
@@ -82,6 +90,7 @@ class DBController {
     /**
      * Save basic parameters and revert existing methods
      *
+     * @constructor
      * @param {object} req - request object. Minimal: {
      *   app: {locals: {collection: null}},
      *   body: null
@@ -102,7 +111,6 @@ class DBController {
     /**
      *
      * @param updateRequest - request for updating data base object
-     * @constructor
      */
     set DBUpdate(updateRequest) {
         this._DBUpdate = updateRequest
@@ -111,7 +119,6 @@ class DBController {
     /**
      *
      * @param findRequest - data base request object
-     * @constructor
      */
     set DBRequest(findRequest) {
         this._DBRequest = findRequest

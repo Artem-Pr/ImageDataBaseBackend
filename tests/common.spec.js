@@ -2,19 +2,15 @@ const fs = require('fs-extra')
 const {
     updateFiledata,
     originalData,
-    videoOriginalFileData,
-    videoUpdatedData,
     originalPathsList,
 } = require("./Data")
 const {
-    deepCopy,
     renameFile,
     pickFileName,
     asyncMoveFile,
     asyncRemove,
     updateNamePath,
     replaceWithoutExt,
-    updatePreviewPath,
     backupFiles,
     cleanBackup,
     removeFilesArr,
@@ -174,35 +170,6 @@ describe('Common functions: ', () => {
             const resultString = 'tests/test-images/bom-bom-thumbnail-1000x562-0001.png'
             
             expect(replaceWithoutExt(newFileName, oldFileName, stringForReplacement)).toBe(resultString)
-        })
-    })
-    describe('updatePreviewPath: ', () => {
-        test('should return updated preview', async () => {
-            const videoOriginalFileDataItem = {...videoOriginalFileData[0]}
-            const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
-            const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
-            expect(newNamePath).toBe('tests/tempVideos/bom-bom-thumbnail-1000x562-0001.png')
-        })
-        test('should return old preview if there is no preview', async () => {
-            const videoOriginalFileDataItem = {...videoOriginalFileData[0], preview: ''}
-            const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
-            const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
-            expect(newNamePath).toBe('')
-        })
-        test('should return old preview if there is no updatedName', async () => {
-            const videoOriginalFileDataItem = Object.assign(videoOriginalFileData[0])
-            const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
-            videoUpdatedDataItem.updatedFields.originalName = undefined
-            const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
-            expect(newNamePath).toBe('tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png')
-        })
-        test('should return new preview path if there is a new filePath in updatedData', () => {
-            const newFilePath = 'tests/testDirectory/проверка локализации'
-            const videoOriginalFileDataItem = {...videoOriginalFileData[0]}
-            const videoUpdatedDataItem = deepCopy(videoUpdatedData[0])
-            videoUpdatedDataItem.updatedFields.filePath = newFilePath
-            const newNamePath = updatePreviewPath(videoOriginalFileDataItem, videoUpdatedDataItem)
-            expect(newNamePath).toBe(`${newFilePath}/bom-bom-thumbnail-1000x562-0001.png`)
         })
     })
     describe('backupFiles: ', () => {

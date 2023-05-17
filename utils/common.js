@@ -7,7 +7,7 @@ const {
     VIDEO_EXTENSION_LIST,
     TEMP_FOLDER,
 } = require('../constants')
-const {dateTimeFormat} = require('./dateFormat');
+const {dateTimeFormat, dateFormat} = require('./dateFormat');
 
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, length))
@@ -16,9 +16,22 @@ const createPid = length => Number(Math.floor(Math.random() * Math.pow(10, lengt
 const removeExtraSlash = (value) => (value.endsWith('/') ? value.slice(0, -1) : value)
 const removeExtraFirstSlash = (value) => (value.startsWith('/') ? value.slice(1) : value)
 const getFilePathWithoutName = (fullPath) => (fullPath.split('/').slice(0, -1).join('/'))
+const createFolderIfNotExist = (dir) => {
+    if (!fs.pathExistsSync(dir)){
+        fs.mkdirsSync(dir, {recursive: true})
+        logger.debug('createFolderIfNotExist - SUCCESS', {message: dir})
+    }
+}
 
 const stringToDate = (stringDate) => moment.utc(stringDate, dateTimeFormat).toDate()
-const dateToString = (date) => moment(new Date(date)).format(dateTimeFormat)
+/**
+ *
+ * @param date
+ * @param isDateFormat
+ * @return {string}
+ */
+const dateToString = (date, isDateFormat) => moment(new Date(date))
+    .format(isDateFormat ? dateFormat : dateTimeFormat)
 
 const transformDBObjectDateToString = ({originalDate, ...rest}) => ({
     ...rest,
@@ -131,13 +144,61 @@ const pickFileName = (filePath) => {
 }
 
 /**
+ * Get file extension if exist, or ''
+ *
+ * @param {string} filePath - 'folder/subfolder/fileName.ext'
+ * @return {string}
+ */
+const pickExtension = (filePath) => {
+    const filePathArr = filePath.split('.')
+    const hasExtension = filePathArr.length > 1
+    
+    return hasExtension
+        ? filePathArr.at(-1)
+        : ''
+}
+
+/**
  * Get file name without extension
  *
- * @param {string} filePath
+ * @param {string} filePath - 'folder/subfolder/fileName.ext'
  * @return {string} fileName
  */
 const removeFileExt = (filePath) => {
-    return filePath.split('.').slice(0, -1).join('.')
+    const filePathArr = filePath.split('.')
+    const hasExtension = filePathArr.length > 1
+    
+    return hasExtension
+        ? filePathArr.slice(0, -1).join('.')
+        : filePath
+}
+
+/**
+ * @param {object} filedata - Blob, DB or uploading object
+ * @param {'filedata'?} filedata.fieldname=filedata
+ * @param {string?} filedata.name=IMG_6649.heic
+ */
+const isBLOB = (filedata) => {
+    return Boolean(filedata.fieldname)
+}
+
+/**
+ * @param {object} filedata - Blob, DB or uploading object
+ * @param {'filedata'?} filedata.fieldname=filedata
+ * @param {string?} filedata.name=IMG_6649.heic
+ */
+const isUploadingObject = (filedata) => {
+    return Boolean(filedata.name)
+}
+
+/**
+ * @param {object} filedata - Blob, DB or uploading object
+ * @param {'filedata'?} filedata.fieldname=filedata
+ * @param {string?} filedata.name=IMG_6649.heic
+ * @param {string?} filedata.originalName=IMG_6649.heic
+ */
+const isDBObject = (filedata) => {
+    return Boolean(filedata.originalName)
 }
 
 /**
@@ -160,6 +221,13 @@ const isVideoThumbnail = (fileName) => {
  */
 const isVideoDBFile = (DBObject) => {
     return DBObject.mimetype.startsWith('video')
+}
+
+/**
+ * @param {{mimetype: string}} fileData - image Blob or DB object
+ */
+const isHEICFile = (fileData) => {
+    return fileData.mimetype === 'image/heic'
 }
 
 /**
@@ -193,7 +261,7 @@ const renameFile = async (originalName, newName) => {
  * @param {string} src - original filePath
  * @param {string} dest - new filePath
  * @param {boolean} isOverwrite
- * @returns {Promise} true or Error
+ * @returns {Promise<string | Error>} true or Error
  */
 const asyncMoveFile = async (src, dest, isOverwrite = false) => {
     const options = {overwrite: !!isOverwrite}
@@ -284,7 +352,6 @@ const updateNamePath = (DBObject, updatedFileDataItem) => {
 
 /**
  * Replace substring exclude file extension
- * use TESTS for updatePreviewPath
  *
  * @param {string} nameWithExt - new file name with extension
  * @param {string} oldNameWithExt - old file name with extension
@@ -297,30 +364,8 @@ const replaceWithoutExt = (nameWithExt, oldNameWithExt, stringForReplacement) =>
 }
 
 /**
- * Update preview path using new file name
- *
- * @param {Object} DBObject - file object from DB
- * @param {Object} updatedFileDataItem - object for update ({id: number, updatedFields: {}})
- * @return {string} new preview path
- */
-const updatePreviewPath = (DBObject, updatedFileDataItem) => {
-    const {updatedFields} = updatedFileDataItem
-    const filePathWithoutName = updatedFields && updatedFields.filePath
-    const updatedName = updatedFields && updatedFields.originalName
-    const preview = filePathWithoutName && DBObject.preview
-        ? `${filePathWithoutName}/${pickFileName(DBObject.preview)}`
-        : DBObject.preview
-    
-    if (updatedName && preview) {
-        return replaceWithoutExt(updatedName, DBObject.originalName, preview)
-    } else {
-        return preview
-    }
-}
-
-/**
  * @param {Array<string>} pathArr - paths for backup
- * @return {Array<Promise<Object>>} [{backupPath: string, originalPath: string}]
+ * @return {Promise<Object[]>} [{backupPath: string, originalPath: string}]
  */
 const backupFiles = async (pathArr) => {
     const getBackupPath = () => TEMP_FOLDER + '/backup' + getRandomCode(6)
@@ -378,7 +423,7 @@ const removeFilesArr = async (removingFilePathsArr) => {
  *
  * @param {Array<Object>} tempPathObjArr - [{backupPath: string, originalPath: string}]
  * @param {Array<string>} removingFilesArr - paths to old files with updated names
- * @return {Array<Promise<any>>}
+ * @return {Promise<any[]>}
  */
 const filesRecovery = async (tempPathObjArr, removingFilesArr) => {
     logger.debug('FILES_RECOVERY - removingFilesArr:', {message: removingFilesArr})
@@ -417,8 +462,9 @@ const getSubdirectories = (directory, pathsArr) => {
 /**
  * get param value from request
  *
- * @param {object} req - request object. Minimal: {url: string}
- * @param {string} paramName
+ * @param {object} req - request object
+ * @param {string} req.url=http://localhost:5000/upload?path=folder/subfolder - (example).
+ * @param {string} paramName - "path" (example).
  * @return {string|null}
  */
 const getParam = (req, paramName) => {
@@ -445,22 +491,36 @@ const normalize = (string) => {
     return string.normalize()
 }
 
+/**
+ * @param {string} nameWithExtension
+ * @param {string} newExtension
+ * @return {string}
+ */
+const changeExtension = (nameWithExtension, newExtension) =>
+    nameWithExtension.split('.').slice(0, -1).join('.') + '.' + newExtension
+
 module.exports = {
     deepCopy,
     createPid,
     removeExtraSlash,
     removeExtraFirstSlash,
     getFilePathWithoutName,
+    createFolderIfNotExist,
     getUniqPaths,
     getError,
     getAndSendError,
     throwError,
     moveFileAndCleanTemp,
     pickFileName,
+    pickExtension,
     removeFileExt,
+    isBLOB,
+    isUploadingObject,
+    isDBObject,
     isVideoFile,
     isVideoThumbnail,
     isVideoDBFile,
+    isHEICFile,
     renameFile,
     asyncMoveFile,
     asyncCopyFile,
@@ -468,7 +528,6 @@ module.exports = {
     asyncCheckFolder,
     updateNamePath,
     replaceWithoutExt,
-    updatePreviewPath,
     backupFiles,
     cleanBackup,
     filesRecovery,
@@ -479,5 +538,6 @@ module.exports = {
     transformDBResponseDateToString,
     stringToDate,
     dateToString,
+    changeExtension,
     DBFilters
 }

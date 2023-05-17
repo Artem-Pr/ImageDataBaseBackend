@@ -25,8 +25,6 @@ const {
     updateDatabase,
     updateFile,
     updateRequest,
-    getPreviewArray,
-    movePreviewFile,
     moveFile,
     addNewFilePath,
 } = require("../requests/updateRequest")
@@ -256,55 +254,6 @@ describe('updateRequest: ', () => {
             expect(fs.existsSync(videoOriginalFileData[0].preview)).toBeTruthy()
             expect(fs.existsSync(resultNamePath)).toBeFalsy()
             expect(fs.existsSync(resultPreviewPath)).toBeFalsy()
-        })
-    })
-    describe('getPreviewArray: ', () => {
-        test('should return preview paths array', () => {
-            const DBObjectsArr = [...originalData, ...videoOriginalFileData]
-            const previewArr = getPreviewArray(DBObjectsArr)
-            
-            expect(previewArr).toHaveLength(1)
-            expect(previewArr[0]).toBe('tests/tempVideos/YDXJ1442-thumbnail-1000x562-0001.png')
-        })
-    })
-    describe('movePreviewFile: ', () => {
-        test('should move preview file to a new directory', async () => {
-            const originalFileDataItem = deepCopy(videoOriginalFileData[0])
-            const filePathWithoutName = 'tests/testDirectory/проверка локализации'
-            const newFullFileName = filePathWithoutName + '/YDXJ1442-thumbnail-1000x562-0001.png'
-            
-            await movePreviewFile(originalFileDataItem, filePathWithoutName, undefined)
-            expect(fs.existsSync(newFullFileName)).toBeTruthy()
-        })
-        test('should move preview file and update file name', async () => {
-            const originalFileDataItem = deepCopy(videoOriginalFileData[0])
-            const filePathWithoutName = 'tests/testDirectory/проверка локализации'
-            const newFileName = 'песня про озеро.png'
-            const newFullFileName = `${filePathWithoutName}/песня про озеро-thumbnail-1000x562-0001.png`
-            
-            await movePreviewFile(originalFileDataItem, filePathWithoutName, newFileName)
-            expect(fs.existsSync(newFullFileName)).toBeTruthy()
-        })
-        test('should return correct new full file name', async () => {
-            const originalFileDataItem = deepCopy(videoOriginalFileData[0])
-            const filePathWithoutName = 'tests/testDirectory/проверка локализации'
-            const newPreviewName = 'песня про озеро.png'
-            const newFullPreviewName = `${filePathWithoutName}/песня про озеро-thumbnail-1000x562-0001.png`
-            
-            const resultFullPreviewName = await movePreviewFile(originalFileDataItem, filePathWithoutName, newPreviewName)
-            
-            expect(resultFullPreviewName).toBe(newFullPreviewName)
-        })
-        test('should return an Error if there is no original file', async () => {
-            const originalFileDataItem = deepCopy(videoOriginalFileData[0])
-            originalFileDataItem.preview = 'tests/wrong directory/YDXJ1442-thumbnail-1000x562-0001.png'
-            const filePathWithoutName = 'tests/testDirectory/проверка локализации'
-            
-            try {
-                await movePreviewFile(originalFileDataItem, filePathWithoutName, undefined)
-            } catch (error) {
-                expect(error.message).toBe(`movePreviewFile: fs.move Error: ENOENT: no such file or directory, stat '${originalFileDataItem.preview}' - tests/testDirectory/проверка локализации/YDXJ1442-thumbnail-1000x562-0001.png`)
-            }
         })
     })
     describe('moveFile: ', () => {

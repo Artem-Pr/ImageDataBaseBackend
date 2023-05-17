@@ -1,8 +1,8 @@
 const {addColors, config, createLogger, format, transports} = require('winston')
-const { combine, timestamp, printf } = format;
+const {combine, timestamp, printf} = format;
 
-const myFormat = printf(({ level, message, data, module, timestamp }) => {
-    return `${timestamp} ${level}: ${message} ${data ? JSON.stringify(data) : ''} ${module ? JSON.stringify(module) : ''}`;
+const myFormat = printf(({level, message, data, module, timestamp}) => {
+    return `${timestamp} ${level}: ${message} ${data ? JSON.stringify(data, null, 2) : ''} ${module ? JSON.stringify(module, null, 2) : ''}`;
 });
 
 const loggerFormat = combine(
