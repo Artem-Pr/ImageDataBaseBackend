@@ -6,6 +6,7 @@ services:
     container_name: IDB_backend_dev
     ports:
       - "5000:5000"
+      - "5001:5001"
     volumes:
       - .:/app
       - /app/node_modules

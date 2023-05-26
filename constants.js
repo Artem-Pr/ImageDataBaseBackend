@@ -1,4 +1,5 @@
 const PORT = 5000
+const WEB_SOCKET_PORT = 5001
 const TEMP_FOLDER = 'temp'
 const UPLOAD_TEMP_FOLDER = 'uploadTemp'
 
@@ -33,6 +34,7 @@ const useHashForPreviewName = true
 
 module.exports = {
     PORT,
+    WEB_SOCKET_PORT,
     TEMP_FOLDER,
     UPLOAD_TEMP_FOLDER,
     

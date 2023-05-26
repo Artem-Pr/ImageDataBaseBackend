@@ -68,21 +68,23 @@ class DBRequests {
     /**
      * Used to get elements if the path matches a regular expression
      * @param {RegExp} folderPathRegex
+     * @param {string?} fieldName
      * @return {{filePath: {$regex}}}
      */
-    static filePathRegex(folderPathRegex) {
-        return {filePath: {$regex: folderPathRegex}}
+    static filePathRegex(folderPathRegex, fieldName = 'filePath') {
+        return {[fieldName]: {$regex: folderPathRegex}}
     }
     
     /**
      * Get a query that finds files starting with filePath and excludes subfolders
      * @param {string} folderPath
+     * @param {string?} fieldName
      * @return {{filePath: {$regex}}}
      */
-    static getFilesExcludeFilesInSubfolders(folderPath) {
+    static getFilesExcludeFilesInSubfolders(folderPath, fieldName) {
         const escapedString = regExp.getEscapedString(folderPath)
         const folderPathExcludeSubFolderRegExp = regExp.getFolderPathExcludeSubFolder(escapedString)
-        return this.filePathRegex(folderPathExcludeSubFolderRegExp)
+        return this.filePathRegex(folderPathExcludeSubFolderRegExp, fieldName)
     }
 }
 
@@ -91,20 +93,21 @@ class DBController {
      * Save basic parameters and revert existing methods
      *
      * @constructor
-     * @param {object} req - request object. Minimal: {
+     * @param {object?} req - request object. Minimal: {
      *   app: {locals: {collection: null}},
      *   body: null
      * }
-     * @param {object} DBRequest - data base request object
-     * @param {object} DBUpdate? - request for updating data base object
+     * @param {object?} DBRequest - data base request object
+     * @param {object?} DBUpdate - request for updating data base object
      * @return {object}
      */
     constructor(req, DBRequest, DBUpdate) {
         this._DBRequest = DBRequest
         this._DBUpdate = DBUpdate
+        this.successLog('controller initialized')
+        if (req === undefined) return
         this.collection = req.app.locals.collection
         this.configCollection = req.app.locals.configCollection
-        this.successLog('controller initialized')
         this._collectionType = undefined
     }
     
@@ -122,6 +125,22 @@ class DBController {
      */
     set DBRequest(findRequest) {
         this._DBRequest = findRequest
+    }
+    
+    /**
+     *
+     * @param collection
+     */
+    set DBCollection(collection) {
+        this.collection = collection
+    }
+    
+    /**
+     *
+     * @param configCollection
+     */
+    set DBConfigCollection(configCollection) {
+        this.configCollection = configCollection
     }
     
     /**

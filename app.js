@@ -16,6 +16,7 @@ const {matchingNumberOfFilesTest} = require("./requests/testRequests/matchingNum
 const {matchingVideoThumbnailsTest} = require('./requests/testRequests/matchingVideoThumbnailsTest')
 const {getUnusedKeywordsRequest} = require('./requests/getUnusedKeywordsRequest')
 const {removeKeywordRequest} = require('./requests/removeKeywordRequest')
+const {WebSockets} = require('./requests/webSockets/webSockets');
 // const {updateStringDateToDateFormat} = require('./utils/updateStringDateToDateFormat')
 
 const {
@@ -192,6 +193,7 @@ mongoClient.connect(function (err, client) {
     // app.locals.configCollection = client.db("TestDB").collection("config")
     app.listen(PORT, function () {
         logger.info('Start listening on port', {message: PORT})
+        new WebSockets(app)
     })
     
     // включить, если нужно обновить даты коллекции со string на Date

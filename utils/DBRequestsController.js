@@ -6,10 +6,13 @@ class DBRequestsController {
     /**
      * Save basic parameters and revert existing methods
      *
-     * @param {object} req - request object. Minimal: {
-     *   app: {locals: {collection: null}},
+     * @param {{
+     *   app: {locals: {
+     *      collection: null,
+     *      configCollection: null
+     *       }},
      *   body: null
-     * }
+     * }} req - request object
      * @return {object}
      */
     constructor(req) {
@@ -37,6 +40,10 @@ class DBRequestsController {
             this.pathsConfigArr = (response && response.pathsArr) ||
                 (init ? null : throwError('Cannot find property \'pathsArr\' in pathConfig', true))
             this.successLog('fetch pathsArr', `long-list (this.pathsConfigArr: ${this.pathsConfigArr})`)
+            
+            return {
+                pathsConfigArr: this.pathsConfigArr
+            }
         } catch (error) {
             throwError(error.message, true)
         }
