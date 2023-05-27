@@ -39,7 +39,7 @@ class WebSockets {
     
     /**
      * @param {object} send
-     * @param {{folderPath: string}} data
+     * @param {{folderPath: string, mimeTypes: string[]}} data
      */
     startCreatePreview(send, data) {
         this.previewCreationInstance = new CreatePreviews(this.locals, send, data)

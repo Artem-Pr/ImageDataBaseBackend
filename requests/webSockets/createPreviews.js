@@ -25,6 +25,7 @@ const paginationDefault = {
 export class CreatePreviews extends BasicClass {
     _processWasStopped = false
     _folderPath = undefined
+    _mimeTypes = []
     _moduleName = undefined
     _DBInstance = undefined
     _send = undefined
@@ -50,12 +51,13 @@ export class CreatePreviews extends BasicClass {
      *     configCollection: object
      * }} locals
      * @param {function(stringifiedResponse: string)} send
-     * @param {{folderPath: string}} data
+     * @param {{folderPath: string, mimeTypes: string[]}} data
      */
     constructor(locals, send, data) {
         const moduleName = 'CREATE_PREVIEWS'
         super(moduleName)
         this._folderPath = data.folderPath
+        this._mimeTypes = data.mimeTypes
         this._moduleName = moduleName
         
         this._DBInstance = new DBController()
@@ -75,6 +77,10 @@ export class CreatePreviews extends BasicClass {
     
     get folderPath() {
         return this._folderPath
+    }
+    
+    get mimeTypes() {
+        return this._mimeTypes
     }
     
     get DBRequestConfig() {
@@ -187,7 +193,7 @@ export class CreatePreviews extends BasicClass {
             
             do {
                 this.DBRequestConfig
-                await this.DBRequest({filePath: this.folderPath});
+                await this.DBRequest();
                 await createPreviewAndAddLinkToDB({
                     res: undefined,
                     filteredPhotos: this.DBRequestConfig.currentResults,
@@ -227,12 +233,11 @@ export class CreatePreviews extends BasicClass {
     /**
      *
      * @param {string} preview
-     * @param {string} filePath
      * @param {boolean?} excludeSubdirectories
      * @returns {Promise<void>}
      * @constructor
      */
-    async DBRequest({preview, filePath, excludeSubdirectories} = {}) {
+    async DBRequest({preview, excludeSubdirectories} = {}) {
         const {areElementsWithPreview, pagination, usePagination} = this.DBRequestConfig
         const {currentPage, nPerPage} = pagination
         const conditionArr = []
@@ -279,9 +284,13 @@ export class CreatePreviews extends BasicClass {
         preview && !excludeSubdirectories && (conditionArr.push(
             {$expr: {$eq: [{$indexOfCP: ['$preview', `/${preview}/`]}, 0]}}
         ))
-        filePath && (conditionArr.push(
-            {$expr: {$eq: [{$indexOfCP: ['$filePath', `/${filePath}/`]}, 0]}}
+        this.folderPath && (conditionArr.push(
+            {$expr: {$eq: [{$indexOfCP: ['$filePath', `/${this.folderPath}/`]}, 0]}}
         ))
+        if (this.mimeTypes.length) {
+            const mimeTypeObjArr = this.mimeTypes.map(type => ({mimetype: type}))
+            conditionArr.push({$or: mimeTypeObjArr})
+        }
         const aggregation = [
             {$match: {$and: conditionArr}},
             returningObject
