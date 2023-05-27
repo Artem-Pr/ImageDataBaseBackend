@@ -2,6 +2,13 @@ const WebSocket = require('ws');
 const {WEB_SOCKET_PORT} = require('../../constants');
 const {logger} = require('../../utils/logger');
 const {SyncPreviews} = require('./syncPreviews');
+const {CreatePreviews} = require('./createPreviews');
+
+const WEB_SOCKET_ACTIONS = {
+    SYNC_PREVIEWS: 'SYNC_PREVIEWS',
+    CREATE_PREVIEWS: 'CREATE_PREVIEWS',
+    CREATE_PREVIEWS_STOP: 'CREATE_PREVIEWS_STOP',
+}
 
 class WebSockets {
     _wsServer = undefined
@@ -25,8 +32,23 @@ class WebSockets {
     }
     
     startSyncPreviews(send) {
+        logger.info('startSyncPreviews', send)
         const syncPreviewsInstance = new SyncPreviews(this.locals, send)
         syncPreviewsInstance.startProcess()
+    }
+    
+    /**
+     * @param {object} send
+     * @param {{folderPath: string}} data
+     */
+    startCreatePreview(send, data) {
+        this.previewCreationInstance = new CreatePreviews(this.locals, send, data)
+        this.previewCreationInstance.startProcess()
+    }
+    
+    stopPreviewCreation() {
+        logger.info('stopPreviewCreation', {message: 'web-sockets'})
+        this.previewCreationInstance.stopProcess()
     }
     
     onConnect(wsClient) {
@@ -39,11 +61,21 @@ class WebSockets {
         wsClient.on('message', message => {
             try {
                 const jsonMessage = JSON.parse(message);
+                logger.info('webSocket request: ', {
+                    message: `Action: ${jsonMessage.action}`,
+                    data: jsonMessage.data || {}
+                })
                 const send = (message) => wsClient.send(message)
                 
                 switch (jsonMessage.action) {
-                    case 'SYNC_PREVIEWS':
+                    case WEB_SOCKET_ACTIONS.SYNC_PREVIEWS:
                         this.startSyncPreviews(send)
+                        break;
+                    case WEB_SOCKET_ACTIONS.CREATE_PREVIEWS:
+                        this.startCreatePreview(send, jsonMessage.data)
+                        break;
+                    case WEB_SOCKET_ACTIONS.CREATE_PREVIEWS_STOP:
+                        this.stopPreviewCreation()
                         break;
                     default:
                         logger.error('Unknown action', {message: 'web-sockets'})
@@ -56,4 +88,4 @@ class WebSockets {
     }
 }
 
-module.exports = {WebSockets}
+module.exports = {WebSockets, WEB_SOCKET_ACTIONS}

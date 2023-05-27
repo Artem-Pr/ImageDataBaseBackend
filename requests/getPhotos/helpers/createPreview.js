@@ -5,7 +5,7 @@ const {removeExtraFirstSlash, getFilePathWithoutName, getAndSendError} = require
 
 /**
  *
- * @param {object} res - response object. Minimal: {send: null}
+ * @param {object | undefined} res - response object. Minimal: {send: null}
  *
  * @param {object} filedata - uploading Filedata object
  * @param {number} filedata.changeDate=1654774720420 (example).

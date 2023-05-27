@@ -102,7 +102,9 @@ const getError = (message, moduleName) => {
 /**
  * Create, log and send Error message
  *
- * @param {object} res - response object. Minimal: {send: null}
+ * @param {{
+ *     status: any,
+ * } | undefined} res - response object. Minimal: {send: null}
  * @param {'GET' | 'POST' | 'DELETE' | 'PUT' | 'PATCH'} queryType
  * @param {string} queryUrl
  * @param {string} errorMessage
@@ -111,7 +113,6 @@ const getError = (message, moduleName) => {
 const getAndSendError = (res, queryType, queryUrl, errorMessage, moduleName) => {
     const error = getError(errorMessage, moduleName)
     logger.http(`${queryType}-response`, {message: queryUrl, data: error})
-    // res ? res.send(error) : throwError(errorMessage, true)
     res ? res.status(500).send(error) : throwError(errorMessage, true)
 }
 

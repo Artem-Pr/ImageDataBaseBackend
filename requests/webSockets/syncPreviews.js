@@ -3,9 +3,6 @@ const {DBController, DBRequests} = require('../../utils/DBController');
 const {BasicClass} = require('../../utils/basicClass');
 const {PREVIEWS_FOLDER} = require('../../constants');
 const {asyncCheckFolder, getFilePathWithoutName, removeExtraFirstSlash} = require('../../utils/common');
-
-const delay = ms => new Promise(res => setTimeout(res, ms || 1000))
-
 const STATUS = {
     DEFAULT: 'default',
     INIT: 'init',
@@ -15,6 +12,9 @@ const STATUS = {
     DONE: 'done',
     ERROR: 'error'
 }
+
+const COMMON_DELAY = 300
+const delay = ms => new Promise(res => setTimeout(res, ms || COMMON_DELAY))
 
 const paginationDefault = {
     currentPage: 0,
@@ -184,7 +184,7 @@ class SyncPreviews extends BasicClass {
             .then(() => {
                 this.status = STATUS.DONE
                 this.progress = 100
-                this.message = 'preview sync completed'
+                this.message = 'Preview sync is complete'
             })
             .catch(error => {
                 this.status = STATUS.ERROR
@@ -507,7 +507,7 @@ class SyncPreviews extends BasicClass {
             }
         }
         
-        this.infoLog('sendRequest', 'webSocket', requestObject)
+        this.successLog('webSocket - sendRequest', requestObject)
         this._send(JSON.stringify(requestObject))
     }
 }
