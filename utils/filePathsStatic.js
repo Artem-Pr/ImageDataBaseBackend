@@ -9,6 +9,7 @@ const {
     PREVIEWS_FOLDER,
     PREVIEWS_FOLDER_NAME,
 } = require('../constants');
+const {pickExtension} = require('./common');
 
 class FilePathsStatic {
     _host = `http://localhost:${PORT}`
@@ -47,6 +48,14 @@ class FilePathsStatic {
     
     get root() {
         return this._root
+    }
+    
+    getOriginalJPEGStaticPath() {
+        if (!this._filePathsWithoutRootDir.sourceFullName) return ''
+        const sourceFullNameExt = pickExtension(this._filePathsWithoutRootDir.sourceFullName)
+        return sourceFullNameExt === 'heic'
+            ? this.getFullSizeJPEGStaticPath()
+            : this.getOriginalStaticPath()
     }
     
     getOriginalStaticPath() {

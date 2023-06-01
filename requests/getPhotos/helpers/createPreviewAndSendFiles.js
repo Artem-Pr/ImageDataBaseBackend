@@ -13,10 +13,10 @@ const defaultRoot = {
 /**
  *
  * @param {object} res - response object. Minimal: {send: null}
- * @param filteredPhotos
+ * @param {object[]} filteredPhotos
  * @param searchPagination
  * @param filesSizeSum
- * @param isFullSizePreview
+ * @param {boolean} isFullSizePreview
  * @param {boolean} dontSavePreview
  * @param {object} req
  * @param {locals: {collection: {
@@ -49,7 +49,7 @@ const createPreviewAndSendFiles = async (
         item.originalPath = filePathStaticInstance.getOriginalStaticPath()
         item.fullSizeJpgPath = filePathStaticInstance.getFullSizeJPEGStaticPath()
         item.preview = isFullSizePreview
-            ? filePathStaticInstance.getOriginalStaticPath()
+            ? filePathStaticInstance.getOriginalJPEGStaticPath()
             : filePathStaticInstance.getPreviewStaticPath()
         
         if (!item.preview) {

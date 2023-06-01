@@ -89,6 +89,7 @@ const getFilesFromDB = async (req, res) => {
     
     logger.debug('isNameComparison', {data: isNameComparison})
     logger.debug('comparisonFolder', {data: comparisonFolder})
+    logger.debug('isFullSizePreview', {data: isFullSizePreview})
     
     logger.debug('folderPath', {data: folderPath})
     logger.debug('showSubfolders', {data: showSubfolders})
