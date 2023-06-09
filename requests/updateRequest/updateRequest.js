@@ -23,6 +23,7 @@ const {
 const {DBRequests, DBController} = require('../../utils/DBController');
 const {PORT, DATABASE_FOLDER} = require('../../constants')
 const {createPreviewAndAddLinkToDB} = require('../../utils/previewCreator/createPreviewAndAddLinkToDB');
+const {omit} = require('ramda');
 const ObjectId = require('mongodb').ObjectID
 
 /**
@@ -39,7 +40,7 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
         ? updatedFields.filePath + '/' + (updatedFields.originalName || DBObject.originalName)
         : updateNamePath(DBObject, {id, updatedFields})
     const updatedFieldsWithFilePath = {
-        ...updatedFields,
+        ...omit(['needUpdatePreview'], updatedFields),
         ...(updatedFields.originalDate && {originalDate: stringToDate(updatedFields.originalDate)}),
         filePath,
     }
@@ -342,8 +343,10 @@ const updateRequest = async (req, res) => {
         if (newKeywordsList.length) await addKeywordsToBase(req, newKeywordsList)
         const filePathResponse = await addNewFilePath(req, updateFields)
         const filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
-        const needToUpdateTimeStamp = filesResponse.length === 1 && filesResponse[0].timeStamp
-        if (needToUpdateTimeStamp) {
+        const needToUpdateTimeStamp = Boolean(filesResponse.length === 1 && filesResponse[0].timeStamp)
+        const needUpdatePreview = filedata.some(item => item.updatedFields && item.updatedFields.needUpdatePreview)
+        
+        if (needToUpdateTimeStamp || needUpdatePreview) {
             await createPreviewAndAddLinkToDB({
                 res: undefined,
                 filteredPhotos: filesResponse,
