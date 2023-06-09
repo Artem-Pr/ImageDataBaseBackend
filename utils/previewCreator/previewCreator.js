@@ -1,6 +1,12 @@
 const sharp = require('sharp');
 const {POSTFIX} = require('../../constants');
-const {isVideoDBFile, isHEICFile, createFolderIfNotExist, getFilePathWithoutName, removeExtraSlash} = require('../common');
+const {
+    isVideoDBFile,
+    isHEICFile,
+    createFolderIfNotExist,
+    getFilePathWithoutName,
+    removeExtraSlash,
+} = require('../common');
 const {default: ThumbnailGenerator} = require('video-thumbnail-generator');
 const {FilePathsStatic} = require('../filePathsStatic');
 const {BasicClass} = require('../basicClass');
@@ -11,6 +17,8 @@ class PreviewCreator extends BasicClass {
         width: 200,
         height: 200,
         quality: 80,
+        // timestamps: ['5%'],
+        // timestamps: ['01:30.000'],
         timestamps: 0,
         thumbnailSize: '1000x?',
         isFullSize: false,

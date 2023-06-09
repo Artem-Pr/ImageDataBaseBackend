@@ -17,7 +17,7 @@ const addFullPathToArr = (shortPaths) => {
     })
 }
 
-const imageItemRequest = async (request, response, exiftoolProcess) => {
+const imageItemRequest = async (request, response) => {
     let filedata = request.body
     if (!filedata) {
         logger.error("Request doesn't contain filedata")
@@ -25,7 +25,7 @@ const imageItemRequest = async (request, response, exiftoolProcess) => {
     }
     
     const fullPaths = addFullPathToArr(filedata)
-    const exifListObj = await getExifFromPhoto(fullPaths, filedata, exiftoolProcess)
+    const exifListObj = await getExifFromPhoto(fullPaths, filedata)
     
     logger.http('POST-response', {
         message: '/image-exif',

@@ -1,9 +1,9 @@
 const fs = require('fs-extra')
 const createError = require('http-errors')
-const {logger} = require("../utils/logger")
-const {getKeywordsFromUpdateFields, addKeywordsToBase} = require("../utils/addKeywordsToBase")
-const {addPathToBase} = require("../utils/addPathToBase")
-const {pushExif} = require("../utils/exifTool")
+const {logger} = require("../../utils/logger")
+const {getKeywordsFromUpdateFields, addKeywordsToBase} = require("../../utils/addKeywordsToBase")
+const {addPathToBase} = require("../../utils/addPathToBase")
+const {pushExif} = require("../../utils/exifTool")
 const {
     removeExtraSlash,
     removeExtraFirstSlash,
@@ -19,9 +19,10 @@ const {
     stringToDate,
     DBFilters,
     getFilePathWithoutName,
-} = require("../utils/common")
-const {DBRequests, DBController} = require('../utils/DBController');
-const {PORT, DATABASE_FOLDER} = require('../constants')
+} = require("../../utils/common")
+const {DBRequests, DBController} = require('../../utils/DBController');
+const {PORT, DATABASE_FOLDER} = require('../../constants')
+const {createPreviewAndAddLinkToDB} = require('../../utils/previewCreator/createPreviewAndAddLinkToDB');
 const ObjectId = require('mongodb').ObjectID
 
 /**
@@ -44,10 +45,7 @@ const updateFile = async (id, updatedFields, DBObject, collection) => {
     }
     const filter = {_id: ObjectId(id)}
     const update = {$set: updatedFieldsWithFilePath}
-    // [MONGODB DRIVER] DeprecationWarning: collection.findOneAndUpdate option [returnOriginal] is deprecated and will be removed in a later version.
-    // (Use `node --trace-deprecation ...` to show where the warning was created)
-    // const options = {new: true} // doesn't work
-    const options = {returnOriginal: false}
+    const options = {returnDocument: 'after'}
     
     try {
         const updatedResponse = await collection.findOneAndUpdate(filter, update, options)
@@ -124,7 +122,8 @@ const returnValuesIfError = (error) => {
         has('BACKUP_FILES:') ||
         has('CLEAN_BACKUP:') ||
         has('movePreviewFile:') ||
-        has('addPathToBase ERROR:')
+        has('addPathToBase ERROR:') ||
+        has('create preview:')
     )
 }
 
@@ -279,10 +278,9 @@ const throwErrorIfNewFullNameExist = async (req, savedOriginalDBObjectsArr, file
  *   body: null
  * }
  * @param {object} res - response object. Minimal: {send: null}
- * @param {any} exiftoolProcess
  * @returns {Object} { files: filesResponse, newFilePath: filePathResponse } filesResponse - array of DB objects
  */
-const updateRequest = async (req, res, exiftoolProcess) => {
+const updateRequest = async (req, res) => {
     let filedata = req.body
     if (!filedata) {
         logger.error('Update request: there are no filedata')
@@ -295,7 +293,11 @@ const updateRequest = async (req, res, exiftoolProcess) => {
     const updateFields = filedata.map(filedataItem => filedataItem.updatedFields)
     const updatedKeywords = updateFields.map(updateFieldsItem => updateFieldsItem.keywords)
     const isUpdatedKeywords = updatedKeywords && updatedKeywords.length && updatedKeywords.some(item => item && item.length)
-    const isUpdateExif = updateFields.some(({originalDate, rating, description}) => originalDate || rating || description)
+    const isUpdateExif = updateFields.some(({
+                                                originalDate,
+                                                rating,
+                                                description
+                                            }) => originalDate || rating || description)
     
     try {
         const savedOriginalDBObjectsArr = await findObjects(idsArr, req.app.locals.collection)
@@ -311,8 +313,7 @@ const updateRequest = async (req, res, exiftoolProcess) => {
             await pushExif(
                 pushExifData.map(({filePath}) => DATABASE_FOLDER + filePath),
                 pushExifData.map(item => item.keywords),
-                pushExifData,
-                exiftoolProcess
+                pushExifData
             )
         }
         
@@ -341,6 +342,18 @@ const updateRequest = async (req, res, exiftoolProcess) => {
         if (newKeywordsList.length) await addKeywordsToBase(req, newKeywordsList)
         const filePathResponse = await addNewFilePath(req, updateFields)
         const filesResponse = await updateDatabase(filedata, savedOriginalDBObjectsArr, req.app.locals.collection)
+        const needToUpdateTimeStamp = filesResponse.length === 1 && filesResponse[0].timeStamp
+        if (needToUpdateTimeStamp) {
+            await createPreviewAndAddLinkToDB({
+                res: undefined,
+                filteredPhotos: filesResponse,
+                isFullSizePreview: false,
+                dontSavePreview: false,
+                recreatePreviewIfExist: true,
+                req
+            })
+        }
+        
         const preparedFilesRes = filesResponse.map(file => ({
             ...file,
             tempPath: `${DATABASE_FOLDER}${file.filePath}`,

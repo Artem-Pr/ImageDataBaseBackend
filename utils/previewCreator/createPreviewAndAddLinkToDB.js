@@ -13,9 +13,10 @@ const defaultRoot = {
 /**
  *
  * @param {object | undefined} res - response object. Minimal: {send: null}
- * @param filteredPhotos
+ * @param filteredPhotos - photos array from DB
  * @param {boolean?} isFullSizePreview
  * @param {boolean} dontSavePreview
+ * @param {boolean?} recreatePreviewIfExist
  * @param {object} req
  * @param {locals: {collection: {
  *    aggregate: (Array, object) => ({toArray: () => Promise<any>})
@@ -27,6 +28,7 @@ const createPreviewAndAddLinkToDB = async ({
                                                filteredPhotos,
                                                isFullSizePreview,
                                                dontSavePreview,
+                                               recreatePreviewIfExist,
                                                req
                                            }
 ) => {
@@ -49,7 +51,7 @@ const createPreviewAndAddLinkToDB = async ({
             ? filePathStaticInstance.getOriginalStaticPath()
             : filePathStaticInstance.getPreviewStaticPath()
         
-        if (!item.preview) {
+        if (!item.preview || recreatePreviewIfExist) {
             const {DBFullPathFullSize, DBFullPath} = await createPreview(res, item, dontSavePreview)
             
             if (!dontSavePreview && DBFullPath) {

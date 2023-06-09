@@ -23,6 +23,7 @@ const {removeExtraFirstSlash, getFilePathWithoutName, getAndSendError} = require
  * @param {string} filedata.tempPath=/main/IMG_6649.heic (example).
  * @param {string} filedata.mimetype=image/heic (example).
  * @param {string} filedata._id=645fee10b8a27d0011cee525 (example).
+ * @param {string?} filedata.timeStamp='00:00:00.200' (example).
  *
  * @param {string} filedata.originalPath=http://localhost:5000/dataBase/main/1/VID_20190623_091549.mp4 - additional static path (not from DB)
  *
@@ -41,7 +42,8 @@ const createPreview = async (res, filedata, dontSavePreview) => {
         filedata,
         root: previewCreatorRoot,
         baseFolder: removeExtraFirstSlash(getFilePathWithoutName(filedata.filePath)),
-        hashName: filedata._id.toString()
+        hashName: filedata._id.toString(),
+        config: {timestamps: filedata.timeStamp}
     })
     return await previewCreator
         .startProcess()

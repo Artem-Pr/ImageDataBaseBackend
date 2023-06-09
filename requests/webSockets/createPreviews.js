@@ -98,14 +98,6 @@ export class CreatePreviews extends BasicClass {
         return this._moduleName
     }
     
-    set pathsList(newPathsList) {
-        this._pathsList = newPathsList
-    }
-    
-    get pathsList() {
-        return this._pathsList
-    }
-    
     /**
      * @param {string} status - status from STATUS object
      */

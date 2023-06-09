@@ -27,7 +27,7 @@ const {
     updateRequest,
     moveFile,
     addNewFilePath,
-} = require("../requests/updateRequest")
+} = require("../requests/updateRequest/updateRequest")
 const {backupTestFiles, recoverTestFiles} = require("./helpers")
 
 const updatedFileNames = [

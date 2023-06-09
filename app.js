@@ -6,7 +6,7 @@ const {keywordsRequest} = require("./requests/keywordsRequest")
 const {uploadItemRequest} = require("./requests/uploadItemRequest")
 const {imageItemRequest} = require("./requests/imageItemRequest")
 const {uploadRequest} = require("./requests/uploadRequest")
-const {updateRequest} = require("./requests/updateRequest")
+const {updateRequest} = require("./requests/updateRequest/updateRequest")
 const {getFilesFromDB} = require("./requests/getPhotos/getFilesFromDB")
 const {pathRequest} = require("./requests/pathsRequest")
 const {removeFilesItem} = require("./requests/removeFilesItem")
@@ -36,12 +36,6 @@ const {MongoClient} = require("mongodb")
 const express = require('express')
 const cors = require('cors')
 
-// пакет для работы с exifTool
-const exiftool = require('node-exiftool')
-// пакет для получения пути к исполняемому файлу exifTool
-const exiftoolBin = require('dist-exiftool')
-// запускаем exifTool
-const exiftoolProcess = new exiftool.ExiftoolProcess(exiftoolBin)
 const app = express()
 
 const mongoClient = new MongoClient(`mongodb://${MONGO_HOST_NAME}:27017/`, {
@@ -104,7 +98,7 @@ app.use("/image-exif",
 app.post("/image-exif",
     (req, res) => {
         logger.http('POST-query', {message: '/image-exif', data: req.body})
-        void imageItemRequest(req, res, exiftoolProcess)
+        void imageItemRequest(req, res)
     }
 )
 
@@ -114,7 +108,7 @@ app.use("/upload",
 app.post("/upload",
     (req, res) => {
         logger.http('POST-query', {message: '/upload', data: req.body})
-        void uploadRequest(req, res, exiftoolProcess)
+        void uploadRequest(req, res)
     }
 )
 
@@ -124,7 +118,7 @@ app.use("/update",
 app.put("/update",
     (req, res) => {
         logger.http('POST-query', {message: '/update', data: req.body})
-        void updateRequest(req, res, exiftoolProcess)
+        void updateRequest(req, res)
     }
 )
 

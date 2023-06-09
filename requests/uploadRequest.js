@@ -88,7 +88,7 @@ const checkIfFilesAreExist = async (req, targetPathArr) => {
     return matchedFilesArr
 }
 
-const uploadRequest = async (req, res, exiftoolProcess) => {
+const uploadRequest = async (req, res) => {
     const basePathWithoutRootDirectory = getParam(req, 'path')
     const targetFolder = DATABASE_FOLDER + '/' + basePathWithoutRootDirectory
     logger.debug('uploadRequest - targetFolder:', {message: targetFolder, module: 'uploadRequest'})
@@ -119,7 +119,7 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
     })
     
     logger.debug('pathsArr:', {data: pathsArr, module: 'uploadRequest'})
-    const exifResponse = await getExifFromArr(pathsArr, exiftoolProcess)
+    const exifResponse = await getExifFromArr(pathsArr)
     
     // Сравниваем keywords из картинок и пришедшие (возможно измененные) внутри getKeywordsArr,
     // записываем в массив changedKeywordsArr новые keywords или null
@@ -131,7 +131,7 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
     // Записываем измененные ключевые слова в файлы в папке темп
     // Todo: cover all functions with try catch and return "throw createError(500, `oops..`)"
     try {
-        await pushExif(pathsArr, changedKeywordsArr, filedata, exiftoolProcess)
+        await pushExif(pathsArr, changedKeywordsArr, filedata)
     } catch (error) {
         logger.error('pushExif - Error, continue uploading', {data: error.message})
         if (error.message.includes('File name:')) {
@@ -156,6 +156,7 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
      *       megapixels: string,
      *       rating: number,
      *       description: string,
+     *       timeStamp: string,
      *     },
      *     filedataItem: object,
      *     movedFilesList: {
@@ -250,6 +251,7 @@ const uploadRequest = async (req, res, exiftoolProcess) => {
         fullSizeJpg: movedFilesList.targetFullSizeJpeg || '',
         ...(filedataItem.rating && {rating: filedataItem.rating}),
         ...(filedataItem.description && {description: filedataItem.description}),
+        ...(filedataItem.timeStamp && {timeStamp: filedataItem.timeStamp}),
     }))
     
     
