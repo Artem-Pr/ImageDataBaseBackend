@@ -444,22 +444,6 @@ class SyncPreviews extends BasicClass {
         }
     }
     
-    async getPathsListFromDB() {
-        this.status = STATUS.PENDING
-        this.message = 'loading directory list from DB ...'
-        this.sendRequest()
-        
-        await delay()
-        try {
-            this._DBInstance.DBRequest = DBRequests.directoriesList
-            const pathsListObject = await this._DBInstance.findOne('configCollection')
-            this.pathsList = pathsListObject.pathsArr
-            this.status = STATUS.PENDING_SUCCESS
-        } catch (error) {
-            this.throwError(error.message)
-        }
-    }
-    
     async getPathsListFromDisc(progress = 0) {
         this.status = STATUS.PENDING
         this.message = 'loading directory list from Disc ...'

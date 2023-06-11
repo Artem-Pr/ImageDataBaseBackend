@@ -3,11 +3,13 @@ const {WEB_SOCKET_PORT} = require('../../constants');
 const {logger} = require('../../utils/logger');
 const {SyncPreviews} = require('./syncPreviews');
 const {CreatePreviews} = require('./createPreviews');
+const {FilesTest} = require('./filesTest');
 
 const WEB_SOCKET_ACTIONS = {
     SYNC_PREVIEWS: 'SYNC_PREVIEWS',
     CREATE_PREVIEWS: 'CREATE_PREVIEWS',
     CREATE_PREVIEWS_STOP: 'CREATE_PREVIEWS_STOP',
+    FILES_TEST: 'FILES_TEST',
 }
 
 class WebSockets {
@@ -51,6 +53,12 @@ class WebSockets {
         this.previewCreationInstance.stopProcess()
     }
     
+    startFilesTest(send) {
+        logger.info('startFilesTest', {message: 'web-sockets'})
+        const filesTestInstance = new FilesTest(this.locals, send)
+        filesTestInstance.startProcess()
+    }
+    
     onConnect(wsClient) {
         logger.info('start connection', {message: 'web-sockets'})
 
@@ -76,6 +84,9 @@ class WebSockets {
                         break;
                     case WEB_SOCKET_ACTIONS.CREATE_PREVIEWS_STOP:
                         this.stopPreviewCreation()
+                        break;
+                    case WEB_SOCKET_ACTIONS.FILES_TEST:
+                        this.startFilesTest(send)
                         break;
                     default:
                         logger.error('Unknown action', {message: 'web-sockets'})
