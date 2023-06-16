@@ -6,13 +6,15 @@ services:
     container_name: IDB_backend
     ports:
       - "5000:5000"
+      - "5001:5001"
     volumes:
-      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
     #  - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/previews:/app/previews
     restart: unless-stopped
 
   mongo:
-    image : mongo:4.4
+    image: mongo:4.4
     container_name: IDB_mongodb
     user: nobody
     volumes:

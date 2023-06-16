@@ -6,10 +6,12 @@ services:
     container_name: IDB_backend_test
     ports:
       - "5000:5000"
+      - "5001:5001"
     volumes:
       - .:/app
       - /app/node_modules
       - /Volumes/Seagate 2TB/IDBVolume/filesVolume:/app/dataBase
+      - /Volumes/Seagate 2TB/IDBVolume/previews:/app/previews
     restart: unless-stopped
 
   mongo-test:

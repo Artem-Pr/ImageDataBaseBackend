@@ -2,8 +2,8 @@ const {readdir, stat} = require('fs/promises')
 const {DBController, DBRequests} = require('../../utils/DBController');
 const {BasicClass} = require('../../utils/basicClass');
 const {DATABASE_FOLDER} = require('../../constants');
-const {getFilePathWithoutName, removeExtraFirstSlash, getUniqPaths} = require('../../utils/common');
-const {uniq} = require('ramda');
+const {getFilePathWithoutName, removeExtraFirstSlash, getUniqPaths, normalize} = require('../../utils/common');
+const {uniq, difference} = require('ramda');
 const STATUS = {
     DEFAULT: 'default',
     INIT: 'init',
@@ -40,7 +40,7 @@ class FilesTest extends BasicClass {
         excessiveFolders__Config_DB: [],
         excessiveFolders__DB_Config: [],
         excessiveFolders__DB_Disk: [],
-        excessiveFolders__Disk_DB: [],
+        excessiveFolders__Disc_DB: [],
         excessiveFolders__Disk_Config: [],
         excessiveFolders__filesOnDisc: [],
         excessiveFolders__filesInDB: [],
@@ -58,6 +58,8 @@ class FilesTest extends BasicClass {
         currentResults: [],
         pagination: paginationDefault
     }
+    _isFolderSearching = true;
+    _mapCounter = 0;
     
     /**
      * @constructor
@@ -124,15 +126,31 @@ class FilesTest extends BasicClass {
     }
     
     get excessiveFolders__Disc_DB() {
-        return this._excessiveFolders.excessiveFolders__Disk_DB
+        return this._excessiveFolders.excessiveFolders__Disc_DB
     }
     
     get excessiveFolders__filesOnDisc() {
         return this._excessiveFolders.excessiveFolders__filesOnDisc
     }
     
+    /**
+     * @param {string[]} filesArray
+     */
+    set excessiveFolders__filesOnDisc(filesArray) {
+        const existedFiles = this._excessiveFolders.excessiveFolders__filesOnDisc
+        this._excessiveFolders.excessiveFolders__filesOnDisc = [...existedFiles, ...filesArray]
+    }
+    
     get excessiveFolders__filesInDB() {
         return this._excessiveFolders.excessiveFolders__filesInDB
+    }
+    
+    /**
+     * @param {string[]} filesArray
+     */
+    set excessiveFolders__filesInDB(filesArray) {
+        const existedFiles = this._excessiveFolders.excessiveFolders__filesInDB
+        this._excessiveFolders.excessiveFolders__filesInDB = [...existedFiles, ...filesArray]
     }
     
     reset_ExcessiveFolders__filesOnDisc() {
@@ -159,6 +177,16 @@ class FilesTest extends BasicClass {
     
     get moduleName() {
         return this._moduleName
+    }
+    
+    /**
+     * Normalized string array with "NFC"
+     *
+     * @param {string[]} strings
+     * @return {string[]}
+     */
+    normalizedStringArr(strings) {
+        return strings.map(string => normalize(string))
     }
     
     set configFoldersSet(newPathsList) {
@@ -195,6 +223,10 @@ class FilesTest extends BasicClass {
     
     set message(newMessage) {
         this.config.message = newMessage
+    }
+    
+    get message() {
+        return this.config.message
     }
     
     set progress(progress) {
@@ -249,7 +281,7 @@ class FilesTest extends BasicClass {
     
     async processChaining() {
         await this.getFoldersListFromDBConfig(10)
-        await this.getFolderListFromDisc(10)
+        await this.getFolderListFromDisc(20)
         await this.getFolderListFromDB(10)
         await this.getExcessiveFolders__Config_Disk(5)
         await this.getExcessiveFolders__Config_DB(5)
@@ -257,8 +289,8 @@ class FilesTest extends BasicClass {
         await this.getExcessiveFolders__DB_Disc(5)
         await this.getExcessiveFolders__Disc_DB(5)
         await this.getExcessiveFolders__Disc_Config(5)
-        await this.getExcessiveFiles__onlyDiscFolders(10)
-        await this.getExcessiveFiles__onlyExcessiveDBFolders(10)
+        await this.getExcessiveFiles__except__excessiveFolders__Disk_DB(15)
+        await this.getExcessiveFiles__only__excessiveFolders__Disk_DB(5)
     }
     
     async getExcessiveFolders__Config_Disk(process = 0) {
@@ -268,11 +300,12 @@ class FilesTest extends BasicClass {
         this.sendRequest()
         await delay()
         
-        this._excessiveFolders.excessiveFolders__Config_Disk = []
+        this._excessiveFolders.excessiveFolders__Config_Disk = difference(
+            this.normalizedStringArr(Array.from(this.configFoldersSet)),
+            this.normalizedStringArr(Array.from(this.DiscFoldersSet)),
+        )
         
-        this.configFoldersSet.forEach((value) => {
-            !this.DiscFoldersSet.has(value) && this._excessiveFolders.excessiveFolders__Config_Disk.push(value)
-        })
+        this._excessiveFolders.excessiveFolders__Config_Disk.sort()
         
         this.message = `Finish finding extra folders in the database config (disc comparison): ${this.excessiveFolders__Config_Disk.length} folders`
         this.sendRequest()
@@ -286,11 +319,12 @@ class FilesTest extends BasicClass {
         this.sendRequest()
         await delay()
         
-        this._excessiveFolders.excessiveFolders__Disk_Config = []
+        this._excessiveFolders.excessiveFolders__Disk_Config = difference(
+            this.normalizedStringArr(Array.from(this.DiscFoldersSet)),
+            this.normalizedStringArr(Array.from(this.configFoldersSet)),
+        )
         
-        this.DiscFoldersSet.forEach((value) => {
-            !this.configFoldersSet.has(value) && this._excessiveFolders.excessiveFolders__Disk_Config.push(value)
-        })
+        this._excessiveFolders.excessiveFolders__Disk_Config.sort()
         
         this.message = `Finish finding extra folders in the disc (DB config comparison): ${this.excessiveFolders__Disk_Config.length} folders`
         this.sendRequest()
@@ -304,11 +338,12 @@ class FilesTest extends BasicClass {
         this.sendRequest()
         await delay()
         
-        this._excessiveFolders.excessiveFolders__Config_DB = []
+        this._excessiveFolders.excessiveFolders__Config_DB = difference(
+            this.normalizedStringArr(Array.from(this.configFoldersSet)),
+            this.normalizedStringArr(Array.from(this.DBFoldersSet)),
+        )
         
-        this.configFoldersSet.forEach((value) => {
-            !this.DBFoldersSet.has(value) && this._excessiveFolders.excessiveFolders__Config_DB.push(value)
-        })
+        this._excessiveFolders.excessiveFolders__Config_DB.sort()
         
         this.message = `Finish finding extra folders in the database config (DB comparison): ${this.excessiveFolders__Config_DB.length} folders`
         this.sendRequest()
@@ -322,11 +357,12 @@ class FilesTest extends BasicClass {
         this.sendRequest()
         await delay()
         
-        this._excessiveFolders.excessiveFolders__DB_Config = []
+        this._excessiveFolders.excessiveFolders__DB_Config = difference(
+            this.normalizedStringArr(Array.from(this.DBFoldersSet)),
+            this.normalizedStringArr(Array.from(this.configFoldersSet)),
+        )
         
-        this.DBFoldersSet.forEach((value) => {
-            !this.configFoldersSet.has(value) && this._excessiveFolders.excessiveFolders__DB_Config.push(value)
-        })
+        this._excessiveFolders.excessiveFolders__DB_Config.sort()
         
         this.message = `Finish finding extra folders in the DB (DB_config comparison): ${this.excessiveFolders__DB_Config.length} folders`
         this.sendRequest()
@@ -340,11 +376,12 @@ class FilesTest extends BasicClass {
         this.sendRequest()
         await delay()
         
-        this._excessiveFolders.excessiveFolders__DB_Disk = []
+        this._excessiveFolders.excessiveFolders__DB_Disk = difference(
+            this.normalizedStringArr(Array.from(this.DBFoldersSet)),
+            this.normalizedStringArr(Array.from(this.DiscFoldersSet)),
+        )
         
-        this.DBFoldersSet.forEach((value) => {
-            !this.DiscFoldersSet.has(value) && this._excessiveFolders.excessiveFolders__DB_Disk.push(value)
-        })
+        this._excessiveFolders.excessiveFolders__DB_Disk.sort()
         
         this.message = `Finish finding extra folders in the DB (disc comparison): ${this.excessiveFolders__DB_Disc.length} folders`
         this.sendRequest()
@@ -358,11 +395,12 @@ class FilesTest extends BasicClass {
         this.sendRequest()
         await delay()
         
-        this._excessiveFolders.excessiveFolders__Disk_DB = []
+        this._excessiveFolders.excessiveFolders__Disc_DB = difference(
+            this.normalizedStringArr(Array.from(this.DiscFoldersSet)),
+            this.normalizedStringArr(Array.from(this.DBFoldersSet)),
+        )
         
-        this.DiscFoldersSet.forEach((value) => {
-            !this.DBFoldersSet.has(value) && this._excessiveFolders.excessiveFolders__Disk_DB.push(value)
-        })
+        this._excessiveFolders.excessiveFolders__Disc_DB.sort()
         
         this.message = `Finish finding extra folders in the disc (DB comparison): ${this.excessiveFolders__Disc_DB.length} folders`
         this.sendRequest()
@@ -392,12 +430,12 @@ class FilesTest extends BasicClass {
     async getFolderListFromDisc(process = 0) {
         this.status = STATUS.PENDING
         this.message = 'loading directory list from Disc ...'
-        this.increaseProgress(process)
+        this.increaseProgress(process * 0.1)
         this.sendRequest()
         
         await delay()
         try {
-            const filesInRootDirectory = await this.getAllFoldersRecursively(DATABASE_FOLDER)
+            const filesInRootDirectory = await this.getAllFoldersRecursively(DATABASE_FOLDER, null, process * 0.9)
             this.DiscFoldersSet = filesInRootDirectory.directoriesList
             this.infoLog('getAllFoldersRecursively', 'DiscFoldersList')
             this.message = `loading directory list from Disc: ${this.DiscFoldersSet.size} folders`
@@ -408,7 +446,7 @@ class FilesTest extends BasicClass {
         }
     }
     
-    async getExcessiveFiles__onlyDiscFolders(process = 0) {
+    async getExcessiveFiles__except__excessiveFolders__Disk_DB(process = 0) {
         this.status = STATUS.PENDING
         this.message = 'loading files from Disc ...'
         this.increaseProgress(process)
@@ -420,24 +458,30 @@ class FilesTest extends BasicClass {
         
         await delay()
         try {
-            for (const dirname of this.DiscFoldersSet) {
+            for (const dirname of this.DBFoldersSet) {
                 const {filesFromDiscSet} = await this.getAllFilesFromDiscDirectory(dirname)
                 await this.DBRequest({targetFolder: dirname, excludeSubdirectories: true})
-                const currentDBResultsSet = new Set(this.DBRequestConfig.currentResults.map(item => removeExtraFirstSlash(item.filePath)))
-    
-                this.increaseNumberOfFilesOnDisc(filesFromDiscSet.size)
-                this.increaseNumberOfFilesInDB(currentDBResultsSet.size)
+                const currentDBResults = this.DBRequestConfig.currentResults.map(item => removeExtraFirstSlash(item))
                 
-                filesFromDiscSet.forEach(dirname => {
-                    !currentDBResultsSet.has(dirname) && this.excessiveFolders__filesOnDisc.push(dirname)
-                })
-                currentDBResultsSet.forEach(dirname => {
-                    !filesFromDiscSet.has(dirname) && this.excessiveFolders__filesInDB.push(dirname)
-                })
+                this.increaseNumberOfFilesOnDisc(filesFromDiscSet.size)
+                this.increaseNumberOfFilesInDB(currentDBResults.length)
+                
+                this.excessiveFolders__filesOnDisc = difference(
+                    this.normalizedStringArr(Array.from(filesFromDiscSet)),
+                    this.normalizedStringArr(currentDBResults),
+                )
+                
+                this.excessiveFolders__filesInDB = difference(
+                    this.normalizedStringArr(currentDBResults),
+                    this.normalizedStringArr(Array.from(filesFromDiscSet)),
+                )
                 
                 this.message = `loading files from Disc: ${dirname}`
                 this.sendRequest()
             }
+            
+            this.excessiveFolders__filesOnDisc.sort()
+            this.excessiveFolders__filesInDB.sort()
             
             this.status = STATUS.PENDING_SUCCESS
         } catch (error) {
@@ -445,28 +489,28 @@ class FilesTest extends BasicClass {
         }
     }
     
-    async getExcessiveFiles__onlyExcessiveDBFolders(process = 0) {
-        await delay()
-        this.message = 'loading files from excessive directories in DB ...'
+    async getExcessiveFiles__only__excessiveFolders__Disk_DB(process = 0) {
+        this.status = STATUS.PENDING
+        this.message = 'loading files from Disc ...'
         this.increaseProgress(process)
         this.sendRequest()
-        this.usePagination = false
+        
+        await delay()
         
         try {
-            for (const dirname of this.excessiveFolders__DB_Disc) {
-                await this.DBRequest({targetFolder: dirname, excludeSubdirectories: true})
-                const currentDBResultsSet = new Set(this.DBRequestConfig.currentResults.map(item => removeExtraFirstSlash(item.filePath)))
-            
-                this.increaseNumberOfFilesInDB(currentDBResultsSet.size)
+            for (const dirname of this.excessiveFolders__Disc_DB) {
+                const {filesFromDiscSet} = await this.getAllFilesFromDiscDirectory(dirname)
                 
-                currentDBResultsSet.forEach(dirname => {
-                    this.excessiveFolders__filesInDB.push(dirname)
-                })
-            
-                this.message = `loading files from excessive directories in DB: ${dirname}`
+                this.increaseNumberOfFilesOnDisc(filesFromDiscSet.size)
+                
+                this.excessiveFolders__filesOnDisc = this.normalizedStringArr(Array.from(filesFromDiscSet))
+                
+                this.message = `loading files from Disc: ${dirname}`
                 this.sendRequest()
             }
-        
+            
+            this.excessiveFolders__filesOnDisc.sort()
+            
             this.status = STATUS.PENDING_SUCCESS
         } catch (error) {
             this.throwError(error.message)
@@ -486,18 +530,20 @@ class FilesTest extends BasicClass {
                 await this.DBRequest();
                 
                 const resultsWithSubfolders = getUniqPaths(uniq(
-                    this.DBRequestConfig.currentResults.map(item => getFilePathWithoutName(item.filePath))
+                    this.DBRequestConfig.currentResults.map(filePath => {
+                        return getFilePathWithoutName(removeExtraFirstSlash(filePath))
+                    })
                 ))
-                resultsWithSubfolders.forEach(item => this.DBFoldersSet.add(removeExtraFirstSlash(item)))
+                resultsWithSubfolders.forEach(item => this.DBFoldersSet.add(item))
                 
                 const {currentPage, totalPages} = this.DBRequestConfig.pagination;
                 const processPart = currentPage && totalPages ? (process * 0.9) / totalPages : 0
                 
-                this.message = `loading directory list from DB: ${currentPage + 1} page, ${this.DBRequestConfig.currentResults.length} results`
+                this.message = `loading directory list from DB: ${currentPage} page of ${totalPages}; ${this.DBRequestConfig.currentResults.length} results`
                 this.increaseProgress(processPart)
                 this.sendRequest();
                 this.pagination = {currentPage: currentPage + 1}
-            } while (this.DBRequestConfig.pagination.currentPage + 1 <= this.DBRequestConfig.pagination.totalPages);
+            } while (this.DBRequestConfig.pagination.currentPage <= this.DBRequestConfig.pagination.totalPages);
             
             this.pagination = paginationDefault
             await delay()
@@ -518,11 +564,29 @@ class FilesTest extends BasicClass {
         const {pagination, usePagination} = this.DBRequestConfig
         const {currentPage, nPerPage} = pagination
         const conditionArr = []
-        const responseWithPagination = [
+        const filePathListResponseWithoutPagination = [
+            {$project: {"filePath": 1}},
+            {
+                $group: {
+                    _id: null,
+                    filePathSet: {$addToSet: '$filePath'},
+                }
+            },
+            {$unset: ["_id", "items"]},
+        ]
+        const filePathListResponseWithPagination = [
             {$project: {"filePath": 1}},
             {$skip: currentPage > 0 ? ((currentPage - 1) * nPerPage) : 0},
             {$limit: nPerPage},
+            {
+                $group: {
+                    _id: null,
+                    filePathSet: {$addToSet: '$filePath'},
+                }
+            },
+            {$unset: ["_id", "items"]},
         ]
+        
         const calculatedPaginationData = [
             {$count: 'resultsCount'},
             {
@@ -545,7 +609,7 @@ class FilesTest extends BasicClass {
         
         const returningObject = {
             $facet: {
-                response: usePagination ? responseWithPagination : [],
+                response: usePagination ? filePathListResponseWithPagination : filePathListResponseWithoutPagination,
                 pagination: usePagination ? calculatedPaginationData : []
             }
         }
@@ -579,25 +643,52 @@ class FilesTest extends BasicClass {
         
         usePagination && (this.pagination = {resultsCount, totalPages})
         needTotal && (this.totalCount = resultsCount)
-        this.currentResults = response
+        this.currentResults = (response.length && response[0].filePathSet) || []
     }
     
-    async getAllFoldersRecursively(dirPath, filesInRootDirectory) {
+    async getAllFoldersRecursively(dirPath, filesInRootDirectory, process = 0) {
+        const processPart = process / this.configFoldersSet.size
         const files = await readdir(dirPath)
         
         filesInRootDirectory = filesInRootDirectory || {
-            directoriesList: []
+            directoriesList: new Set()
         }
         
         const filesResponse = files.map(async file => {
+            if (this._mapCounter === 100) {
+                await new Promise((resolve) => setTimeout(() => {
+                    this.message = this.message.startsWith('Normalize')
+                        ? `Normalize: ${dirPath + "/" + file}`
+                        : `Folder search, current file: ${dirPath + "/" + file}`
+                    this.sendRequest()
+                    resolve()
+                }))
+                this._mapCounter = 0
+            }
+            ++this._mapCounter
+            
             if (file === '.DS_Store') return
             const fileStat = await stat(dirPath + "/" + file)
             if (fileStat.isDirectory()) {
-                filesInRootDirectory.directoriesList.push((dirPath + "/" + file).replace(`${DATABASE_FOLDER}/`, ''))
-                filesInRootDirectory = await this.getAllFoldersRecursively(dirPath + "/" + file, filesInRootDirectory)
+                this._isFolderSearching = false
+                await new Promise((resolve) => setTimeout(() => {
+                    this.increaseProgress(processPart)
+                    this.message = `Normalize: ${dirPath + "/" + file}`
+                    this.sendRequest()
+                    resolve()
+                }))
+                
+                const normalizedDir = (dirPath + "/" + file).replace(`${DATABASE_FOLDER}/`, '')
+                filesInRootDirectory.directoriesList.add(normalizedDir)
+                filesInRootDirectory = await this.getAllFoldersRecursively(dirPath + "/" + file, filesInRootDirectory, process)
+            } else {
+                if (this._isFolderSearching) return
+                this._isFolderSearching = true
+                this.message = `Folder search, current file: ${dirPath + "/" + file}`
+                this.sendRequest()
             }
         })
-        
+        this._isFolderSearching = false
         await Promise.all(filesResponse)
         
         return filesInRootDirectory
@@ -646,7 +737,7 @@ class FilesTest extends BasicClass {
             }
         }
         
-        this.successLog('webSocket - sendRequest', requestObject)
+        this.successLog('webSocket - sendRequest', requestObject.data.message)
         this._send(JSON.stringify(requestObject))
     }
 }

@@ -6,10 +6,12 @@ services:
     container_name: IDB_backend
     ports:
       - "5000:5000"
+      - "5001:5001"
     volumes:
       - .:/app
       - /app/node_modules
       - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/previews:/app/previews
     restart: unless-stopped
 
   mongo:

@@ -13,9 +13,9 @@ const DATABASE_FOLDER = '/app/' + DATABASE_FOLDER_NAME // docker mode
 const PREVIEWS_FOLDER = '/app/' + PREVIEWS_FOLDER_NAME // docker mode
 // const DATABASE_FOLDER = __dirname + '/' + DATABASE_FOLDER_NAME // local mode
 
-const MONGO_HOST_NAME = 'mongo-dev' // docker dev
+// const MONGO_HOST_NAME = 'mongo-dev' // docker dev
 // const MONGO_HOST_NAME = 'mongo-test' // docker test
-// const MONGO_HOST_NAME = 'mongo' // docker
+const MONGO_HOST_NAME = 'mongo' // docker
 // const MONGO_HOST_NAME = 'localhost' // local
 
 const VIDEO_EXTENSION_LIST = ['mkv', 'flv', 'avi', 'mov', 'wmv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2', 'mpeg', 'm2v', '3gp']

@@ -27,10 +27,40 @@ const {omit} = require('ramda');
 const ObjectId = require('mongodb').ObjectID
 
 /**
+ * @param updatedFields
+ * @param {string} updatedFields.originalName?
+ * @param {string} updatedFields.filePath?
+ * @param {string} updatedFields.originalDate?
+ * @param {string} updatedFields.keywords?
+ * @param {number} updatedFields.rating?
+ * @param {string} updatedFields.description?
+ * @param {string} updatedFields.timeStamp?
+ * @param {boolean} updatedFields.needUpdatePreview?
+ */
+const normalizeStringFields = (updatedFields) => (
+    Object.keys(updatedFields).reduce((accum, current) => {
+        if (!updatedFields[current]) return accum
+        if (typeof updatedFields[current] === 'string') {
+            const normalizedString = updatedFields[current].normalize()
+            return {...accum, [current]: normalizedString}
+        }
+        return {...accum, [current]: updatedFields[current]}
+    }, {})
+)
+
+/**
  * Update DB file object (originalName, filePath, originalDate, keywords)
  *
  * @param id
  * @param updatedFields
+ * @param {string} updatedFields.originalName?
+ * @param {string} updatedFields.filePath?
+ * @param {string} updatedFields.originalDate?
+ * @param {string} updatedFields.keywords?
+ * @param {number} updatedFields.rating?
+ * @param {string} updatedFields.description?
+ * @param {string} updatedFields.timeStamp?
+ * @param {boolean} updatedFields.needUpdatePreview?
  * @param DBObject
  * @param collection
  * @return {Promise<*>}

@@ -208,7 +208,7 @@ export class CreatePreviews extends BasicClass {
                 if (!curTotalPages) curTotalPages = totalPages
                 const processPart = totalPages ? process / curTotalPages : 0
                 
-                this.message = `creating preview for the file (${curPage} from ${curTotalPages}): ${filePathForTheMessage}`
+                this.message = `creating preview for the file (${curPage} of ${curTotalPages}): ${filePathForTheMessage}`
                 this.increaseProgress(processPart)
                 this.sendRequest();
                 ++curPage
