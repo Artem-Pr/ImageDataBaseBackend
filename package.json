@@ -1,6 +1,6 @@
 {
   "name": "image_db-back",
-  "version": "4.6.0",
+  "version": "4.6.1",
   "scripts": {
     "start": "node -r esm app",
     "dev": "nodemon -r esm app",
