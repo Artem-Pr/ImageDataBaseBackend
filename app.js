@@ -52,6 +52,9 @@ if (!isDataBaseExist) {
 
 const upload = getMulterSettings(UPLOAD_TEMP_FOLDER)
 
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
+
 app.use(cors())
 app.use('/' + IMAGES_TEMP_FOLDER, express.static(__dirname + '/' + TEMP_FOLDER))
 app.use('/' + UPLOAD_IMAGES_TEMP_FOLDER, express.static(__dirname + '/' + UPLOAD_TEMP_FOLDER))
