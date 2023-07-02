@@ -18,6 +18,26 @@ const PREVIEWS_FOLDER = '/app/' + PREVIEWS_FOLDER_NAME // docker mode
 const MONGO_HOST_NAME = 'mongo' // docker
 // const MONGO_HOST_NAME = 'localhost' // local
 
+const DB = {
+    NAME: {
+        ID_BASE: "IDBase", // main base
+        DATABASE: "dataBase",
+        IDB: "IDB",
+        TEST_DB: "TestDB"
+    },
+    COLLECTION_NAME: {
+        PHOTOS: "photos",
+        CONFIG: "config"
+    }
+}
+
+const CURRENT_DB_NAMES = {
+    DB_NAME: DB.NAME.ID_BASE,
+    COLLECTION_NAME: DB.COLLECTION_NAME
+}
+
+const EXIFTOOL_TASK_TIMEOUT_MILLIS = 60000
+
 const VIDEO_EXTENSION_LIST = ['mkv', 'flv', 'avi', 'mov', 'wmv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2', 'mpeg', 'm2v', '3gp']
 const IMAGE_EXTENSIONS = {
     HEIC: 'heic',
@@ -46,6 +66,10 @@ module.exports = {
     DATABASE_FOLDER,
     PREVIEWS_FOLDER,
     MONGO_HOST_NAME,
+    
+    CURRENT_DB_NAMES,
+    
+    EXIFTOOL_TASK_TIMEOUT_MILLIS,
     
     VIDEO_EXTENSION_LIST,
     IMAGE_EXTENSIONS,

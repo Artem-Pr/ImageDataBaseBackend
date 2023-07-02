@@ -30,6 +30,7 @@ const {
     MONGO_HOST_NAME,
     TEMP_FOLDER,
     UPLOAD_TEMP_FOLDER,
+    CURRENT_DB_NAMES,
 } = require('./constants')
 
 const {MongoClient} = require("mongodb")
@@ -180,14 +181,8 @@ mongoClient.connect(function (err, client) {
     }
     
     dbClient = client
-    // app.locals.collection = client.db("IDB").collection("photos")
-    // app.locals.configCollection = client.db("IDB").collection("config")
-    app.locals.collection = client.db("IDBase").collection("photos")
-    app.locals.configCollection = client.db("IDBase").collection("config")
-    // app.locals.collection = client.db("dataBase").collection("photos")
-    // app.locals.configCollection = client.db("dataBase").collection("config")
-    // app.locals.collection = client.db("TestDB").collection("photos")
-    // app.locals.configCollection = client.db("TestDB").collection("config")
+    app.locals.collection = client.db(CURRENT_DB_NAMES.DB_NAME).collection(CURRENT_DB_NAMES.COLLECTION_NAME.PHOTOS)
+    app.locals.configCollection = client.db(CURRENT_DB_NAMES.DB_NAME).collection(CURRENT_DB_NAMES.COLLECTION_NAME.CONFIG)
     app.listen(PORT, function () {
         logger.info('Start listening on port', {message: PORT})
         new WebSockets(app)

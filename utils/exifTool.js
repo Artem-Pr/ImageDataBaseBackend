@@ -3,8 +3,10 @@ const createError = require("http-errors")
 const {throwError} = require("./common")
 const {logger} = require("./logger")
 const {dateTimeFormat} = require('./dateFormat');
+const {EXIFTOOL_TASK_TIMEOUT_MILLIS} = require('../constants');
 
-const exiftool = require("exiftool-vendored").exiftool
+const ExifTool = require("exiftool-vendored").ExifTool
+const exiftool = new ExifTool({ taskTimeoutMillis: EXIFTOOL_TASK_TIMEOUT_MILLIS })
 
 exiftool
     .version()
@@ -136,7 +138,7 @@ const pushExif = async (pathsArr, changedKeywordsArr, filedata) => {
             .write(
                 currentPhotoPath,
                 preparedExif,
-                ['-overwrite_original', "-codedcharacterset=utf8"]
+                ['-overwrite_original', '-codedcharacterset=utf8']
             )
             .then(response => {
                 logger.info('ExifTool SUCCESS: pushExif - file: ' + currentPhotoPath)
