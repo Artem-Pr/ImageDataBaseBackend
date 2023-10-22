@@ -5,7 +5,7 @@ services:
     build: .
     container_name: IDB_backend_dev
     ports:
-      - "5000:5000"
+      - "5002:5002"
       - "5001:5001"
     volumes:
       - .:/app

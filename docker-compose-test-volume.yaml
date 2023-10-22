@@ -1,25 +1,25 @@
 version: "3.8"
 
 services:
-  image_db_backend:
+  image_db_backend_test_volume:
     build: .
-    container_name: IDB_backend
+    container_name: IDB_backend_test_volume
     ports:
       - "5002:5002"
       - "5001:5001"
     volumes:
       - .:/app
       - /app/node_modules
-      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
-      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/previews:/app/previews
+      - /Volumes/Seagate 2TB/IDBVolume/filesVolume:/app/dataBase
+      - /Volumes/Seagate 2TB/IDBVolume/previews:/app/previews
     restart: unless-stopped
 
-  mongo:
+  mongo-test:
     image : mongo:4.4
     container_name: IDB_mongodb
     user: nobody
     volumes:
-      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/mongodb:/data/db
+      - /Volumes/Seagate 2TB/IDBVolume/mongodb:/data/db
     ports:
       - "27017:27017"
     restart: unless-stopped

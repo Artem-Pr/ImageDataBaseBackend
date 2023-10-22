@@ -1,4 +1,4 @@
-const PORT = 5000
+const PORT = 5002
 const WEB_SOCKET_PORT = 5001
 const TEMP_FOLDER = 'temp'
 const UPLOAD_TEMP_FOLDER = 'uploadTemp'

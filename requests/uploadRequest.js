@@ -35,6 +35,7 @@ const getKeywordsArr = (req, keywordsRawList, exifResponse, filedata) => {
         // нашел много разных вариантов даты, возможно надо их протестировать
         const originalDate =
             item.DateTimeOriginal ||
+            item.CreationDate || //Видео для iPhone с тайм зоной
             item.CreateDate ||
             item.ModifyDate ||
             item.MediaCreateDate

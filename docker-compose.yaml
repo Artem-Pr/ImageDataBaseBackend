@@ -5,12 +5,16 @@ services:
     build: .
     container_name: IDB_backend
     ports:
-      - "5000:5000"
+      - "5002:5002"
       - "5001:5001"
     volumes:
     #  - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
-      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
-      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/previews:/app/previews
+#      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+#      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/previews:/app/previews
+      # - /Users/artempriadkin/Documents/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+      # - /Users/artempriadkin/Documents/Yandex.Disk.localized/IDBase/previews:/app/previews
+      - /Users/artempriadkin/Documents/IDBase/filesVolume:/app/dataBase
+      - /Users/artempriadkin/Documents/IDBase/previews:/app/previews
     restart: unless-stopped
 
   mongo:
@@ -18,8 +22,10 @@ services:
     container_name: IDB_mongodb
     user: nobody
     volumes:
-      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/mongodb:/data/db
+#      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/mongodb:/data/db
     #  - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/mongodb:/data/db
+      # - /Users/artempriadkin/Documents/Yandex.Disk.localized/IDBase/mongodb:/data/db
+      - /Users/artempriadkin/Documents/IDBase/mongodb:/data/db
     ports:
       - "27017:27017"
     restart: unless-stopped
