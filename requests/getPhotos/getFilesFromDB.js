@@ -5,6 +5,7 @@ const {removeFileExt} = require('../../utils/common')
 const {DBRequests} = require('../../utils/DBController');
 const {TEMP_FOLDER, DATABASE_FOLDER} = require('../../constants')
 const {createPreviewAndSendFiles} = require('./helpers/createPreviewAndSendFiles');
+const { getDynamicFoldersArr } = require('./helpers/getDynamicFoldersArr');
 
 const getName = (dbObject) => removeFileExt(dbObject.originalName)
 // const getName = (dbObject) => dbObject.size //нужно для изменения вариантов сравнения
@@ -59,6 +60,7 @@ const getFilesFromDB = async (req, res) => {
         return
     }
     
+    const isDynamicFolders = Boolean(filedata.isDynamicFolders)
     const randomSort = Boolean(filedata.randomSort)
     const sorting = filedata.sorting
     const folderPath = filedata.folderPath
@@ -107,14 +109,7 @@ const getFilesFromDB = async (req, res) => {
     fs.emptyDirSync(TEMP_FOLDER)
     
     const conditionArr = []
-    
-    if (folderPath && showSubfolders) conditionArr.push(
-        {$expr: {$eq: [{$indexOfCP: ['$filePath', `/${folderPath}/`]}, 0]}}
-    )
-    if (folderPath && !showSubfolders) {
-        conditionArr.push(DBRequests.getFilesExcludeFilesInSubfolders(folderPath))
-    }
-    
+        
     if (fileNameFilter) conditionArr.push(
         {originalName: {'$regex': fileNameFilter, '$options': 'i'}}
     )
@@ -148,10 +143,20 @@ const getFilesFromDB = async (req, res) => {
             {originalDate: {$gte: startDate, $lt: endDate}}
         )
     }
+
+    const collection = req.app.locals.collection
+    const dynamicFolders = isDynamicFolders 
+        ? await getDynamicFoldersArr(collection, conditionArr) // put conditionArr before adding paths
+        : []
+
+    if (folderPath && showSubfolders) conditionArr.push(
+        {$expr: {$eq: [{$indexOfCP: ['$filePath', `/${folderPath}/`]}, 0]}}
+    )
+    if (folderPath && !showSubfolders) {
+        conditionArr.push(DBRequests.getFilesExcludeFilesInSubfolders(folderPath))
+    }
     
     const findObject = conditionArr.length ? {$and: conditionArr} : {}
-    
-    const collection = req.app.locals.collection
     
     const aggregationMatch = {$match: findObject}
     const aggregationSort = {$sort: sorting}
@@ -228,7 +233,7 @@ const getFilesFromDB = async (req, res) => {
                 : {resultsCount: 0, totalPages: 0, currentPage: 0}
             const searchPagination = {currentPage, totalPages, nPerPage, resultsCount}
             
-            await createPreviewAndSendFiles(res, response, searchPagination, filesSizeSum, isFullSizePreview, dontSavePreview, req)
+            await createPreviewAndSendFiles(res, response, searchPagination, filesSizeSum, isFullSizePreview, dontSavePreview, req, dynamicFolders)
             return
         }
         

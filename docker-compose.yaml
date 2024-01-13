@@ -8,11 +8,22 @@ services:
       - "5002:5002"
       - "5001:5001"
     volumes:
-    #  - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
+          #  - /Volumes/Transcend V/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
 #      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
 #      - /Volumes/Seagate 2TB/Yandex.Disk.localized/IDBase/previews:/app/previews
+
       # - /Users/artempriadkin/Documents/Yandex.Disk.localized/IDBase/filesVolume:/app/dataBase
       # - /Users/artempriadkin/Documents/Yandex.Disk.localized/IDBase/previews:/app/previews
+
+      # - /Users/artempriadkin/Documents/IDBase/filesVolume/main/2023:/app/dataBase/main/2023
+      # - /Volumes/Seagate 2TB/IDBase_2023.11.04/IDBase/filesVolume/main/2022:/app/dataBase/main/2022
+      # - /Volumes/Seagate 2TB/IDBase_2023.11.04/IDBase/filesVolume/main/2021:/app/dataBase/main/2021
+      # - /Volumes/Seagate 2TB/IDBase_2023.11.04/IDBase/filesVolume/main/2020:/app/dataBase/main/2020
+      # - /Users/artempriadkin/Documents/IDBase/filesVolume/main/2019:/app/dataBase/main/2019
+      # - /Volumes/Seagate 2TB/IDBase_2023.11.04/IDBase/filesVolume/games:/app/dataBase/games
+
+      # - /Users/artempriadkin/Documents/IDBase/filesVolume/main:/app/dataBase/main
+      # - /Users/artempriadkin/Documents/IDBase/filesVolume/games:/app/dataBase/games
       - /Users/artempriadkin/Documents/IDBase/filesVolume:/app/dataBase
       - /Users/artempriadkin/Documents/IDBase/previews:/app/previews
     restart: unless-stopped

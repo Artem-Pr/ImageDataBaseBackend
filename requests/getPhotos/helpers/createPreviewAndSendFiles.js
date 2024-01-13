@@ -19,6 +19,7 @@ const defaultRoot = {
  * @param {boolean} isFullSizePreview
  * @param {boolean} dontSavePreview
  * @param {object} req
+ * @param {string[]} dynamicFolders
  * @param {locals: {collection: {
  *    aggregate: (Array, object) => ({toArray: () => Promise<any>})
  * }}} req.app.locals - express instance
@@ -31,7 +32,8 @@ const createPreviewAndSendFiles = async (
     filesSizeSum,
     isFullSizePreview,
     dontSavePreview,
-    req
+    req,
+    dynamicFolders,
 ) => {
     logger.debug('filteredPhotos.length: ', {message: filteredPhotos.length})
     const filesWithTempPathPromise = filteredPhotos.map(async item => {
@@ -70,9 +72,10 @@ const createPreviewAndSendFiles = async (
     })
     const filesWithTempPath = await Promise.all(filesWithTempPathPromise)
     const responseObject = {
+        dynamicFolders: dynamicFolders.length ? dynamicFolders : false,
         files: filesWithTempPath,
+        filesSizeSum,
         searchPagination,
-        filesSizeSum
     }
     logger.http('POST-response', {
         message: '/filtered-photos',

@@ -565,14 +565,14 @@ class FilesTest extends BasicClass {
         const {currentPage, nPerPage} = pagination
         const conditionArr = []
         const filePathListResponseWithoutPagination = [
-            {$project: {"filePath": 1}},
+            {$project: {"filePath": 1}}, // includes only the filePath field in the resulting documents
             {
                 $group: {
                     _id: null,
-                    filePathSet: {$addToSet: '$filePath'},
+                    filePathSet: {$addToSet: '$filePath'}, // creates a set of unique file paths
                 }
             },
-            {$unset: ["_id", "items"]},
+            {$unset: ["_id", "items"]}, // removes the _id field and the items field (if it exists) from the resulting documents
         ]
         const filePathListResponseWithPagination = [
             {$project: {"filePath": 1}},
