@@ -466,7 +466,7 @@ const getSubdirectories = (directory, pathsArr) => {
  * @param {object} req - request object
  * @param {string} req.url=http://localhost:5000/upload?path=folder/subfolder - (example).
  * @param {string} paramName - "path" (example).
- * @return {string|null}
+ * @return {string|null|Array<string>}
  */
 const getParam = (req, paramName) => {
     if (!req.url) {
@@ -475,11 +475,12 @@ const getParam = (req, paramName) => {
     }
     const url = new URL('http://localhost:' + PORT + req.url)
     const param = url.searchParams.get(paramName)
-    if (!param) {
+    const paramArr = url.searchParams.getAll(paramName + '[]')
+    if (!param && !paramArr) {
         throwError('Request does not contain a required parameter', true)
         return null
     }
-    return param
+    return param || paramArr
 }
 
 /**

@@ -16,6 +16,7 @@ const {matchingNumberOfFilesTest} = require("./requests/testRequests/matchingNum
 const {matchingVideoThumbnailsTest} = require('./requests/testRequests/matchingVideoThumbnailsTest')
 const {getUnusedKeywordsRequest} = require('./requests/getUnusedKeywordsRequest')
 const {removeKeywordRequest} = require('./requests/removeKeywordRequest')
+const {checkDuplicates} = require('./requests/checkDuplicates')
 const {WebSockets} = require('./requests/webSockets/webSockets');
 // const {updateStringDateToDateFormat} = require('./utils/updateStringDateToDateFormat')
 
@@ -86,6 +87,11 @@ app.get("/paths", (req, res) => {
 app.get("/check-directory", (req, res) => {
     logger.http('GET-query', {message: '/check-directory', data: getParam(req, 'directory')})
     void checkDirectory(req, res)
+})
+
+app.get("/check-duplicates", (req, res) => {
+    logger.http('GET-query', {message: '/check-duplicates', data: getParam(req, 'names')})
+    void checkDuplicates(req, res)
 })
 
 app.post("/uploadItem",

@@ -214,6 +214,9 @@ const getFilesFromDB = async (req, res) => {
     ]
     
     try {
+        logger.debug('aggregationArray', {data: isNameComparison
+            ? comparisonAggregationArray
+            : aggregationArray})
         const [mongoResponse] = await collection
             .aggregate(
                 isNameComparison

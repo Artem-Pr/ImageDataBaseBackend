@@ -34,6 +34,10 @@ const getDynamicFoldersArr = async (DBCollection, conditionArr) => {
     const [mongoResponse] = await DBCollection
         .aggregate(aggregation, {allowDiskUse: true})
         .toArray()
+
+    if (mongoResponse.response.length === 0) {
+        return []
+    }
     
     const resultsWithSubfolders = getUniqPaths(uniq(
         mongoResponse.response[0].filePathSet.map(filePath => {
