@@ -36,7 +36,7 @@ const CURRENT_DB_NAMES = {
     COLLECTION_NAME: DB.COLLECTION_NAME
 }
 
-const EXIFTOOL_TASK_TIMEOUT_MILLIS = 60000
+const EXIFTOOL_TASK_TIMEOUT_MILLIS = 100000
 
 const VIDEO_EXTENSION_LIST = ['mkv', 'flv', 'avi', 'mov', 'wmv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2', 'mpeg', 'm2v', '3gp']
 const IMAGE_EXTENSIONS = {
